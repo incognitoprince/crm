@@ -10,8 +10,8 @@ const customerSchema = z.object({
   name: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(6).max(30),
   email: z.string().email().optional().or(z.literal("")),
-  address: z.string().trim().max(250).optional(),
-  notes: z.string().trim().max(1000).optional(),
+  address: z.string().trim().max(250).optional().nullable(),
+  notes: z.string().trim().max(1000).optional().nullable(),
   shopId: z.string().cuid().optional().nullable(),
 });
 
