@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import pinoHttp from "pino-http";
+import { rateLimit } from "express-rate-limit";
+import { pinoHttp } from "pino-http";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { apiRouter } from "./routes/index.js";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLatency } from "./utils/cn";
+import { formatLatency } from "./cn";
 
 describe("formatLatency", () => {
   it("appends milliseconds", () => {
