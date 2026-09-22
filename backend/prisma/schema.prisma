@@ -7,10 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum CustomerStatus { ACTIVE INACTIVE }
-enum OrderStatus { PENDING MEASUREMENT CUTTING STITCHING QUALITY_CHECK READY DELIVERED CANCELLED }
-enum GarmentType { THOBE SHIRT TROUSER SUIT OTHER }
-enum PaymentStatus { UNPAID PARTIAL PAID }
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  MEASUREMENT
+  CUTTING
+  STITCHING
+  QUALITY_CHECK
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum GarmentType {
+  THOBE
+  SHIRT
+  TROUSER
+  SUIT
+  OTHER
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
 
 model Shop {
   id String @id @default(cuid())
