@@ -9,7 +9,7 @@ const router = Router();
 const garments = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
 
 const measurementSchema = z.object({
-  customerId: z.string().cuid(),
+  customerId: z.string().trim().min(1).max(100),
   garment: z.enum(garments),
   profileName: z.string().trim().min(1).max(60).default("Standard"),
   values: z.record(z.string(), z.coerce.number().min(0).max(300)),
