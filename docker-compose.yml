@@ -33,6 +33,8 @@ services:
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL:-postgresql://tailoring:tailoring@postgres:5432/tailoring_crm?schema=public}
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,6 +89,7 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
 
 networks:
   tailoring-crm:
