@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { ZodError } from "zod";
 import { logger } from "../config/logger.js";
 import { isProduction } from "../config/env.js";
 
@@ -21,10 +22,11 @@ export function notFoundHandler(req: Request, res: Response) {
 }
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+  const isValidationError = err instanceof ZodError;
   const error = err instanceof AppError ? err : null;
-  const statusCode = error?.statusCode ?? 500;
-  const code = error?.code ?? "INTERNAL_ERROR";
-  const message = error?.message ?? "An unexpected error occurred";
+  const statusCode = error?.statusCode ?? (isValidationError ? 400 : 500);
+  const code = error?.code ?? (isValidationError ? "VALIDATION_ERROR" : "INTERNAL_ERROR");
+  const message = error?.message ?? (isValidationError ? err.issues.map(issue => `${issue.path.join(".") || "request"}: ${issue.message}`).join("; ") : "An unexpected error occurred");
 
   logger.error({ err }, "Unhandled API error");
 
