@@ -16,7 +16,6 @@ export function NewOrderPage() {
   const [garment, setGarment] = useState<GarmentType>("THOBE");
   const [description, setDescription] = useState("");
   const [total, setTotal] = useState("");
-  const [quantity, setQuantity] = useState("");
   const [paid, setPaid] = useState("0");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -39,16 +38,10 @@ export function NewOrderPage() {
     }).catch(e => setError(e instanceof Error ? e.message : "Unable to load order form"));
   }, [searchParams]);
 
-  const totalQuantity = Number(quantity) || 0;
   const breakdown = defaultSizes
     .map(size => ({ size, quantity: Number(sizeBreakdowns[size] || 0) }))
     .filter(item => item.quantity > 0);
   const breakdownTotal = breakdown.reduce((sum, item) => sum + item.quantity, 0);
-  const remainingQuantity = totalQuantity - breakdownTotal;
-
-  function updateQuantity(value: string) {
-    if (value === "" || /^\d+$/.test(value)) setQuantity(value);
-  }
 
   function updateSize(size: string, value: string) {
     if (value === "" || /^\d+$/.test(value)) {
@@ -60,13 +53,8 @@ export function NewOrderPage() {
     e.preventDefault();
     setError("");
 
-    if (totalQuantity < 1) {
-      setError("Enter the total quantity.");
-      return;
-    }
-
-    if (breakdownTotal !== totalQuantity) {
-      setError(`Size quantities must equal total quantity. Total: ${totalQuantity}, sizes: ${breakdownTotal}.`);
+    if (breakdownTotal < 1) {
+      setError("Add at least one piece in the size breakdown.");
       return;
     }
 
@@ -76,7 +64,7 @@ export function NewOrderPage() {
         shopId: shopId || null,
         garment,
         description,
-        quantity: totalQuantity,
+        quantity: breakdownTotal,
         totalAmountFils: Math.round(Number(total) * 1000),
         paidAmountFils: Math.round(Number(paid) * 1000),
         deliveryDate: deliveryDate ? new Date(deliveryDate + "T00:00:00").toISOString() : null,
@@ -94,7 +82,7 @@ export function NewOrderPage() {
     <button onClick={() => navigate("/orders")} className="text-sm text-slate-500 hover:underline">← Back to orders</button>
     <div>
       <h3 className="text-2xl font-semibold text-navy-900">New order</h3>
-      <p className="text-sm text-slate-600">Capture the customer's reference image, total quantity, size quantities and production assignment.</p>
+      <p className="text-sm text-slate-600">Capture the customer's reference image, size quantities and production assignment.</p>
     </div>
 
     {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -124,18 +112,14 @@ export function NewOrderPage() {
         </label>
 
         <label className="text-sm">
-          Total quantity
+          Total Quantity
           <input
-            required
-            min="1"
-            step="1"
+            readOnly
             type="number"
-            value={quantity}
-            onChange={e => updateQuantity(e.target.value)}
-            placeholder="e.g. 7"
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+            value={breakdownTotal}
+            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 font-medium text-slate-700"
           />
-          <span className="mt-1 block text-xs text-slate-500">Enter the total number of pieces in this order.</span>
+          <span className="mt-1 block text-xs text-slate-500">Automatically calculated from the size breakdown below.</span>
         </label>
 
         <label className="text-sm sm:col-span-2">
@@ -146,7 +130,7 @@ export function NewOrderPage() {
 
       <section className="rounded-lg border border-slate-200 p-4">
         <h4 className="font-semibold text-navy-900">Size breakdown</h4>
-        <p className="mt-1 text-xs text-slate-500">Enter how the total quantity is distributed by size. Example: 4 XL + 3 M = 7 total.</p>
+        <p className="mt-1 text-xs text-slate-500">Enter the quantity for each size. Total Quantity will be calculated automatically.</p>
 
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
           {defaultSizes.map(size => (
@@ -164,20 +148,7 @@ export function NewOrderPage() {
           ))}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          <span className="font-medium text-slate-700">Size total: {breakdownTotal}</span>
-          <span className={remainingQuantity === 0 ? "font-medium text-emerald-700" : "font-medium text-amber-700"}>
-            Remaining: {remainingQuantity}
-          </span>
-          <span className="font-medium text-slate-700">Order total: {totalQuantity}</span>
-        </div>
-
-        {totalQuantity > 0 && remainingQuantity === 0 && (
-          <p className="mt-2 text-xs font-medium text-emerald-700">✓ Size breakdown matches the total quantity.</p>
-        )}
-        {remainingQuantity < 0 && (
-          <p className="mt-2 text-xs font-medium text-red-700">Size breakdown exceeds the total quantity.</p>
-        )}
+        <p className="mt-3 text-sm font-medium text-emerald-700">Total pieces: {breakdownTotal}</p>
       </section>
 
       <section className="rounded-lg border border-slate-200 p-4">
