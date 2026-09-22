@@ -24,6 +24,25 @@ const customers = [
   ["demo-cust-012","CUST-1012","Turki Al-Shammari","+965 5000 1012","Shop4"],
 ];
 
+const masters = [
+  ["demo-master-001","Ahmed Hassan","+965 6000 2001","demo-shop-kuwait-city"],
+  ["demo-master-002","Hassan Ali","+965 6000 2002","demo-shop-kuwait-city"],
+  ["demo-master-003","Mohammed Salem","+965 6000 2003","demo-shop-kuwait-city"],
+  ["demo-master-004","Yousef Karim","+965 6000 2004","demo-shop-hawally"],
+  ["demo-master-005","Khaled Nasser","+965 6000 2005","demo-shop-hawally"],
+  ["demo-master-006","Omar Faisal","+965 6000 2006","demo-shop-salmiya"],
+  ["demo-master-007","Bader Mahmoud","+965 6000 2007","demo-shop-farwaniya"],
+  ["demo-master-008","Salem Ibrahim","+965 6000 2008","demo-shop-farwaniya"],
+];
+
+const designs = [
+  ["demo-design-001","DES-0041","Classic Arabic Collar","THOBE","Traditional white thobe collar"],
+  ["demo-design-002","DES-0042","Modern French Collar","THOBE","Clean modern collar profile"],
+  ["demo-design-003","DES-0043","Executive Shirt","SHIRT","Formal business shirt"],
+  ["demo-design-004","DES-0044","Straight Fit Trouser","TROUSER","Classic straight fit"],
+  ["demo-design-005","DES-0045","Two Button Suit","SUIT","Two-piece business suit"],
+];
+
 const measurements = [
   ["demo-cust-001","THOBE",{length:58,shoulder:18,chest:42,waist:40,sleeve:24,neck:16}],
   ["demo-cust-002","THOBE",{length:57,shoulder:17.5,chest:41,waist:39,sleeve:23.5,neck:16}],
@@ -71,6 +90,22 @@ async function main() {
     });
   }
 
+  for (const [id, name, phone, shopId] of masters) {
+    await prisma.master.upsert({
+      where: { id },
+      update: { name, phone, shopId, active: true },
+      create: { id, name, phone, shopId, active: true },
+    });
+  }
+
+  for (const [id, designNo, name, garment, description] of designs) {
+    await prisma.design.upsert({
+      where: { id },
+      update: { designNo, name, garment, description, active: true },
+      create: { id, designNo, name, garment, description, active: true },
+    });
+  }
+
   for (const [customerId, garment, values] of measurements) {
     await prisma.measurement.upsert({
       where: { customerId_garment_profileName: { customerId, garment, profileName: "Standard" } },
@@ -85,6 +120,62 @@ async function main() {
       where: { id },
       update: { orderNo, customerId, shopId, garment, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
       create: { id, orderNo, customerId, shopId, garment, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
+    });
+  }
+
+  const sizeRows = [
+    ["demo-order-001", [["M",1],["L",1]]],
+    ["demo-order-002", [["M",2],["L",1]]],
+    ["demo-order-003", [["M",2],["L",2]]],
+    ["demo-order-004", [["M",1],["L",1]]],
+    ["demo-order-005", [["M",2],["L",1]]],
+    ["demo-order-006", [["L",1]]],
+    ["demo-order-007", [["M",2],["L",2],["XL",1]]],
+    ["demo-order-008", [["M",2],["L",1]]],
+    ["demo-order-009", [["M",1],["L",1]]],
+    ["demo-order-010", [["M",1],["L",1]]],
+    ["demo-order-011", [["M",1],["L",1]]],
+    ["demo-order-012", [["L",1]]],
+  ];
+  for (const [orderId, rows] of sizeRows) {
+    for (const [size, quantity] of rows) {
+      await prisma.orderSizeBreakdown.upsert({
+        where: { orderId_size: { orderId, size } },
+        update: { quantity },
+        create: { orderId, size, quantity },
+      });
+    }
+  }
+
+  const orderDesigns = [
+    ["demo-od-001","demo-order-001","demo-design-001"],
+    ["demo-od-002","demo-order-002","demo-design-001"],
+    ["demo-od-003","demo-order-005","demo-design-002"],
+    ["demo-od-004","demo-order-007","demo-design-001"],
+  ];
+  for (const [id, orderId, designId] of orderDesigns) {
+    await prisma.orderDesign.upsert({
+      where: { id },
+      update: { orderId, designId },
+      create: { id, orderId, designId },
+    });
+  }
+
+  const assignments = [
+    ["demo-assignment-001","demo-od-001","demo-master-001","M",1],
+    ["demo-assignment-002","demo-od-001","demo-master-002","L",1],
+    ["demo-assignment-003","demo-od-002","demo-master-004","M",2],
+    ["demo-assignment-004","demo-od-002","demo-master-005","L",1],
+    ["demo-assignment-005","demo-od-003","demo-master-001","M",2],
+    ["demo-assignment-006","demo-od-004","demo-master-006","M",2],
+    ["demo-assignment-007","demo-od-004","demo-master-006","L",1],
+    ["demo-assignment-008","demo-od-004","demo-master-005","L",1],
+  ];
+  for (const [id, orderDesignId, masterId, size, quantity] of assignments) {
+    await prisma.masterAssignment.upsert({
+      where: { id },
+      update: { orderDesignId, masterId, size, quantity },
+      create: { id, orderDesignId, masterId, size, quantity },
     });
   }
 }
