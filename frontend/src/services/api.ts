@@ -3,11 +3,21 @@ import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measur
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(API_BASE + path, { ...options, headers: { Accept: "application/json", "Content-Type": "application/json", ...(options?.headers ?? {}) } });
+  const headers = new Headers(options?.headers);
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
+
+  // Do not set Content-Type for FormData. The browser must add the multipart
+  // boundary automatically; otherwise Express receives an invalid JSON body.
+  if (!(options?.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(API_BASE + path, { ...options, headers });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.message ?? "Request failed (" + response.status + ")");
   return body as T;
 }
+
 export function getHealth() { return request<HealthResponse>("/api/health"); }
 export function getDashboardSummary() { return request<{ data: DashboardSummary }>("/api/dashboard/summary"); }
 export function getCustomers(q = "") { return request<{ data: Customer[] }>("/api/customers" + (q ? "?q=" + encodeURIComponent(q) : "")); }
@@ -20,8 +30,9 @@ export function getOrders() { return request<{ data: Order[] }>("/api/orders"); 
 export function getOrder(id: string) { return request<{ data: Order }>("/api/orders/" + id); }
 export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils: number; paidAmountFils: number; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
 export function uploadOrderReferenceImage(orderId: string, file: File) {
-  const body = new FormData(); body.append("image", file);
-  return request<{ data: Order["referenceImages"][number] }>("/api/orders/" + orderId + "/reference-images", { method: "POST", body, headers: { Accept: "application/json" } });
+  const body = new FormData();
+  body.append("image", file);
+  return request<{ data: Order["referenceImages"][number] }>("/api/orders/" + orderId + "/reference-images", { method: "POST", body });
 }
 export function updateOrderStatus(id: string, status: Order["status"]) { return request<{ data: Order }>("/api/orders/" + id + "/status", { method: "PATCH", body: JSON.stringify({ status }) }); }
 export function saveMeasurement(data: { customerId: string; garment: GarmentType; profileName: string; values: Record<string, number>; notes?: string | null }) { return request<{ data: Measurement }>("/api/measurements", { method: "POST", body: JSON.stringify(data) }); }
