@@ -6,3 +6,81 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum CustomerStatus { ACTIVE INACTIVE }
+enum OrderStatus { PENDING MEASUREMENT CUTTING STITCHING QUALITY_CHECK READY DELIVERED CANCELLED }
+enum GarmentType { THOBE SHIRT TROUSER SUIT OTHER }
+enum PaymentStatus { UNPAID PARTIAL PAID }
+
+model Shop {
+  id String @id @default(cuid())
+  name String
+  area String
+  phone String?
+  active Boolean @default(true)
+  customers Customer[]
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([active])
+}
+
+model Customer {
+  id String @id @default(cuid())
+  customerNo String @unique
+  name String
+  phone String
+  email String?
+  address String?
+  notes String?
+  status CustomerStatus @default(ACTIVE)
+  shopId String?
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  measurements Measurement[]
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([name])
+  @@index([phone])
+  @@index([shopId])
+}
+
+model Measurement {
+  id String @id @default(cuid())
+  customerId String
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  garment GarmentType
+  profileName String @default("Standard")
+  values Json
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([customerId, garment, profileName])
+  @@index([customerId])
+}
+
+model Order {
+  id String @id @default(cuid())
+  orderNo String @unique
+  customerId String
+  shopId String?
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  status OrderStatus @default(PENDING)
+  garment GarmentType
+  description String
+  quantity Int @default(1)
+  totalAmountFils Int
+  paidAmountFils Int @default(0)
+  paymentStatus PaymentStatus @default(UNPAID)
+  orderDate DateTime @default(now())
+  deliveryDate DateTime?
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([customerId])
+  @@index([shopId])
+  @@index([status])
+  @@index([orderDate])
+  @@index([deliveryDate])
+}
