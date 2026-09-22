@@ -13,8 +13,10 @@ const statuses = ["PENDING", "MEASUREMENT", "CUTTING", "STITCHING", "QUALITY_CHE
 const garments = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
 const upload = multer({ dest: path.resolve(process.cwd(), "uploads"), limits: { fileSize: 8 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, ["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) });
 
+const idSchema = z.string().trim().min(1).max(100);
+
 const orderSchema = z.object({
-  customerId: z.string().cuid(), shopId: z.string().cuid().nullable().optional(), garment: z.enum(garments),
+  customerId: idSchema, shopId: idSchema.nullable().optional(), garment: z.enum(garments),
   description: z.string().trim().min(2).max(250), quantity: z.number().int().min(1).max(100).default(1),
   totalAmountFils: z.number().int().min(0).max(100000000), paidAmountFils: z.number().int().min(0).max(100000000).default(0),
   deliveryDate: z.string().datetime().nullable().optional(), notes: z.string().trim().max(1000).nullable().optional(),
@@ -46,6 +48,10 @@ router.post("/", asyncHandler(async (req, res) => {
   if (input.paidAmountFils > input.totalAmountFils) throw new AppError("Paid amount cannot exceed order value", 400, "INVALID_PAYMENT");
   const customer = await prisma.customer.findUnique({ where: { id: input.customerId } });
   if (!customer) throw new AppError("Customer not found", 404, "CUSTOMER_NOT_FOUND");
+  if (input.shopId) {
+    const shop = await prisma.shop.findUnique({ where: { id: input.shopId } });
+    if (!shop) throw new AppError("Shop not found", 404, "SHOP_NOT_FOUND");
+  }
   const count = await prisma.order.count();
   const paymentStatus = input.paidAmountFils === 0 ? "UNPAID" : input.paidAmountFils === input.totalAmountFils ? "PAID" : "PARTIAL";
   const breakdownTotal = input.sizeBreakdowns.reduce((sum, item) => sum + item.quantity, 0);
