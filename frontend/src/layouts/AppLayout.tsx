@@ -6,6 +6,9 @@ const links = [
   { to: "/customers", label: "Customers" },
   { to: "/orders", label: "Orders" },
   { to: "/shops", label: "Shops" },
+  { to: "/masters", label: "Masters" },
+  { to: "/designs", label: "Design Library" },
+  { to: "/production", label: "Production" },
   { to: "/overview", label: "System status" },
 ];
 
