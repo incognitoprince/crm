@@ -7,35 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum CustomerStatus {
-  ACTIVE
-  INACTIVE
-}
-
-enum OrderStatus {
-  PENDING
-  MEASUREMENT
-  CUTTING
-  STITCHING
-  QUALITY_CHECK
-  READY
-  DELIVERED
-  CANCELLED
-}
-
-enum GarmentType {
-  THOBE
-  SHIRT
-  TROUSER
-  SUIT
-  OTHER
-}
-
-enum PaymentStatus {
-  UNPAID
-  PARTIAL
-  PAID
-}
+enum CustomerStatus { ACTIVE INACTIVE }
+enum OrderStatus { PENDING MEASUREMENT CUTTING STITCHING QUALITY_CHECK READY DELIVERED CANCELLED }
+enum GarmentType { THOBE SHIRT TROUSER SUIT OTHER }
+enum PaymentStatus { UNPAID PARTIAL PAID }
 
 model Shop {
   id String @id @default(cuid())
@@ -101,6 +76,8 @@ model Order {
   orderDate DateTime @default(now())
   deliveryDate DateTime?
   notes String?
+  sizeBreakdowns OrderSizeBreakdown[]
+  referenceImages OrderReferenceImage[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([customerId])
@@ -108,4 +85,26 @@ model Order {
   @@index([status])
   @@index([orderDate])
   @@index([deliveryDate])
+}
+
+model OrderSizeBreakdown {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  size String
+  quantity Int
+  @@unique([orderId, size])
+  @@index([orderId])
+}
+
+model OrderReferenceImage {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fileName String
+  storagePath String
+  mimeType String
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  @@index([orderId])
 }
