@@ -21,7 +21,12 @@ const orderSchema = z.object({
   sizeBreakdowns: z.array(z.object({ size: z.string().trim().min(1).max(20), quantity: z.number().int().min(1).max(100) })).max(20).default([]),
 });
 
-const includes = { customer: true, shop: true, sizeBreakdowns: { orderBy: { size: "asc" } }, referenceImages: { orderBy: { sortOrder: "asc" } } };
+const includes = {
+  customer: true,
+  shop: true,
+  sizeBreakdowns: { orderBy: { size: "asc" as const } },
+  referenceImages: { orderBy: { sortOrder: "asc" as const } },
+};
 
 router.get("/", asyncHandler(async (req, res) => {
   const rawStatus = typeof req.query.status === "string" ? req.query.status : undefined;
