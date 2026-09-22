@@ -5,6 +5,9 @@ import { shopsRouter } from "./shops.js";
 import { ordersRouter } from "./orders.js";
 import { dashboardRouter } from "./dashboard.js";
 import { measurementsRouter } from "./measurements.js";
+import { mastersRouter } from "./masters.js";
+import { designsRouter } from "./designs.js";
+import { assignmentsRouter } from "./assignments.js";
 
 export const apiRouter = Router();
 
@@ -14,3 +17,6 @@ apiRouter.use("/shops", shopsRouter);
 apiRouter.use("/orders", ordersRouter);
 apiRouter.use("/measurements", measurementsRouter);
 apiRouter.use("/dashboard", dashboardRouter);
+apiRouter.use("/masters", mastersRouter);
+apiRouter.use("/designs", designsRouter);
+apiRouter.use("/production", assignmentsRouter);
