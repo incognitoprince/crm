@@ -3,25 +3,25 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const shops = [
-  { id: "demo-shop-kuwait-city", name: "Kuwait City", area: "Sharq", phone: "+965 2200 1001" },
-  { id: "demo-shop-hawally", name: "Hawally", area: "Hawally", phone: "+965 2200 1002" },
-  { id: "demo-shop-salmiya", name: "Salmiya", area: "Salmiya", phone: "+965 2200 1003" },
-  { id: "demo-shop-farwaniya", name: "Farwaniya", area: "Farwaniya", phone: "+965 2200 1004" },
+  { id: "demo-shop-kuwait-city", name: "Shop1", area: "Area 1", phone: "+965 2200 1001" },
+  { id: "demo-shop-hawally", name: "Shop2", area: "Area 2", phone: "+965 2200 1002" },
+  { id: "demo-shop-salmiya", name: "Shop3", area: "Area 3", phone: "+965 2200 1003" },
+  { id: "demo-shop-farwaniya", name: "Shop4", area: "Area 4", phone: "+965 2200 1004" },
 ];
 
 const customers = [
-  ["demo-cust-001","CUST-1001","Ahmed Al-Mutairi","+965 5000 1001","Kuwait City"],
-  ["demo-cust-002","CUST-1002","Mohammed Al-Hajri","+965 5000 1002","Hawally"],
-  ["demo-cust-003","CUST-1003","Abdullah Al-Rashid","+965 5000 1003","Salmiya"],
-  ["demo-cust-004","CUST-1004","Yousef Al-Dosari","+965 5000 1004","Farwaniya"],
-  ["demo-cust-005","CUST-1005","Khaled Al-Sabah","+965 5000 1005","Kuwait City"],
-  ["demo-cust-006","CUST-1006","Fahad Al-Otaibi","+965 5000 1006","Hawally"],
-  ["demo-cust-007","CUST-1007","Salem Al-Ajmi","+965 5000 1007","Salmiya"],
-  ["demo-cust-008","CUST-1008","Nasser Al-Enezi","+965 5000 1008","Farwaniya"],
-  ["demo-cust-009","CUST-1009","Omar Al-Qahtani","+965 5000 1009","Kuwait City"],
-  ["demo-cust-010","CUST-1010","Bader Al-Fahad","+965 5000 1010","Hawally"],
-  ["demo-cust-011","CUST-1011","Saad Al-Marri","+965 5000 1011","Salmiya"],
-  ["demo-cust-012","CUST-1012","Turki Al-Shammari","+965 5000 1012","Farwaniya"],
+  ["demo-cust-001","CUST-1001","Ahmed Al-Mutairi","+965 5000 1001","Shop1"],
+  ["demo-cust-002","CUST-1002","Mohammed Al-Hajri","+965 5000 1002","Shop2"],
+  ["demo-cust-003","CUST-1003","Abdullah Al-Rashid","+965 5000 1003","Shop3"],
+  ["demo-cust-004","CUST-1004","Yousef Al-Dosari","+965 5000 1004","Shop4"],
+  ["demo-cust-005","CUST-1005","Khaled Al-Sabah","+965 5000 1005","Shop1"],
+  ["demo-cust-006","CUST-1006","Fahad Al-Otaibi","+965 5000 1006","Shop2"],
+  ["demo-cust-007","CUST-1007","Salem Al-Ajmi","+965 5000 1007","Shop3"],
+  ["demo-cust-008","CUST-1008","Nasser Al-Enezi","+965 5000 1008","Shop4"],
+  ["demo-cust-009","CUST-1009","Omar Al-Qahtani","+965 5000 1009","Shop1"],
+  ["demo-cust-010","CUST-1010","Bader Al-Fahad","+965 5000 1010","Shop2"],
+  ["demo-cust-011","CUST-1011","Saad Al-Marri","+965 5000 1011","Shop3"],
+  ["demo-cust-012","CUST-1012","Turki Al-Shammari","+965 5000 1012","Shop4"],
 ];
 
 const measurements = [
