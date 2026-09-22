@@ -16,11 +16,11 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache wget
+RUN apk add --no-cache wget su-exec
 COPY package.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 EXPOSE 4000
-USER node
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node prisma/seed.mjs && node dist/index.js"]
+CMD ["sh", "-c", "mkdir -p /app/uploads && chown -R node:node /app/uploads && su-exec node sh -c 'npx prisma db push --skip-generate && node prisma/seed.mjs && node dist/index.js'"]
