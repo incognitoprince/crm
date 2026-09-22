@@ -42,6 +42,7 @@ model Shop {
   active Boolean @default(true)
   customers Customer[]
   orders Order[]
+  masters Master[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([active])
@@ -100,6 +101,7 @@ model Order {
   notes String?
   sizeBreakdowns OrderSizeBreakdown[]
   referenceImages OrderReferenceImage[]
+  designs OrderDesign[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([customerId])
@@ -117,6 +119,65 @@ model OrderSizeBreakdown {
   quantity Int
   @@unique([orderId, size])
   @@index([orderId])
+}
+
+model Master {
+  id String @id @default(cuid())
+  name String
+  phone String?
+  shopId String
+  active Boolean @default(true)
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  assignments MasterAssignment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([shopId, active])
+  @@index([name])
+}
+
+model Design {
+  id String @id @default(cuid())
+  designNo String @unique
+  name String
+  garment GarmentType
+  description String?
+  imagePath String?
+  active Boolean @default(true)
+  orderDesigns OrderDesign[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([garment, active])
+  @@index([name])
+}
+
+model OrderDesign {
+  id String @id @default(cuid())
+  orderId String
+  designId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  design Design @relation(fields: [designId], references: [id], onDelete: Restrict)
+  notes String?
+  assignments MasterAssignment[]
+  createdAt DateTime @default(now())
+  @@unique([orderId, designId])
+  @@index([orderId])
+  @@index([designId])
+}
+
+model MasterAssignment {
+  id String @id @default(cuid())
+  orderDesignId String
+  masterId String
+  size String
+  quantity Int
+  notes String?
+  startedAt DateTime?
+  orderDesign OrderDesign @relation(fields: [orderDesignId], references: [id], onDelete: Cascade)
+  master Master @relation(fields: [masterId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderDesignId, size])
+  @@index([masterId])
 }
 
 model OrderReferenceImage {
