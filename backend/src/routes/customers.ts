@@ -36,7 +36,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
     include: {
       shop: true,
       measurements: { orderBy: { garment: "asc" } },
-      orders: { include: { shop: true }, orderBy: { orderDate: "desc" }, take: 20 },
+      orders: { include: { shop: true, sizeBreakdowns: { orderBy: { size: "asc" } }, referenceImages: { orderBy: { sortOrder: "asc" } } }, orderBy: { orderDate: "desc" }, take: 20 },
     },
   });
   if (!customer) throw new AppError("Customer not found", 404, "CUSTOMER_NOT_FOUND");
