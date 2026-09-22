@@ -5,6 +5,7 @@ import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
+const idSchema = z.string().trim().min(1).max(100);
 
 const customerSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -12,7 +13,7 @@ const customerSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   address: z.string().trim().max(250).optional().nullable(),
   notes: z.string().trim().max(1000).optional().nullable(),
-  shopId: z.string().cuid().optional().nullable(),
+  shopId: idSchema.optional().nullable(),
 });
 
 router.get("/", asyncHandler(async (req, res) => {
@@ -45,6 +46,10 @@ router.get("/:id", asyncHandler(async (req, res) => {
 
 router.post("/", asyncHandler(async (req, res) => {
   const input = customerSchema.parse(req.body);
+  if (input.shopId) {
+    const shop = await prisma.shop.findUnique({ where: { id: input.shopId } });
+    if (!shop) throw new AppError("Shop not found", 404, "SHOP_NOT_FOUND");
+  }
   const count = await prisma.customer.count();
   const customer = await prisma.customer.create({
     data: {
@@ -59,6 +64,10 @@ router.post("/", asyncHandler(async (req, res) => {
 
 router.patch("/:id", asyncHandler(async (req, res) => {
   const input = customerSchema.partial().parse(req.body);
+  if (input.shopId) {
+    const shop = await prisma.shop.findUnique({ where: { id: input.shopId } });
+    if (!shop) throw new AppError("Shop not found", 404, "SHOP_NOT_FOUND");
+  }
   const customer = await prisma.customer.update({
     where: { id: req.params.id },
     data: { ...input, email: input.email === "" ? null : input.email },
