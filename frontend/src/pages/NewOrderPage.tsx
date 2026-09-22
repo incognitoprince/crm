@@ -15,7 +15,6 @@ export function NewOrderPage() {
   const [shopId, setShopId] = useState("");
   const [garment, setGarment] = useState<GarmentType>("THOBE");
   const [description, setDescription] = useState("");
-  const [quantity, setQuantity] = useState("1");
   const [total, setTotal] = useState("");
   const [paid, setPaid] = useState("0");
   const [deliveryDate, setDeliveryDate] = useState("");
@@ -35,10 +34,11 @@ export function NewOrderPage() {
 
   const breakdown = defaultSizes.map(size => ({ size, quantity: Number(sizeBreakdowns[size] || 0) })).filter(item => item.quantity > 0);
   const breakdownTotal = breakdown.reduce((sum, item) => sum + item.quantity, 0);
+  const quantity = breakdownTotal;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (breakdown.length && breakdownTotal !== Number(quantity)) { setError("Size quantities must equal total quantity."); return; }
+    if (breakdownTotal < 1) { setError("Add at least one piece in the size breakdown."); return; }
     try {
       const order = await createOrder({
         customerId, shopId: shopId || null, garment, description, quantity: Number(quantity),
@@ -60,7 +60,7 @@ export function NewOrderPage() {
         <label className="text-sm">Customer<select required value={customerId} onChange={e => setCustomerId(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">{customers.map(c => <option key={c.id} value={c.id}>{c.name} · {c.customerNo}</option>)}</select></label>
         <label className="text-sm">Stitching shop<select value={shopId} onChange={e => setShopId(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option value="">Unassigned</option>{shops.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
         <label className="text-sm">Garment<select value={garment} onChange={e => setGarment(e.target.value as GarmentType)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">{garments.map(g => <option key={g} value={g}>{g}</option>)}</select></label>
-        <label className="text-sm">Total pieces<input required min="1" type="number" value={quantity} onChange={e => setQuantity(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
+        <label className="text-sm">Total pieces<input readOnly type="number" value={quantity} className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-slate-700" /><span className="mt-1 block text-xs text-slate-500">Automatically calculated from the size breakdown.</span></label>
         <label className="text-sm sm:col-span-2">Order description<input required value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Customer reference image - formal thobe" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
       </div>
 
@@ -70,7 +70,7 @@ export function NewOrderPage() {
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
           {defaultSizes.map(size => <label key={size} className="text-xs font-medium text-slate-600">{size}<input type="number" min="0" value={sizeBreakdowns[size]} onChange={e => setSizeBreakdowns(v => ({...v, [size]: e.target.value}))} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" /></label>)}
         </div>
-        <p className={"mt-3 text-sm " + (breakdownTotal === Number(quantity) ? "text-emerald-700" : "text-amber-700")}>Breakdown total: {breakdownTotal} / {quantity || 0} pieces</p>
+        <p className="mt-3 text-sm font-medium text-emerald-700">Total pieces: {breakdownTotal}</p>
       </section>
 
       <section className="rounded-lg border border-slate-200 p-4">
