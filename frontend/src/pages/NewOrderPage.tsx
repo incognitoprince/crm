@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createOrder, getCustomers, getShops } from "../services/api";
 import type { Customer, GarmentType, Shop } from "../types";
 
@@ -7,9 +7,10 @@ const garments: GarmentType[] = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"];
 
 export function NewOrderPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
-  const [customerId, setCustomerId] = useState("");
+  const [customerId, setCustomerId] = useState(searchParams.get("customerId") ?? "");
   const [shopId, setShopId] = useState("");
   const [garment, setGarment] = useState<GarmentType>("THOBE");
   const [description, setDescription] = useState("");
@@ -23,10 +24,12 @@ export function NewOrderPage() {
   useEffect(() => {
     Promise.all([getCustomers(), getShops()]).then(([c, s]) => {
       setCustomers(c.data); setShops(s.data);
-      if (c.data[0]) setCustomerId(c.data[0].id);
-      if (s.data[0]) setShopId(s.data[0].id);
+      const requestedCustomer = c.data.find(customer => customer.id === searchParams.get("customerId"));
+      const selectedCustomer = requestedCustomer ?? c.data[0];
+      if (selectedCustomer) { setCustomerId(selectedCustomer.id); if (selectedCustomer.shop?.id) setShopId(selectedCustomer.shop.id); }
+      if (s.data[0] && !selectedCustomer?.shop?.id) setShopId(s.data[0].id);
     }).catch(e => setError(e instanceof Error ? e.message : "Unable to load order form"));
-  }, []);
+  }, [searchParams]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -35,7 +38,8 @@ export function NewOrderPage() {
         customerId, shopId: shopId || null, garment, description, quantity: Number(quantity),
         totalAmountFils: Math.round(Number(total) * 1000),
         paidAmountFils: Math.round(Number(paid) * 1000),
-        deliveryDate: deliveryDate || null, notes: notes || null,
+        deliveryDate: deliveryDate ? new Date(deliveryDate + "T00:00:00").toISOString() : null,
+        notes: notes || null,
       });
       navigate("/orders/" + order.data.id);
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to create order"); }
