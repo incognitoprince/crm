@@ -32,6 +32,7 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL:-postgresql://tailoring:tailoring@postgres:5432/tailoring_crm?schema=public}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,7 +41,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 15s
     networks:
       - tailoring-crm
 
@@ -50,8 +51,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
-    container_name: tailoring-crm-frontend
     restart: unless-stopped
+    container_name: tailoring-crm-frontend
     depends_on:
       backend:
         condition: service_healthy

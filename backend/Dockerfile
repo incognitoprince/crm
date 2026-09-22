@@ -23,4 +23,4 @@ COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
 EXPOSE 4000
 USER node
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node prisma/seed.mjs && node dist/index.js"]
