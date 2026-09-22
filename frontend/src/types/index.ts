@@ -12,3 +12,9 @@ export interface OrderReferenceImage { id: string; fileName: string; storagePath
 export interface Order { id: string; orderNo: string; status: OrderStatus; garment: GarmentType; description: string; quantity: number; totalAmountFils: number; paidAmountFils: number; paymentStatus: "UNPAID" | "PARTIAL" | "PAID"; orderDate: string; deliveryDate?: string | null; notes?: string | null; customer: Customer; shop?: Shop | null; sizeBreakdowns: OrderSizeBreakdown[]; referenceImages: OrderReferenceImage[]; }
 export interface CustomerDetail extends Customer { measurements: Measurement[]; orders: Order[]; }
 export interface DashboardSummary { customers: number; orders: number; pending: number; production: number; quality: number; ready: number; delivered: number; revenueFils: number; shops: Array<{ id: string; name: string; area: string; customers: number; orders: number }>; }
+
+export interface Master { id: string; name: string; phone?: string | null; shopId: string; active: boolean; shop: Shop; _count?: { assignments: number }; }
+export interface Design { id: string; designNo: string; name: string; garment: GarmentType; description?: string | null; imagePath?: string | null; active: boolean; createdAt?: string; }
+export interface MasterAssignment { id: string; masterId: string; size: string; quantity: number; notes?: string | null; startedAt?: string | null; master: Master; }
+export interface OrderDesign { id: string; orderId: string; designId: string; design: Design; notes?: string | null; assignments: MasterAssignment[]; }
+export interface ProductionOrder extends Order { designs: OrderDesign[]; }
