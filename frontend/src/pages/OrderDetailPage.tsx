@@ -20,7 +20,7 @@ export function OrderDetailPage() {
   const { id } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [designs, setDesigns] = useState<Design[]>([]);
-  const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
+  const [editingDesignId, setEditingDesignId] = useState<string | "new" | null>(null);
   const [designSource, setDesignSource] = useState<"existing" | "upload">("existing");
   const [selectedDesignId, setSelectedDesignId] = useState("");
   const [designImage, setDesignImage] = useState<File | null>(null);
@@ -47,7 +47,7 @@ export function OrderDetailPage() {
   async function openDesignEditor(orderDesignId: string | null, currentDesignId?: string | null) {
     setDesignError("");
     setDesignImage(null);
-    setEditingDesignId(orderDesignId);
+    setEditingDesignId(orderDesignId ?? "new");
     setSelectedDesignId(currentDesignId ?? "");
     setDesignSource(currentDesignId ? "existing" : "upload");
     if (order) {
@@ -80,7 +80,7 @@ export function OrderDetailPage() {
 
     setDesignSaving(true);
     try {
-      if (editingDesignId) {
+      if (editingDesignId && editingDesignId !== "new") {
         await updateOrderDesign(order.id, editingDesignId, {
           designId: designSource === "existing" ? selectedDesignId : undefined,
           file: designSource === "upload" ? designImage ?? undefined : undefined,
@@ -115,7 +115,7 @@ export function OrderDetailPage() {
   if (error) return <ErrorState message={error} />;
   if (!order) return <LoadingState label="Loading order…" />;
   const balance = order.totalAmountFils - order.paidAmountFils;
-  const editingDesign = order.designs.find(d => d.id === editingDesignId);
+  const editingDesign = typeof editingDesignId === "string" && editingDesignId !== "new" ? order.designs.find(d => d.id === editingDesignId) : undefined;
   const editingLocked = !!editingDesign?.assignments?.length;
 
   return <div className="mx-auto max-w-5xl space-y-5">
