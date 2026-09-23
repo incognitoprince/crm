@@ -9,6 +9,7 @@ import { mastersRouter } from "./masters.js";
 import { designsRouter } from "./designs.js";
 import { assignmentsRouter } from "./assignments.js";
 import { garmentsRouter } from "./garments.js";
+import { paymentsRouter } from "./payments.js";
 
 export const apiRouter = Router();
 
@@ -22,3 +23,4 @@ apiRouter.use("/masters", mastersRouter);
 apiRouter.use("/designs", designsRouter);
 apiRouter.use("/production", assignmentsRouter);
 apiRouter.use("/garments", garmentsRouter);
+apiRouter.use("/payments", paymentsRouter);
