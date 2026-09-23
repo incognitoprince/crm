@@ -101,20 +101,23 @@ export function MastersPage() {
         <select value={shopId} onChange={e => setShopId(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">{shops.map(s => <option key={s.id} value={s.id}>{s.name} · {s.area}</option>)}</select>
       </div>
       <div className="mt-3 flex flex-wrap justify-between gap-3"><div className="flex gap-2"><button disabled={saving} onClick={saveEdit} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Save changes</button><button onClick={() => navigate("/production?masterId=" + selected.id)} className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium">Assign work</button></div><button onClick={() => toggle(selected)} className="text-sm font-medium text-red-700">Deactivate master</button></div>
-      <div className="mt-5 border-t border-slate-100 pt-4"><h5 className="font-semibold text-navy-900">Current work</h5>
+      <div className="mt-5 border-t border-slate-100 pt-4">
+        <h5 className="font-semibold text-navy-900">Current work</h5>
         {selected.currentAssignments?.length ? <div className="mt-3 grid gap-3 md:grid-cols-2">{selected.currentAssignments.map(a => <div key={a.id} className="rounded-lg bg-slate-50 p-3">
-          <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
-          <p className="mt-1 text-sm text-slate-700">{a.orderDesign.order?.customer?.name}</p>
-          <p className="mt-1 text-xs text-slate-500">{a.orderDesign.design?.name ?? a.orderDesign.designName ?? "Customer design"}</p>
+          <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign?.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
+          <p className="mt-1 text-sm text-slate-700">{a.orderDesign?.order?.customer?.name}</p>
+          <p className="mt-1 text-xs text-slate-500">{a.orderDesign?.design?.name ?? a.orderDesign?.designName ?? "Customer design"}</p>
           <p className="mt-1 text-[11px] text-slate-500">{a.startedAt ? "Work started" : "Not started"}</p>
         </div>)}</div> : <p className="mt-3 text-sm text-slate-500">No current work assigned.</p>}
-        <div className="mt-5 border-t border-slate-100 pt-4"><h5 className="font-semibold text-navy-900">Completed work</h5>
-          {selected.completedAssignments?.length ? <div className="mt-3 grid gap-3 md:grid-cols-2">{selected.completedAssignments.map(a => <div key={a.id} className="rounded-lg bg-slate-50 p-3 opacity-80">
-            <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign?.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
-            <p className="mt-1 text-sm text-slate-700">{a.orderDesign?.order?.customer?.name}</p>
-            <p className="mt-1 text-xs text-slate-500">{a.orderDesign?.design?.name ?? a.orderDesign?.designName ?? "Customer design"}</p>
-            <p className="mt-1 text-[11px] text-emerald-700">{a.completedAt ? "Completed" : "Order closed"}</p>
-          </div>)}</div> : <p className="mt-3 text-sm text-slate-500">No completed work yet.</p>}
+      </div>
+      <div className="mt-5 border-t border-slate-100 pt-4">
+        <h5 className="font-semibold text-navy-900">Completed work</h5>
+        {selected.completedAssignments?.length ? <div className="mt-3 grid gap-3 md:grid-cols-2">{selected.completedAssignments.map(a => <div key={a.id} className="rounded-lg bg-slate-50 p-3 opacity-80">
+          <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign?.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
+          <p className="mt-1 text-sm text-slate-700">{a.orderDesign?.order?.customer?.name}</p>
+          <p className="mt-1 text-xs text-slate-500">{a.orderDesign?.design?.name ?? a.orderDesign?.designName ?? "Customer design"}</p>
+          <p className="mt-1 text-[11px] text-emerald-700">{a.completedAt ? "Completed" : "Order closed"}</p>
+        </div>)}</div> : <p className="mt-3 text-sm text-slate-500">No completed work yet.</p>}
       </div>
     </section>}
 
