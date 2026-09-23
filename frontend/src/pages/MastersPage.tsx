@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { createMaster, getMasters, getShops, updateMaster } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import type { Master, Shop } from "../types";
 
 export function MastersPage() {
+  const navigate = useNavigate();
   const [masters, setMasters] = useState<Master[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
   const [show, setShow] = useState(false);
@@ -98,7 +100,7 @@ export function MastersPage() {
         <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Phone" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <select value={shopId} onChange={e => setShopId(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">{shops.map(s => <option key={s.id} value={s.id}>{s.name} · {s.area}</option>)}</select>
       </div>
-      <div className="mt-3 flex justify-between gap-3"><button disabled={saving} onClick={saveEdit} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Save changes</button><button onClick={() => toggle(selected)} className="text-sm font-medium text-red-700">Deactivate master</button></div>
+      <div className="mt-3 flex flex-wrap justify-between gap-3"><div className="flex gap-2"><button disabled={saving} onClick={saveEdit} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Save changes</button><button onClick={() => navigate("/production?masterId=" + selected.id)} className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium">Assign work</button></div><button onClick={() => toggle(selected)} className="text-sm font-medium text-red-700">Deactivate master</button></div>
       <div className="mt-5 border-t border-slate-100 pt-4"><h5 className="font-semibold text-navy-900">Current work</h5>
         {selected.assignments?.length ? <div className="mt-3 grid gap-3 md:grid-cols-2">{selected.assignments.map(a => <div key={a.id} className="rounded-lg bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
