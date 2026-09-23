@@ -88,6 +88,17 @@ export function PaymentsPage() {
 
     {error && <ErrorState message={error} onRetry={() => void load()} />}
 
+    <div className="grid gap-3 sm:grid-cols-3">
+      {[
+        ["Total received", money(payments.reduce((sum, item) => sum + item.amountFils, 0)), "bg-emerald-50 text-emerald-700"],
+        ["Pending amount", money(orders.reduce((sum, item) => sum + Math.max(0, item.totalAmountFils - item.paidAmountFils), 0)), "bg-amber-50 text-amber-700"],
+        ["Transactions", String(payments.length), "bg-blue-50 text-blue-700"],
+      ].map(([label, value, tone]) => <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between"><span className="text-sm text-slate-500">{label}</span><span className={"h-8 min-w-8 rounded-full px-2 text-center text-xs font-semibold leading-8 " + tone}>{label === "Transactions" ? "↗" : "₹"}</span></div>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-navy-900">{value}</p>
+      </article>)}
+    </div>
+
     <div className="grid gap-5 lg:grid-cols-3">
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h4 className="font-semibold text-navy-900">Record payment</h4>
