@@ -45,6 +45,10 @@ const includes = {
     },
     orderBy: { createdAt: "asc" as const },
   },
+  masterAssignments: {
+    include: { master: true, orderDesign: { include: { design: true } } },
+    orderBy: { createdAt: "asc" as const },
+  },
 };
 
 router.get("/", asyncHandler(async (req, res) => {
