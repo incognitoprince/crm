@@ -70,6 +70,7 @@ export function updateOrderDesign(orderId: string, orderDesignId: string, data: 
 export function deleteOrderDesign(orderId: string, orderDesignId: string) {
   return request<void>("/api/production/orders/" + orderId + "/designs/" + orderDesignId, { method: "DELETE" });
 }
+export function createOrderAssignment(orderId: string, data: { masterId: string; size: string; quantity: number; notes?: string }) { return request<{ data: MasterAssignment }>("/api/production/orders/" + orderId + "/assignments", { method: "POST", body: JSON.stringify(data) }); }
 export function createMasterAssignment(orderDesignId: string, data: { masterId: string; size: string; quantity: number; notes?: string }) { return request<{ data: MasterAssignment }>("/api/production/order-designs/" + orderDesignId + "/assignments", { method: "POST", body: JSON.stringify(data) }); }
 export function updateMasterAssignment(id: string, data: { masterId?: string; quantity?: number; notes?: string | null }) { return request<{ data: MasterAssignment }>("/api/production/assignments/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function startMasterAssignment(id: string) { return request<{ data: MasterAssignment }>("/api/production/assignments/" + id + "/start", { method: "PATCH" }); }
