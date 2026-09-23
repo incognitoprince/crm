@@ -39,7 +39,7 @@ router.get("/", asyncHandler(async (req, res) => {
       ],
     };
   }
-  const designs = await prisma.design.findMany({ where, orderBy: { createdAt: "desc" } });
+  const designs = await prisma.design.findMany({ where, include: { garmentMaster: true }, orderBy: { createdAt: "desc" } });
   res.json({ data: designs });
 }));
 
