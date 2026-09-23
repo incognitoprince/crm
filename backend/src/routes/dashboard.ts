@@ -28,6 +28,7 @@ router.get("/summary", asyncHandler(async (_req, res) => {
     delayed,
     shops,
     shopOrderTotals,
+    shopStatusTotals,
     upcoming,
     pendingPayments,
     recentOrders,
@@ -73,6 +74,11 @@ router.get("/summary", asyncHandler(async (_req, res) => {
       _count: { _all: true },
       _sum: { totalAmountFils: true },
     }),
+    prisma.order.groupBy({
+      by: ["shopId", "status"],
+      where: { status: closedStatuses },
+      _count: { _all: true },
+    }),
     prisma.order.findMany({
       where: {
         deliveryDate: { gte: now },
@@ -109,6 +115,11 @@ router.get("/summary", asyncHandler(async (_req, res) => {
       orders: item._count._all,
       revenueFils: item._sum.totalAmountFils ?? 0,
     },
+  ]));
+
+  const shopStatusMap = new Map(shopStatusTotals.map(item => [
+    `${item.shopId ?? ""}:${item.status}`,
+    item._count._all,
   ]));
 
   const topDesignRows = topDesigns
@@ -152,6 +163,15 @@ router.get("/summary", asyncHandler(async (_req, res) => {
           area: shop.area,
           customers: shop._count.customers,
           orders: totals?.orders ?? 0,
+          completed: shopStatusMap.get(`${shop.id}:DELIVERED`) ?? 0,
+          pending: shopStatusMap.get(`${shop.id}:PENDING`) ?? 0,
+          inProgress: [
+            "MEASUREMENT",
+            "CUTTING",
+            "STITCHING",
+            "QUALITY_CHECK",
+            "READY",
+          ].reduce((total, status) => total + (shopStatusMap.get(`${shop.id}:${status}`) ?? 0), 0),
           revenueFils: totals?.revenueFils ?? 0,
         };
       }),
