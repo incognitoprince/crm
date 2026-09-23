@@ -141,7 +141,7 @@ router.patch("/orders/:orderId/designs/:orderDesignId", upload.single("image"), 
   }
 
   if (current.imagePath?.startsWith("/uploads/")) {
-    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^/uploads//, "uploads/"));
+    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^\/uploads\//, "uploads/"));
     await fs.unlink(oldPath).catch(() => undefined);
   }
 
