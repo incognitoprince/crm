@@ -11,7 +11,7 @@ export interface Customer { id: string; customerNo: string; name: string; phone:
 export interface Measurement { id: string; garment: GarmentType; profileName: string; values: Record<string, number>; notes?: string | null; }
 export interface OrderSizeBreakdown { id: string; size: string; quantity: number; }
 export interface OrderReferenceImage { id: string; fileName: string; storagePath: string; mimeType: string; sortOrder: number; createdAt: string; }
-export interface Design { id: string; designNo: string; name: string; garment: GarmentType; description?: string | null; imagePath?: string | null; active: boolean; createdAt?: string; }
+export interface Design { id: string; designNo: string; name: string; garment: GarmentType; garmentId?: string | null; garmentMaster?: Garment | null; description?: string | null; imagePath?: string | null; active: boolean; createdAt?: string; }
 export interface Master { id: string; name: string; phone?: string | null; shopId: string; active: boolean; shop: Shop; _count?: { assignments: number }; assignments?: MasterAssignment[]; }
 export interface MasterAssignment { id: string; masterId: string; size: string; quantity: number; notes?: string | null; startedAt?: string | null; master: Master; orderDesignId?: string; orderDesign?: { order: { id: string; orderNo: string; customer: { name: string }; garment: GarmentType; quantity: number }; design?: Design | null; designName?: string | null } | null; }
 export interface OrderDesign { id: string; orderId: string; designId?: string | null; designName?: string | null; imagePath?: string | null; design?: Design | null; notes?: string | null; assignments: MasterAssignment[]; }
@@ -20,6 +20,8 @@ export interface Order {
   orderNo: string;
   status: OrderStatus;
   garment: GarmentType;
+  garmentId?: string | null;
+  garmentMaster?: Garment | null;
   description: string;
   quantity: number;
   totalAmountFils: number;
