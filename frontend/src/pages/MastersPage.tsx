@@ -104,8 +104,8 @@ export function MastersPage() {
       <div className="mt-5 border-t border-slate-100 pt-4">
         <h5 className="font-semibold text-navy-900">Current work</h5>
         {selected.currentAssignments?.length ? <div className="mt-3 grid gap-3 md:grid-cols-2">{selected.currentAssignments.map(a => <div key={a.id} className="rounded-lg bg-slate-50 p-3">
-          <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign?.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
-          <p className="mt-1 text-sm text-slate-700">{a.orderDesign?.order?.customer?.name}</p>
+          <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.order?.orderNo ?? a.orderDesign?.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
+          <p className="mt-1 text-sm text-slate-700">{a.order?.customer?.name ?? a.orderDesign?.order?.customer?.name}</p>
           <p className="mt-1 text-xs text-slate-500">{a.orderDesign?.design?.name ?? a.orderDesign?.designName ?? "Customer design"}</p>
           <p className="mt-1 text-[11px] text-slate-500">{a.startedAt ? "Work started" : "Not started"}</p>
         </div>)}</div> : <p className="mt-3 text-sm text-slate-500">No current work assigned.</p>}
