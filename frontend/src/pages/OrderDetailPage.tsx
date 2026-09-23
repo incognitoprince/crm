@@ -119,12 +119,15 @@ export function OrderDetailPage() {
   const editingLocked = !!editingDesign?.assignments?.length;
 
   return <div className="mx-auto max-w-5xl space-y-5">
-    <Link to="/orders" className="text-sm text-slate-500 hover:underline">← Back to orders</Link>
-
     <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div><p className="text-xs text-slate-500">{order.orderNo}</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">{order.customer.name}</h3><p className="mt-1 text-sm text-slate-600">{order.description || "No order description"}</p></div>
-        <div className="flex items-center gap-2"><Link to={"/production?orderId=" + order.id} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium">Manage masters</Link><select value={order.status} onChange={e => change(e.target.value as OrderStatus)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">{statuses.map(s => <option key={s} value={s}>{label(s)}</option>)}</select></div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => openDesignEditor(null)} className="rounded-md bg-navy-900 px-3 py-2 text-sm font-medium text-white">+ Add</button>
+          <Link to={"/production?orderId=" + order.id} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium">Manage masters</Link>
+          <select value={order.status} onChange={e => change(e.target.value as OrderStatus)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">{statuses.map(s => <option key={s} value={s}>{label(s)}</option>)}</select>
+          <Link to="/orders" className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white">Done</Link>
+        </div>
       </div>
     </section>
 
@@ -132,7 +135,7 @@ export function OrderDetailPage() {
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm lg:col-span-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><h4 className="font-semibold text-navy-900">Design</h4><p className="mt-1 text-xs text-slate-500">Optional. Attach a reusable Design Library design or a customer-supplied image at any time.</p></div>
-          {!editingDesignId && <button onClick={() => openDesignEditor(null)} className="rounded-md bg-navy-900 px-3 py-2 text-sm font-medium text-white">+ Add design</button>}
+          {!editingDesignId && <button onClick={() => openDesignEditor(null)} className="text-sm font-medium text-navy-900 hover:underline">+ Add design</button>}
         </div>
 
         {designError && <p className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700">{designError}</p>}

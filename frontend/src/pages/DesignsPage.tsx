@@ -80,6 +80,8 @@ export function DesignsPage() {
   }
 
   function openDesign(design: Design) {
+    setShow(false);
+    setShowGarmentForm(false);
     setSelected(design);
     setDesignNo(design.designNo);
     setName(design.name);
@@ -116,26 +118,40 @@ export function DesignsPage() {
   return <div className="mx-auto max-w-6xl space-y-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Library</p><h3 className="text-2xl font-semibold text-navy-900">Designs</h3><p className="text-sm text-slate-600">Reusable designs. Order-specific customer designs are stored directly on the order.</p></div>
-      <button onClick={() => setShow(v => !v)} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">{show ? "Close" : "+ Add design"}</button>
+      <button onClick={() => { setSelected(null); setShow(v => !v); setDesignNo(""); setName(""); setGarment(""); setDescription(""); setShowGarmentForm(false); }} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">{show ? "Close" : "+ Add design"}</button>
     </div>
     {error && <ErrorState message={error} />}
-    {show && <form onSubmit={submit} className="grid gap-3 rounded-xl border border-sand-100 bg-white p-5 shadow-sm md:grid-cols-4">
-      <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design no. e.g. DES-0046" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-      <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-      <div className="text-sm">
-        <div className="flex items-center justify-between gap-2"><span>Garment</span><button type="button" onClick={() => setShowGarmentForm(v => !v)} className="text-xs font-medium text-navy-900 hover:underline">+ Add garment</button></div>
-        <select required value={garment} onChange={e => setGarment(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
-        {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
+    {show && <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div><p className="text-xs uppercase tracking-wide text-slate-500">Design details</p><h4 className="mt-1 text-xl font-semibold text-navy-900">Add new design</h4></div>
+        <button type="button" onClick={() => setShow(false)} className="text-sm text-slate-500 hover:underline">Close</button>
       </div>
-      <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description" className="rounded-md border border-slate-300 px-3 py-2 text-sm md:col-span-4" />
-      <button disabled={saving || !garment} className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white md:col-start-4">{saving ? "Saving…" : "Save design"}</button>
-    </form>}
-    {selected && <section className="rounded-xl border border-navy-100 bg-white p-5 shadow-sm">
+      <form onSubmit={submit} className="mt-4 grid gap-3 md:grid-cols-4">
+        <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        <div className="text-sm">
+          <span>Garment</span>
+          <select required value={garment} onChange={e => setGarment(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
+          <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
+          {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
+        </div>
+        <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description" className="rounded-md border border-slate-300 px-3 py-2 text-sm md:col-span-4" />
+        <div className="flex gap-2 md:col-span-4 md:justify-end">
+          <button type="button" onClick={() => setShow(false)} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button>
+          <button disabled={saving || !garment} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">{saving ? "Saving…" : "Save design"}</button>
+        </div>
+      </form>
+    </section>}    {selected && <section className="rounded-xl border border-navy-100 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-wide text-slate-500">Design details</p><h4 className="mt-1 text-xl font-semibold text-navy-900">Edit design</h4></div><button type="button" onClick={() => setSelected(null)} className="text-sm text-slate-500 hover:underline">Close</button></div>
       <div className="mt-4 grid gap-3 md:grid-cols-4">
         <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-        <select required value={garment} onChange={e => setGarment(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
+        <div className="text-sm">
+          <span>Garment</span>
+          <select required value={garment} onChange={e => setGarment(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
+          <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
+          {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
+        </div>
         <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description" className="rounded-md border border-slate-300 px-3 py-2 text-sm md:col-span-4" />
       </div>
       <div className="mt-3 flex gap-2"><button disabled={saving || !garment} onClick={() => void saveEdit()} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Save changes</button><button type="button" onClick={() => setSelected(null)} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button></div>
