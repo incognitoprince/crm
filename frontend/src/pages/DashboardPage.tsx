@@ -144,7 +144,7 @@ export function DashboardPage() {
       })}
     </section>
 
-    <section className="grid gap-4 lg:grid-cols-12">
+    <section className="grid items-start gap-4 lg:grid-cols-12">
       <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6">
         <div className="flex items-center justify-between">
           <div><h4 className="font-semibold text-navy-900">Shop performance</h4><p className="mt-0.5 text-xs text-slate-500">Orders and revenue by active shop</p></div>
@@ -155,11 +155,11 @@ export function DashboardPage() {
             <thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-3 font-medium">Shop</th><th className="pb-3 font-medium">Orders</th><th className="pb-3 font-medium">Completed</th><th className="pb-3 font-medium">In progress</th><th className="pb-3 text-right font-medium">Revenue</th></tr></thead>
             <tbody>
               {data.shops.map(shop => <tr key={shop.id} className="border-b border-slate-50 last:border-0">
-                <td className="py-3"><p className="font-medium text-slate-800">{shop.name}</p><p className="text-[11px] text-slate-500">{shop.area}</p></td>
-                <td className="py-3">{shop.orders}</td>
-                <td className="py-3 text-emerald-700">{shop.completed}</td>
-                <td className="py-3 text-blue-700">{shop.inProgress}</td>
-                <td className="py-3 text-right font-medium">{money(shop.revenueFils)}</td>
+                <td className="py-2.5"><p className="font-medium text-slate-800">{shop.name}</p><p className="text-[11px] text-slate-500">{shop.area}</p></td>
+                <td className="py-2.5">{shop.orders}</td>
+                <td className="py-2.5 text-emerald-700">{shop.completed}</td>
+                <td className="py-2.5 text-blue-700">{shop.inProgress}</td>
+                <td className="py-2.5 text-right font-medium">{money(shop.revenueFils)}</td>
               </tr>)}
             </tbody>
           </table>
@@ -169,14 +169,14 @@ export function DashboardPage() {
 
       <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-3">
         <div className="flex items-center justify-between"><div><h4 className="font-semibold text-navy-900">Order status</h4><p className="mt-0.5 text-xs text-slate-500">Current order distribution</p></div></div>
-        <div className="mt-5 flex items-center gap-5">
-          <div className="relative h-36 w-36 shrink-0 rounded-full" style={{ background: statusGradient }}>
+        <div className="mt-4 flex items-center gap-4">
+          <div className="relative h-32 w-32 shrink-0 rounded-full" style={{ background: statusGradient }}>
             <div className="absolute inset-[25%] flex flex-col items-center justify-center rounded-full bg-white">
               <span className="text-2xl font-semibold text-navy-900">{totalStatusOrders}</span>
               <span className="text-[10px] text-slate-500">Orders</span>
             </div>
           </div>
-          <div className="min-w-0 flex-1 space-y-2">
+          <div className="min-w-0 flex-1 space-y-1.5">
             {statusItems.map(item => <div key={item.key} className="flex items-center justify-between gap-2 text-xs">
               <span className="flex min-w-0 items-center gap-2"><span className={"h-2.5 w-2.5 shrink-0 rounded-full " + item.className}></span><span className="truncate text-slate-600">{statusLabels[item.key]}</span></span>
               <span className="font-semibold text-slate-800">{data.orderStatus[item.key] ?? 0}</span>
@@ -187,10 +187,10 @@ export function DashboardPage() {
 
       <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-3">
         <div className="flex items-center justify-between"><div><h4 className="font-semibold text-navy-900">Recent activity</h4><p className="mt-0.5 text-xs text-slate-500">Latest order changes</p></div><Link to="/orders" className="text-xs font-medium text-blue-700 hover:underline">View all</Link></div>
-        <div className="mt-3 space-y-1">
-          {data.activity.map(item => <Link key={item.id} to={"/orders/" + item.orderId} className="flex gap-3 rounded-lg p-2.5 hover:bg-slate-50">
-            <span className={"mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold " + (item.type === "ORDER_CREATED" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700")}>{item.type === "ORDER_CREATED" ? "+" : "↻"}</span>
-            <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-slate-800">{item.type === "ORDER_CREATED" ? "New order created" : "Order updated"}</span><span className="block truncate text-xs text-slate-500">{item.orderNo} · {item.customerName}</span><span className="mt-0.5 block text-[11px] text-slate-400">{dateTime(item.timestamp)}</span></span>
+        <div className="mt-3 max-h-[300px] space-y-0.5 overflow-y-auto pr-1">
+          {data.activity.slice(0, 5).map(item => <Link key={item.id} to={"/orders/" + item.orderId} className="flex gap-2.5 rounded-lg p-2 hover:bg-slate-50">
+            <span className={"mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold " + (item.type === "ORDER_CREATED" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700")}>{item.type === "ORDER_CREATED" ? "+" : "↻"}</span>
+            <span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-slate-800">{item.type === "ORDER_CREATED" ? "New order created" : "Order updated"}</span><span className="block truncate text-[11px] text-slate-500">{item.orderNo} · {item.customerName}</span><span className="mt-0.5 block text-[10px] text-slate-400">{dateTime(item.timestamp)}</span></span>
           </Link>)}
           {!data.activity.length && <p className="py-8 text-center text-sm text-slate-500">No recent activity.</p>}
         </div>
