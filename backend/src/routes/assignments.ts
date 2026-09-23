@@ -203,6 +203,19 @@ router.patch("/assignments/:id", asyncHandler(async (req, res) => {
   res.json({ data: row });
 }));
 
+router.patch("/assignments/:id/complete", asyncHandler(async (req, res) => {
+  const current = await prisma.masterAssignment.findUnique({ where: { id: req.params.id } });
+  if (!current) throw new AppError("Assignment not found", 404, "ASSIGNMENT_NOT_FOUND");
+  if (!current.startedAt) throw new AppError("Start the assignment before marking it completed", 400, "ASSIGNMENT_NOT_STARTED");
+  if (current.completedAt) throw new AppError("Assignment is already completed", 400, "ASSIGNMENT_COMPLETED");
+  const row = await prisma.masterAssignment.update({
+    where: { id: current.id },
+    data: { completedAt: new Date() },
+    include: { master: { include: { shop: true } } },
+  });
+  res.json({ data: row });
+}));
+
 router.patch("/assignments/:id/start", asyncHandler(async (req, res) => {
   const row = await prisma.masterAssignment.update({
     where: { id: req.params.id },
