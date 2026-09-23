@@ -228,7 +228,6 @@ function DesignAssignmentCard({ od, production, masters, form, setForm, saving, 
     <div className="mt-5 space-y-4">
       {production.sizeBreakdowns.map((s: any) => {
         const rows = od.assignments.filter((a: any) => a.size === s.size);
-        const designAssigned = rows.reduce((n: number, a: any) => n + a.quantity, 0);
         const assigned = (production.masterAssignments ?? []).filter((a: any) => a.size === s.size).reduce((n: number, a: any) => n + a.quantity, 0);
         const remaining = s.quantity - assigned;
         return <div key={s.id} className="rounded-lg border border-slate-200 p-4">
