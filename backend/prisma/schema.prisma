@@ -120,6 +120,7 @@ model Order {
   sizeBreakdowns OrderSizeBreakdown[]
   referenceImages OrderReferenceImage[]
   designs OrderDesign[]
+  masterAssignments MasterAssignment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([customerId])
@@ -190,17 +191,20 @@ model OrderDesign {
 
 model MasterAssignment {
   id String @id @default(cuid())
-  orderDesignId String
+  orderId String?
+  orderDesignId String?
   masterId String
   size String
   quantity Int
   notes String?
   startedAt DateTime?
   completedAt DateTime?
-  orderDesign OrderDesign @relation(fields: [orderDesignId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderDesign OrderDesign? @relation(fields: [orderDesignId], references: [id], onDelete: Cascade)
   master Master @relation(fields: [masterId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([orderId, size])
   @@index([orderDesignId, size])
   @@index([masterId])
 }
