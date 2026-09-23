@@ -50,7 +50,7 @@ export interface DashboardSummary {
   paidFils: number;
   outstandingFils: number;
   delayed: number;
-  shops: Array<{ id: string; name: string; area: string; customers: number; orders: number; revenueFils: number }>;
+  shops: Array<{ id: string; name: string; area: string; customers: number; orders: number; completed: number; pending: number; inProgress: number; revenueFils: number }>;
   orderStatus: Record<OrderStatus, number>;
   upcomingDeliveries: Array<{ id: string; orderNo: string; customerName: string; garment: string; deliveryDate: string | null; status: OrderStatus }>;
   pendingPayments: Array<{ id: string; orderNo: string; customerName: string; totalAmountFils: number; paidAmountFils: number; outstandingFils: number }>;
