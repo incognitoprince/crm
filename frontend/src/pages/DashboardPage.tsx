@@ -87,7 +87,7 @@ export function DashboardPage() {
   useEffect(() => { void load(); }, []);
 
   const totalStatusOrders = useMemo(
-    () => statusItems.reduce((total, item) => total + data?.orderStatus[item.key] ?? 0, 0),
+    () => statusItems.reduce((total, item) => total + (data?.orderStatus[item.key] ?? 0), 0),
     [data],
   );
 
