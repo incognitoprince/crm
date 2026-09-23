@@ -35,6 +35,7 @@ export interface Order {
   sizeBreakdowns: OrderSizeBreakdown[];
   referenceImages: OrderReferenceImage[];
   designs: OrderDesign[];
+  masterAssignments?: MasterAssignment[];
 }
 export interface CustomerDetail extends Customer { measurements: Measurement[]; orders: Order[]; }
 export interface DashboardSummary { customers: number; orders: number; pending: number; production: number; quality: number; ready: number; delivered: number; revenueFils: number; shops: Array<{ id: string; name: string; area: string; customers: number; orders: number }>; }
