@@ -51,6 +51,59 @@ router.get("/orders/:orderId", asyncHandler(async (req, res) => {
   res.json({ data: order });
 }));
 
+router.post("/orders/:orderId/assignments", asyncHandler(async (req, res) => {
+  const input = assignmentSchema.parse(req.body);
+  const order = await prisma.order.findUnique({
+    where: { id: req.params.orderId },
+    include: { shop: true, sizeBreakdowns: true },
+  });
+  if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
+  if (!order.shopId) throw new AppError("Assign a stitching shop to the order before assigning a master", 400, "ORDER_SHOP_REQUIRED");
+  if (["DELIVERED", "CANCELLED"].includes(order.status)) {
+    throw new AppError("Completed/closed orders cannot receive new master assignments", 400, "ORDER_CLOSED");
+  }
+
+  const master = await prisma.master.findUnique({ where: { id: input.masterId } });
+  if (!master || !master.active) throw new AppError("Master not found or inactive", 404, "MASTER_NOT_FOUND");
+  if (master.shopId !== order.shopId) {
+    throw new AppError("Master must belong to the order's stitching shop", 400, "MASTER_SHOP_MISMATCH");
+  }
+
+  const breakdown = order.sizeBreakdowns.find(item => item.size.toUpperCase() === input.size.toUpperCase());
+  if (!breakdown) throw new AppError("Selected size is not part of this order", 400, "SIZE_NOT_IN_ORDER");
+
+  const assigned = await prisma.masterAssignment.aggregate({
+    where: {
+      size: breakdown.size,
+      OR: [
+        { orderId: order.id },
+        { orderDesign: { orderId: order.id } },
+      ],
+    },
+    _sum: { quantity: true },
+  });
+  const assignedQty = assigned._sum.quantity ?? 0;
+  if (assignedQty + input.quantity > breakdown.quantity) {
+    throw new AppError(
+      "Assignment exceeds size quantity. Remaining: " + (breakdown.quantity - assignedQty),
+      400,
+      "ASSIGNMENT_EXCEEDS_QUANTITY"
+    );
+  }
+
+  const row = await prisma.masterAssignment.create({
+    data: {
+      orderId: order.id,
+      masterId: input.masterId,
+      size: breakdown.size,
+      quantity: input.quantity,
+      notes: input.notes ?? null,
+    },
+    include: { master: { include: { shop: true } }, order: true },
+  });
+  res.status(201).json({ data: row });
+}));
+
 router.post("/orders/:orderId/designs", upload.single("image"), asyncHandler(async (req, res) => {
   const designId = typeof req.body.designId === "string" && req.body.designId.trim() ? req.body.designId.trim() : null;
   const notes = typeof req.body.notes === "string" && req.body.notes.trim() ? req.body.notes.trim() : null;
@@ -209,6 +262,7 @@ router.post("/order-designs/:orderDesignId/assignments", asyncHandler(async (req
 
   const row = await prisma.masterAssignment.create({
     data: {
+      orderId: od.order.id,
       orderDesignId: od.id,
       masterId: input.masterId,
       size: breakdown.size,
@@ -231,11 +285,8 @@ router.patch("/assignments/:id", asyncHandler(async (req, res) => {
   const current = await prisma.masterAssignment.findUnique({
     where: { id: req.params.id },
     include: {
-      orderDesign: {
-        include: {
-          order: { include: { sizeBreakdowns: true } },
-        },
-      },
+      order: { include: { sizeBreakdowns: true } },
+      orderDesign: { include: { order: { include: { sizeBreakdowns: true } } } },
     },
   });
 
@@ -249,17 +300,26 @@ router.patch("/assignments/:id", asyncHandler(async (req, res) => {
   if (input.masterId) {
     const master = await prisma.master.findUnique({ where: { id: input.masterId } });
     if (!master || !master.active) throw new AppError("Master not found or inactive", 404, "MASTER_NOT_FOUND");
-    if (master.shopId !== current.orderDesign.order.shopId) {
+    const assignmentShopId = current.order?.shopId ?? current.orderDesign?.order.shopId;
+    if (master.shopId !== assignmentShopId) {
       throw new AppError("Master must belong to the order's stitching shop", 400, "MASTER_SHOP_MISMATCH");
     }
   }
 
   if (input.quantity !== undefined) {
-    const total = current.orderDesign.order.sizeBreakdowns.find(s => s.size === current.size)?.quantity ?? 0;
-    const other = await prisma.masterAssignment.aggregate({
-      where: { orderDesignId: current.orderDesignId, size: current.size, id: { not: current.id } },
+    const orderId = current.order?.id ?? current.orderDesign?.order.id;
+    const total = (current.order?.sizeBreakdowns ?? current.orderDesign?.order.sizeBreakdowns ?? []).find(s => s.size === current.size)?.quantity ?? 0;
+    const other = orderId ? await prisma.masterAssignment.aggregate({
+      where: {
+        size: current.size,
+        id: { not: current.id },
+        OR: [
+          { orderId },
+          { orderDesign: { orderId } },
+        ],
+      },
       _sum: { quantity: true },
-    });
+    }) : { _sum: { quantity: 0 } };
     if ((other._sum.quantity ?? 0) + input.quantity > total) {
       throw new AppError("Assignment exceeds size quantity", 400, "ASSIGNMENT_EXCEEDS_QUANTITY");
     }
