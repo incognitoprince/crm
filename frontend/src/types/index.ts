@@ -15,6 +15,8 @@ export interface Design { id: string; designNo: string; name: string; garment: G
 export interface Master { id: string; name: string; phone?: string | null; shopId: string; active: boolean; shop: Shop; _count?: { assignments: number }; currentAssignments?: MasterAssignment[]; completedAssignments?: MasterAssignment[]; assignments?: MasterAssignment[]; }
 export interface MasterAssignment { id: string; masterId: string; orderId?: string | null; size: string; quantity: number; notes?: string | null; startedAt?: string | null; completedAt?: string | null; master: Master; order?: { id: string; orderNo: string; customer: { name: string }; garment: GarmentType; quantity: number; status?: OrderStatus } | null; orderDesignId?: string | null; orderDesign?: { order: { id: string; orderNo: string; customer: { name: string }; garment: GarmentType; quantity: number }; design?: Design | null; designName?: string | null } | null; }
 export interface OrderDesign { id: string; orderId: string; designId?: string | null; designName?: string | null; imagePath?: string | null; design?: Design | null; notes?: string | null; assignments: MasterAssignment[]; }
+export type PaymentMethod = "CASH" | "CARD" | "BANK_TRANSFER" | "OTHER";
+export interface Payment { id: string; orderId: string; amountFils: number; method: PaymentMethod; reference?: string | null; notes?: string | null; receivedAt: string; createdAt: string; order: { id: string; orderNo: string; customer: Customer; shop?: Shop | null }; }
 export interface Order {
   id: string;
   orderNo: string;
@@ -36,6 +38,7 @@ export interface Order {
   referenceImages: OrderReferenceImage[];
   designs: OrderDesign[];
   masterAssignments?: MasterAssignment[];
+  payments?: Payment[];
 }
 export interface CustomerDetail extends Customer { measurements: Measurement[]; orders: Order[]; }
 export interface DashboardSummary {
