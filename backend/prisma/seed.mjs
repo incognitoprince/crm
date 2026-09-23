@@ -115,27 +115,29 @@ async function main() {
   }
 
   for (const [id, designNo, name, garment, description] of designs) {
+    const garmentRow = await prisma.garment.findUnique({ where: { name: garment } });
     await prisma.design.upsert({
       where: { id },
-      update: { designNo, name, garment, description, active: true },
-      create: { id, designNo, name, garment, description, active: true },
+      update: { designNo, name, garment, garmentId: garmentRow?.id, description, active: true },
+      create: { id, designNo, name, garment, garmentId: garmentRow?.id, description, active: true },
     });
   }
 
   for (const [customerId, garment, values] of measurements) {
     await prisma.measurement.upsert({
       where: { customerId_garment_profileName: { customerId, garment, profileName: "Standard" } },
-      update: { values },
-      create: { customerId, garment, profileName: "Standard", values },
+      update: { values, garmentId: (await prisma.garment.findUnique({ where: { name: garment } }))?.id },
+      create: { customerId, garment, garmentId: (await prisma.garment.findUnique({ where: { name: garment } }))?.id, profileName: "Standard", values },
     });
   }
 
   for (const [id, orderNo, customerId, shopId, garment, description, quantity, total, paid, status, deliveryOffset] of orders) {
     const paymentStatus = paid === 0 ? "UNPAID" : paid >= total ? "PAID" : "PARTIAL";
+    const garmentRow = await prisma.garment.findUnique({ where: { name: garment } });
     await prisma.order.upsert({
       where: { id },
-      update: { orderNo, customerId, shopId, garment, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
-      create: { id, orderNo, customerId, shopId, garment, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
+      update: { orderNo, customerId, shopId, garment, garmentId: garmentRow?.id, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
+      create: { id, orderNo, customerId, shopId, garment, garmentId: garmentRow?.id, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
     });
   }
 
