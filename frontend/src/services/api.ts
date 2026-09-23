@@ -60,6 +60,16 @@ export function createOrderDesign(orderId: string, data: { designId?: string; fi
   if (data.file) body.append("image", data.file);
   return request<{ data: OrderDesign }>("/api/production/orders/" + orderId + "/designs", { method: "POST", body });
 }
+export function updateOrderDesign(orderId: string, orderDesignId: string, data: { designId?: string; file?: File; notes?: string }) {
+  const body = new FormData();
+  if (data.designId) body.append("designId", data.designId);
+  if (data.notes) body.append("notes", data.notes);
+  if (data.file) body.append("image", data.file);
+  return request<{ data: OrderDesign }>("/api/production/orders/" + orderId + "/designs/" + orderDesignId, { method: "PATCH", body });
+}
+export function deleteOrderDesign(orderId: string, orderDesignId: string) {
+  return request<void>("/api/production/orders/" + orderId + "/designs/" + orderDesignId, { method: "DELETE" });
+}
 export function createMasterAssignment(orderDesignId: string, data: { masterId: string; size: string; quantity: number; notes?: string }) { return request<{ data: MasterAssignment }>("/api/production/order-designs/" + orderDesignId + "/assignments", { method: "POST", body: JSON.stringify(data) }); }
 export function updateMasterAssignment(id: string, data: { masterId?: string; quantity?: number; notes?: string | null }) { return request<{ data: MasterAssignment }>("/api/production/assignments/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function startMasterAssignment(id: string) { return request<{ data: MasterAssignment }>("/api/production/assignments/" + id + "/start", { method: "PATCH" }); }
