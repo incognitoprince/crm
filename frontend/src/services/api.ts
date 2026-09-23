@@ -29,7 +29,7 @@ export function createGarment(data: { name: string }) { return request<{ data: G
 
 export function getOrders() { return request<{ data: Order[] }>("/api/orders"); }
 export function getOrder(id: string) { return request<{ data: Order }>("/api/orders/" + id); }
-export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils: number; paidAmountFils: number; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
+export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils: number; paidAmountFils: number; paymentMethod?: PaymentMethod; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
 export function updateOrderStatus(id: string, status: Order["status"]) { return request<{ data: Order }>("/api/orders/" + id + "/status", { method: "PATCH", body: JSON.stringify({ status }) }); }
 
 export function uploadOrderReferenceImage(orderId: string, file: File) {
