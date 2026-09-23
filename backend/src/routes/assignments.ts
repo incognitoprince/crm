@@ -39,6 +39,7 @@ router.get("/orders/:orderId", asyncHandler(async (req, res) => {
     include: {
       customer: true,
       shop: true,
+      garmentMaster: true,
       sizeBreakdowns: { orderBy: { size: "asc" } },
       designs: {
         include: orderDesignInclude,
