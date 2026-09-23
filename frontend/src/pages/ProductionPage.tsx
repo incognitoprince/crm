@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   completeMasterAssignment,
   createMasterAssignment,
+  createOrderAssignment,
   deleteMasterAssignment,
   getDesigns,
   getMasters,
@@ -86,6 +87,18 @@ export function ProductionPage() {
     } finally { setSaving(false); }
   }
 
+  async function assignWithoutDesign() {
+    if (!orderId || !form.size || !form.masterId || !form.quantity) return;
+    setSaving(true); setError("");
+    try {
+      await createOrderAssignment(orderId, { masterId: form.masterId, size: form.size, quantity: Number(form.quantity), notes: form.notes || undefined });
+      setForm(f => ({ ...f, quantity: "", notes: "" }));
+      await loadOrder(orderId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to assign master");
+    } finally { setSaving(false); }
+  }
+
   function beginEdit(a: MasterAssignment) {
     setEditing(a.id);
     setEditForm({ masterId: a.masterId, quantity: String(a.quantity), notes: a.notes ?? "" });
@@ -152,6 +165,29 @@ export function ProductionPage() {
       </section>
 
       {production.designs.map(od => <DesignAssignmentCard key={od.id} od={od} production={production} masters={masters} form={form} setForm={setForm} saving={saving} editing={editing} editForm={editForm} setEditForm={setEditForm} onAssign={assign} onEdit={beginEdit} onSaveEdit={saveEdit} onComplete={complete} onRemove={remove} onCancelEdit={() => setEditing(null)} />)}
+
+      <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div><h4 className="font-semibold text-navy-900">General production assignments</h4><p className="mt-1 text-xs text-slate-500">Master work can be assigned using the order's garment, size, and production quantity even when no design image is attached.</p></div>
+        </div>
+        <div className="mt-4 space-y-3">
+          {production.sizeBreakdowns.map(s => {
+            const rows = (production.masterAssignments ?? []).filter(a => a.size === s.size);
+            const assigned = rows.reduce((n, a) => n + a.quantity, 0);
+            const remaining = s.quantity - assigned;
+            return <div key={s.id} className="rounded-lg border border-slate-200 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><span className="font-semibold">{s.size}</span><span className="ml-2 text-sm text-slate-500">{s.quantity} required</span></div><span className={"rounded-full px-2.5 py-1 text-xs font-medium " + (remaining === 0 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700")}>{assigned} assigned · {remaining} remaining</span></div>
+              {rows.length > 0 && <div className="mt-3 space-y-2">{rows.map(a => <div key={a.id} className="rounded-md bg-slate-50 px-3 py-2 text-sm"><div className="flex flex-wrap items-center justify-between gap-2"><div><span className="font-medium">{a.master.name}</span><span className="ml-2 text-slate-500">{a.quantity} pcs</span></div><div className="flex gap-3"><button onClick={() => beginEdit(a)} disabled={!!a.completedAt} className="text-xs font-medium text-navy-900 disabled:opacity-40">Edit</button>{a.startedAt && !a.completedAt && <button onClick={() => complete(a.id)} className="text-xs font-medium text-emerald-700">Done</button>}{!a.startedAt && !a.completedAt && <button onClick={() => remove(a.id)} className="text-xs font-medium text-red-700">Remove</button>}</div></div><p className="mt-1 text-[11px] text-slate-500">{a.completedAt ? "Completed" : a.startedAt ? "Currently working — master is locked" : "Assigned, not started"}{a.notes ? " · " + a.notes : ""}</p></div>)}</div>}
+              {remaining > 0 && !["DELIVERED","CANCELLED"].includes(production.status) && <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                <select value={form.size === s.size ? form.masterId : ""} onChange={e => setForm(f => ({ ...f, size: s.size, masterId: e.target.value }))} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Master…</option>{masters.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</select>
+                <input type="number" min="1" max={remaining} value={form.size === s.size ? form.quantity : ""} onChange={e => setForm(f => ({ ...f, size: s.size, quantity: e.target.value }))} placeholder={"Qty (max " + remaining + ")"} className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+                <input value={form.size === s.size ? form.notes : ""} onChange={e => setForm(f => ({ ...f, size: s.size, notes: e.target.value }))} placeholder="Note (optional)" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+                <button disabled={saving || form.size !== s.size || !form.masterId || !form.quantity || !production.shop} onClick={assignWithoutDesign} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white">Assign</button>
+              </div>}
+            </div>;
+          })}
+        </div>
+      </section>
 
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
         <h4 className="font-semibold text-navy-900">Attach existing design</h4>
