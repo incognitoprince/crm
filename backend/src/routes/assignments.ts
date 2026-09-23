@@ -15,10 +15,15 @@ const assignmentSchema = z.object({
   notes: z.string().trim().max(500).nullable().optional(),
 });
 
+// Keep Prisma include flags as literal types so the inferred object matches
+// the generated OrderDesign include args during the TypeScript build.
 const productionInclude = {
   design: true,
-  assignments: { include: { master: { include: { shop: true } } }, orderBy: { createdAt: "asc" as const } },
-};
+  assignments: {
+    include: { master: { include: { shop: true } } },
+    orderBy: { createdAt: "asc" },
+  },
+} as const;
 
 router.get("/orders/:orderId", asyncHandler(async (req, res) => {
   const order = await prisma.order.findUnique({
