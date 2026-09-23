@@ -126,7 +126,7 @@ export function ProductionPage() {
       <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Select order</label>
       <select value={orderId} onChange={e => setOrderId(e.target.value)} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
         <option value="">Choose an order…</option>
-        {orders.map(o => <option key={o.id} value={o.id}>{o.orderNo} · {o.customer.name} · {label(o.garment)} · {o.quantity} pcs</option>)}
+        {orders.map(o => <option key={o.id} value={o.id}>{o.orderNo} · {o.customer.name} · {label(o.garmentMaster?.name ?? o.garment)} · {o.quantity} pcs</option>)}
       </select>
     </section>
 
