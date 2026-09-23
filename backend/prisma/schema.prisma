@@ -21,6 +21,13 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
 }
+enum GarmentType {
+  THOBE
+  SHIRT
+  TROUSER
+  SUIT
+  OTHER
+}
 enum PaymentStatus {
   UNPAID
   PARTIAL
@@ -46,6 +53,9 @@ model Garment {
   name String @unique
   active Boolean @default(true)
   sortOrder Int @default(0)
+  orders Order[] @relation("OrderGarment")
+  designs Design[] @relation("DesignGarment")
+  measurements Measurement[] @relation("MeasurementGarment")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([active, sortOrder])
@@ -75,7 +85,9 @@ model Measurement {
   id String @id @default(cuid())
   customerId String
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  garment String
+  garment GarmentType
+  garmentId String?
+  garmentMaster Garment? @relation("MeasurementGarment", fields: [garmentId], references: [id], onDelete: SetNull)
   profileName String @default("Standard")
   values Json
   notes String?
@@ -83,6 +95,7 @@ model Measurement {
   updatedAt DateTime @updatedAt
   @@unique([customerId, garment, profileName])
   @@index([customerId])
+  @@index([garmentId])
 }
 
 model Order {
@@ -93,7 +106,9 @@ model Order {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
   shop Shop? @relation(fields: [shopId], references: [id], onDelete: SetNull)
   status OrderStatus @default(PENDING)
-  garment String
+  garment GarmentType
+  garmentId String?
+  garmentMaster Garment? @relation("OrderGarment", fields: [garmentId], references: [id], onDelete: SetNull)
   description String
   quantity Int @default(1)
   totalAmountFils Int
@@ -110,6 +125,7 @@ model Order {
   @@index([customerId])
   @@index([shopId])
   @@index([status])
+  @@index([garmentId])
   @@index([orderDate])
   @@index([deliveryDate])
 }
@@ -142,7 +158,9 @@ model Design {
   id String @id @default(cuid())
   designNo String @unique
   name String
-  garment String
+  garment GarmentType
+  garmentId String?
+  garmentMaster Garment? @relation("DesignGarment", fields: [garmentId], references: [id], onDelete: SetNull)
   description String?
   imagePath String?
   active Boolean @default(true)
@@ -150,6 +168,7 @@ model Design {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([garment, active])
+  @@index([garmentId])
   @@index([name])
 }
 
