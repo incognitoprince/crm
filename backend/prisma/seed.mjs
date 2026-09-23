@@ -44,11 +44,11 @@ const masters = [
 ];
 
 const designs = [
-  ["demo-design-001","DES-0041","Classic Arabic Collar","THOBE","Traditional white thobe collar"],
-  ["demo-design-002","DES-0042","Modern French Collar","THOBE","Clean modern collar profile"],
-  ["demo-design-003","DES-0043","Executive Shirt","SHIRT","Formal business shirt"],
-  ["demo-design-004","DES-0044","Straight Fit Trouser","TROUSER","Classic straight fit"],
-  ["demo-design-005","DES-0045","Two Button Suit","SUIT","Two-piece business suit"],
+  ["demo-design-001","DES-0041","Classic Arabic Collar","THOBE","Traditional white thobe collar","https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=900&q=80"],
+  ["demo-design-002","DES-0042","Modern French Collar","THOBE","Clean modern collar profile","https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&w=900&q=80"],
+  ["demo-design-003","DES-0043","Executive Shirt","SHIRT","Formal business shirt","https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=900&q=80"],
+  ["demo-design-004","DES-0044","Straight Fit Trouser","TROUSER","Classic straight fit","https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=900&q=80"],
+  ["demo-design-005","DES-0045","Two Button Suit","SUIT","Two-piece business suit","https://images.unsplash.com/photo-1598808503746-f34c53b9323e?auto=format&fit=crop&w=900&q=80"],
 ];
 
 const measurements = [
@@ -114,12 +114,12 @@ async function main() {
     });
   }
 
-  for (const [id, designNo, name, garment, description] of designs) {
+  for (const [id, designNo, name, garment, description, imagePath] of designs) {
     const garmentRow = await prisma.garment.findUnique({ where: { name: garment } });
     await prisma.design.upsert({
       where: { id },
-      update: { designNo, name, garment, garmentId: garmentRow?.id, description, active: true },
-      create: { id, designNo, name, garment, garmentId: garmentRow?.id, description, active: true },
+      update: { designNo, name, garment, garmentId: garmentRow?.id, description, imagePath, active: true },
+      create: { id, designNo, name, garment, garmentId: garmentRow?.id, description, imagePath, active: true },
     });
   }
 
@@ -138,6 +138,24 @@ async function main() {
       where: { id },
       update: { orderNo, customerId, shopId, garment, garmentId: garmentRow?.id, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
       create: { id, orderNo, customerId, shopId, garment, garmentId: garmentRow?.id, description, quantity, totalAmountFils: total, paidAmountFils: paid, paymentStatus, status, deliveryDate: dateFromOffset(deliveryOffset) },
+    });
+  }
+
+  const demoPayments = [
+    ["demo-payment-001","demo-order-001",21000,"CASH","Advance payment"],
+    ["demo-payment-002","demo-order-002",57000,"CARD","Paid in full"],
+    ["demo-payment-003","demo-order-003",18000,"BANK_TRANSFER","50% advance"],
+    ["demo-payment-004","demo-order-005",69000,"CARD","Paid in full"],
+    ["demo-payment-005","demo-order-006",42500,"CASH","50% advance"],
+    ["demo-payment-006","demo-order-007",55000,"BANK_TRANSFER","Advance payment"],
+    ["demo-payment-007","demo-order-008",33000,"CARD","Paid in full"],
+    ["demo-payment-008","demo-order-011",40000,"CASH","Paid in full"],
+  ];
+  for (const [id, orderId, amountFils, method, notes] of demoPayments) {
+    await prisma.payment.upsert({
+      where: { id },
+      update: { orderId, amountFils, method, notes },
+      create: { id, orderId, amountFils, method, notes },
     });
   }
 
