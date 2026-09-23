@@ -242,7 +242,7 @@ export function NewOrderPage() {
 
         <label className="text-sm">
           Order description
-          <input required value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Formal customer thobe" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+          <input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Formal customer thobe (optional)" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
         </label>
       </div>
 
