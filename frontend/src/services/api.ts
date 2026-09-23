@@ -63,4 +63,5 @@ export function createOrderDesign(orderId: string, data: { designId?: string; fi
 export function createMasterAssignment(orderDesignId: string, data: { masterId: string; size: string; quantity: number; notes?: string }) { return request<{ data: MasterAssignment }>("/api/production/order-designs/" + orderDesignId + "/assignments", { method: "POST", body: JSON.stringify(data) }); }
 export function updateMasterAssignment(id: string, data: { masterId?: string; quantity?: number; notes?: string | null }) { return request<{ data: MasterAssignment }>("/api/production/assignments/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function startMasterAssignment(id: string) { return request<{ data: MasterAssignment }>("/api/production/assignments/" + id + "/start", { method: "PATCH" }); }
+export function completeMasterAssignment(id: string) { return request<{ data: MasterAssignment }>("/api/production/assignments/" + id + "/complete", { method: "PATCH" }); }
 export function deleteMasterAssignment(id: string) { return request<void>("/api/production/assignments/" + id, { method: "DELETE" }); }
