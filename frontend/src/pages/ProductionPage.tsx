@@ -25,7 +25,7 @@ export function ProductionPage() {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [masters, setMasters] = useState<Master[]>([]);
   const [selectedDesign, setSelectedDesign] = useState("");
-  const [form, setForm] = useState({ size: "", masterId: "", quantity: "", notes: "" });
+  const [form, setForm] = useState({ size: "", masterId: searchParams.get("masterId") ?? "", quantity: "", notes: "" });
   const [editing, setEditing] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ masterId: "", quantity: "", notes: "" });
   const [error, setError] = useState("");
@@ -57,7 +57,7 @@ export function ProductionPage() {
   useEffect(() => { loadOrder(orderId); }, [orderId]);
 
   const availableDesigns = useMemo(
-    () => production ? designs.filter(d => d.garment === production.garment && !production.designs.some(x => x.designId === d.id)) : [],
+    () => production ? designs.filter(d => (production.garmentMaster?.id ? d.garmentId === production.garmentMaster.id : d.garment === production.garment) && !production.designs.some(x => x.designId === d.id)) : [],
     [designs, production]
   );
 
