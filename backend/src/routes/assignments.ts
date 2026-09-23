@@ -164,7 +164,7 @@ router.delete("/orders/:orderId/designs/:orderDesignId", asyncHandler(async (req
   }
 
   if (current.imagePath?.startsWith("/uploads/")) {
-    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^/uploads//, "uploads/"));
+    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^\/uploads\//, "uploads/"));
     await fs.unlink(oldPath).catch(() => undefined);
   }
 
