@@ -10,6 +10,7 @@ const links = [
   { to: "/designs", label: "Design Library" },
   { to: "/production", label: "Production" },
   { to: "/payments", label: "Payments" },
+  { to: "/bills", label: "Bills / Invoices" },
   { to: "/overview", label: "System status" },
 ];
 
