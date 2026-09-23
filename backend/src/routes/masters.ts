@@ -15,6 +15,7 @@ const masterSchema = z.object({
 });
 
 const assignmentInclude = {
+  order: { select: { id: true, orderNo: true, status: true, customer: { select: { name: true } }, garment: true, quantity: true } },
   orderDesign: {
     include: {
       order: { select: { id: true, orderNo: true, status: true, customer: { select: { name: true } }, garment: true, quantity: true } },
@@ -37,7 +38,10 @@ router.get("/", asyncHandler(async (req, res) => {
         where: {
           masterId: master.id,
           completedAt: null,
-          orderDesign: { order: { status: { notIn: ["DELIVERED", "CANCELLED"] } } },
+          OR: [
+            { order: { status: { notIn: ["DELIVERED", "CANCELLED"] } } },
+            { orderDesign: { order: { status: { notIn: ["DELIVERED", "CANCELLED"] } } } },
+          ],
         },
         include: assignmentInclude,
         orderBy: { createdAt: "asc" },
@@ -47,6 +51,7 @@ router.get("/", asyncHandler(async (req, res) => {
           masterId: master.id,
           OR: [
             { completedAt: { not: null } },
+            { order: { status: { in: ["DELIVERED", "CANCELLED"] } } },
             { orderDesign: { order: { status: { in: ["DELIVERED", "CANCELLED"] } } } },
           ],
         },
