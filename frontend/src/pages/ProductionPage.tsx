@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
+  completeMasterAssignment,
   createMasterAssignment,
   deleteMasterAssignment,
   getDesigns,
@@ -101,6 +102,17 @@ export function ProductionPage() {
     } finally { setSaving(false); }
   }
 
+  async function complete(id: string) {
+    if (!window.confirm("Mark this master assignment as completed?")) return;
+    setSaving(true); setError("");
+    try {
+      await completeMasterAssignment(id);
+      await loadOrder(orderId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to complete assignment");
+    } finally { setSaving(false); }
+  }
+
   async function remove(id: string) {
     if (!window.confirm("Remove this master assignment?")) return;
     setSaving(true); setError("");
@@ -116,7 +128,7 @@ export function ProductionPage() {
 
   return <div className="mx-auto max-w-6xl space-y-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Production</p><h3 className="text-2xl font-semibold text-navy-900">Master assignments</h3><p className="text-sm text-slate-600">Assign, change, or remove work by size. The same size can be split across multiple masters.</p></div>
+      <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Production</p><h3 className="text-2xl font-semibold text-navy-900">Master assignments</h3><p className="text-sm text-slate-600">Assign, change, complete, or remove work by size. The same size can be split across multiple masters.</p></div>
       <button onClick={() => navigate("/orders")} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Done</button>
     </div>
 
@@ -139,7 +151,7 @@ export function ProductionPage() {
         <div className="mt-5 flex flex-wrap gap-2">{production.sizeBreakdowns.map(s => <span key={s.id} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium">{s.size}: {s.quantity}</span>)}</div>
       </section>
 
-      {production.designs.map(od => <DesignAssignmentCard key={od.id} od={od} production={production} masters={masters} form={form} setForm={setForm} saving={saving} editing={editing} editForm={editForm} setEditForm={setEditForm} onAssign={assign} onEdit={beginEdit} onSaveEdit={saveEdit} onRemove={remove} onCancelEdit={() => setEditing(null)} />)}
+      {production.designs.map(od => <DesignAssignmentCard key={od.id} od={od} production={production} masters={masters} form={form} setForm={setForm} saving={saving} editing={editing} editForm={editForm} setEditForm={setEditForm} onAssign={assign} onEdit={beginEdit} onSaveEdit={saveEdit} onComplete={complete} onRemove={remove} onCancelEdit={() => setEditing(null)} />)}
 
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
         <h4 className="font-semibold text-navy-900">Attach existing design</h4>
@@ -154,11 +166,12 @@ export function ProductionPage() {
 
       {!production.designs.length && <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">No design is attached to this order yet. Add the design from the order page first.</div>}
       {!production.shop && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">Assign a stitching shop to this order before assigning a master.</div>}
+      {["DELIVERED","CANCELLED"].includes(production.status) && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">This order is completed/closed. Its master assignments are kept as completed history and are no longer shown as current work.</div>}
     </>}
   </div>;
 }
 
-function DesignAssignmentCard({ od, production, masters, form, setForm, saving, editing, editForm, setEditForm, onAssign, onEdit, onSaveEdit, onRemove, onCancelEdit }: any) {
+function DesignAssignmentCard({ od, production, masters, form, setForm, saving, editing, editForm, setEditForm, onAssign, onEdit, onSaveEdit, onComplete, onRemove, onCancelEdit }: any) {
   return <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
     <div className="flex items-start gap-4">
       {od.imagePath || od.design?.imagePath ? <img src={od.imagePath || od.design?.imagePath} alt="" className="h-20 w-20 rounded-lg object-cover" /> : <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-300">SP</div>}
@@ -179,11 +192,11 @@ function DesignAssignmentCard({ od, production, masters, form, setForm, saving, 
             <input value={editForm.notes} onChange={e => setEditForm((f: any) => ({ ...f, notes: e.target.value }))} placeholder="Note" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
             <div className="flex gap-2"><button disabled={saving} onClick={() => onSaveEdit(a.id)} className="rounded-md bg-navy-900 px-3 py-2 text-xs text-white">Save</button><button onClick={onCancelEdit} className="rounded-md border px-3 py-2 text-xs">Cancel</button></div>
           </div> : <div key={a.id} className="rounded-md bg-slate-50 px-3 py-2 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2"><div><span className="font-medium">{a.master.name}</span><span className="ml-2 text-slate-500">{a.quantity} pcs</span></div><div className="flex gap-3"><button onClick={() => onEdit(a)} className="text-xs font-medium text-navy-900">Edit</button>{!a.startedAt && <button onClick={() => onRemove(a.id)} className="text-xs font-medium text-red-700">Remove</button>}</div></div>
-            <p className="mt-1 text-[11px] text-slate-500">{a.startedAt ? "Work started — master is locked" : "Not started"}{a.notes ? " · " + a.notes : ""}</p>
+            <div className="flex flex-wrap items-center justify-between gap-2"><div><span className="font-medium">{a.master.name}</span><span className="ml-2 text-slate-500">{a.quantity} pcs</span></div><div className="flex gap-3"><button onClick={() => onEdit(a)} disabled={!!a.completedAt} className="text-xs font-medium text-navy-900 disabled:opacity-40">Edit</button>{a.startedAt && !a.completedAt && <button onClick={() => onComplete(a.id)} className="text-xs font-medium text-emerald-700">Done</button>}{!a.startedAt && !a.completedAt && <button onClick={() => onRemove(a.id)} className="text-xs font-medium text-red-700">Remove</button>}</div></div>
+            <p className="mt-1 text-[11px] text-slate-500">{a.completedAt ? "Completed" : a.startedAt ? "Currently working — master is locked" : "Assigned, not started"}{a.notes ? " · " + a.notes : ""}</p>
           </div>)}</div>}
 
-          {remaining > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-4">
+          {remaining > 0 && !["DELIVERED","CANCELLED"].includes(production.status) && <div className="mt-3 grid gap-2 sm:grid-cols-4">
             <select value={form.size === s.size ? form.masterId : ""} onChange={e => setForm((f: any) => ({ ...f, size: s.size, masterId: e.target.value }))} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Master…</option>{masters.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}</select>
             <input type="number" min="1" max={remaining} value={form.size === s.size ? form.quantity : ""} onChange={e => setForm((f: any) => ({ ...f, size: s.size, quantity: e.target.value }))} placeholder={"Qty (max " + remaining + ")"} className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
             <input value={form.size === s.size ? form.notes : ""} onChange={e => setForm((f: any) => ({ ...f, size: s.size, notes: e.target.value }))} placeholder="Note (optional)" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
