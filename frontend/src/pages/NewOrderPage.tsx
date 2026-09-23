@@ -66,7 +66,7 @@ export function NewOrderPage() {
       setDesigns(r.data);
       if (!r.data.some(d => d.id === selectedDesignId)) setSelectedDesignId(r.data[0]?.id ?? "");
     }).catch(e => setError(e instanceof Error ? e.message : "Unable to load designs"));
-  }, [garment, selectedDesignId]);
+  }, [garment]);
 
   useEffect(() => {
     if (!shopId) {
