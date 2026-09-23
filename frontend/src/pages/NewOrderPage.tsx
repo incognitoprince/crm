@@ -1,19 +1,35 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { createOrder, getCustomers, getShops, uploadOrderReferenceImage } from "../services/api";
-import type { Customer, GarmentType, Shop } from "../types";
+import {
+  createGarment,
+  createMasterAssignment,
+  createOrder,
+  createOrderDesign,
+  getCustomers,
+  getDesigns,
+  getGarments,
+  getMasters,
+  getShops,
+} from "../services/api";
+import type { Customer, Design, Garment, GarmentType, Master, Shop } from "../types";
 
-const garments: GarmentType[] = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"];
 const defaultSizes = ["XS", "S", "M", "L", "XL", "XXL"];
+
+type AssignmentDraft = { id: number; size: string; masterId: string; quantity: string; notes: string };
 
 export function NewOrderPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
+  const [garments, setGarments] = useState<Garment[]>([]);
+  const [designs, setDesigns] = useState<Design[]>([]);
+  const [masters, setMasters] = useState<Master[]>([]);
   const [customerId, setCustomerId] = useState(searchParams.get("customerId") ?? "");
   const [shopId, setShopId] = useState("");
-  const [garment, setGarment] = useState<GarmentType>("THOBE");
+  const [garment, setGarment] = useState<GarmentType>("");
+  const [showGarmentForm, setShowGarmentForm] = useState(false);
+  const [newGarmentName, setNewGarmentName] = useState("");
   const [description, setDescription] = useState("");
   const [total, setTotal] = useState("");
   const [paid, setPaid] = useState("0");
@@ -22,25 +38,47 @@ export function NewOrderPage() {
   const [sizeBreakdowns, setSizeBreakdowns] = useState<Record<string, string>>(
     Object.fromEntries(defaultSizes.map(s => [s, ""]))
   );
-  const [referenceImage, setReferenceImage] = useState<File | null>(null);
+  const [designSource, setDesignSource] = useState<"existing" | "upload">("existing");
+  const [selectedDesignId, setSelectedDesignId] = useState("");
+  const [designImage, setDesignImage] = useState<File | null>(null);
+  const [assignments, setAssignments] = useState<AssignmentDraft[]>([]);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([getCustomers(), getShops()]).then(([c, s]) => {
+    Promise.all([getCustomers(), getShops(), getGarments()]).then(([c, s, g]) => {
       setCustomers(c.data);
       setShops(s.data);
+      setGarments(g.data);
       const selected = c.data.find(customer => customer.id === searchParams.get("customerId")) ?? c.data[0];
       if (selected) {
         setCustomerId(selected.id);
         if (selected.shop?.id) setShopId(selected.shop.id);
       }
       if (s.data[0] && !selected?.shop?.id) setShopId(s.data[0].id);
+      if (g.data[0]) setGarment(g.data[0].name);
     }).catch(e => setError(e instanceof Error ? e.message : "Unable to load order form"));
   }, [searchParams]);
 
-  const breakdown = defaultSizes
+  useEffect(() => {
+    if (!garment) return;
+    getDesigns(garment).then(r => {
+      setDesigns(r.data);
+      if (!r.data.some(d => d.id === selectedDesignId)) setSelectedDesignId(r.data[0]?.id ?? "");
+    }).catch(e => setError(e instanceof Error ? e.message : "Unable to load designs"));
+  }, [garment, selectedDesignId]);
+
+  useEffect(() => {
+    if (!shopId) {
+      setMasters([]);
+      return;
+    }
+    getMasters(shopId).then(r => setMasters(r.data)).catch(e => setError(e instanceof Error ? e.message : "Unable to load masters"));
+  }, [shopId]);
+
+  const breakdown = useMemo(() => defaultSizes
     .map(size => ({ size, quantity: Number(sizeBreakdowns[size] || 0) }))
-    .filter(item => item.quantity > 0);
+    .filter(item => item.quantity > 0), [sizeBreakdowns]);
   const breakdownTotal = breakdown.reduce((sum, item) => sum + item.quantity, 0);
 
   function updateSize(size: string, value: string) {
@@ -49,15 +87,75 @@ export function NewOrderPage() {
     }
   }
 
+  async function addGarment() {
+    const name = newGarmentName.trim();
+    if (!name) return;
+    setError("");
+    try {
+      const result = await createGarment({ name });
+      setGarments(current => [...current, result.data].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)));
+      setGarment(result.data.name);
+      setNewGarmentName("");
+      setShowGarmentForm(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to add garment");
+    }
+  }
+
+  function addAssignment() {
+    setAssignments(current => [...current, { id: Date.now(), size: breakdown[0]?.size ?? "M", masterId: "", quantity: "", notes: "" }]);
+  }
+
+  function updateAssignment(id: number, patch: Partial<AssignmentDraft>) {
+    setAssignments(current => current.map(row => row.id === id ? { ...row, ...patch } : row));
+  }
+
+  function removeAssignment(id: number) {
+    setAssignments(current => current.filter(row => row.id !== id));
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError("");
 
+    if (!customerId || !garment) {
+      setError("Customer and garment are required.");
+      return;
+    }
     if (breakdownTotal < 1) {
       setError("Add at least one piece in the size breakdown.");
       return;
     }
+    if (designSource === "existing" && !selectedDesignId) {
+      setError("Select a design from the Design Library or choose Upload new design image.");
+      return;
+    }
+    if (designSource === "upload" && !designImage) {
+      setError("Upload a design image before saving the order.");
+      return;
+    }
 
+    const assignmentTotals: Record<string, number> = {};
+    for (const row of assignments) {
+      const qty = Number(row.quantity);
+      if (!row.masterId || !row.size || qty < 1) {
+        setError("Complete every optional master assignment row or remove it.");
+        return;
+      }
+      assignmentTotals[row.size] = (assignmentTotals[row.size] ?? 0) + qty;
+      const required = breakdown.find(item => item.size === row.size)?.quantity ?? 0;
+      if (assignmentTotals[row.size] > required) {
+        setError(row.size + " assignments exceed the order quantity for that size.");
+        return;
+      }
+    }
+
+    if (assignments.length && !shopId) {
+      setError("A stitching shop is required when assigning a master during order creation.");
+      return;
+    }
+
+    setSaving(true);
     try {
       const order = await createOrder({
         customerId,
@@ -71,18 +169,34 @@ export function NewOrderPage() {
         notes: notes || null,
         sizeBreakdowns: breakdown,
       });
-      if (referenceImage) await uploadOrderReferenceImage(order.data.id, referenceImage);
+
+      const orderDesign = await createOrderDesign(order.data.id, {
+        designId: designSource === "existing" ? selectedDesignId : undefined,
+        file: designSource === "upload" ? designImage ?? undefined : undefined,
+      });
+
+      for (const row of assignments) {
+        await createMasterAssignment(orderDesign.data.id, {
+          masterId: row.masterId,
+          size: row.size,
+          quantity: Number(row.quantity),
+          notes: row.notes || undefined,
+        });
+      }
+
       navigate("/orders/" + order.data.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to create order");
+    } finally {
+      setSaving(false);
     }
   }
 
-  return <div className="mx-auto max-w-4xl space-y-5">
+  return <div className="mx-auto max-w-5xl space-y-5">
     <button onClick={() => navigate("/orders")} className="text-sm text-slate-500 hover:underline">← Back to orders</button>
     <div>
       <h3 className="text-2xl font-semibold text-navy-900">New order</h3>
-      <p className="text-sm text-slate-600">Capture the customer's reference image, size quantities and production assignment.</p>
+      <p className="text-sm text-slate-600">Create the order, attach the customer's design, and optionally assign master work now.</p>
     </div>
 
     {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -92,6 +206,7 @@ export function NewOrderPage() {
         <label className="text-sm">
           Customer
           <select required value={customerId} onChange={e => setCustomerId(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
+            <option value="">Choose customer…</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name} · {c.customerNo}</option>)}
           </select>
         </label>
@@ -104,82 +219,101 @@ export function NewOrderPage() {
           </select>
         </label>
 
-        <label className="text-sm">
-          Garment
-          <select value={garment} onChange={e => setGarment(e.target.value as GarmentType)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
-            {garments.map(g => <option key={g} value={g}>{g}</option>)}
+        <div className="text-sm sm:col-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <span>Garment</span>
+            <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
+          </div>
+          <select value={garment} onChange={e => setGarment(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
+            <option value="">Choose garment…</option>
+            {garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
           </select>
-        </label>
+          {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-3">
+            <input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white">Add</button>
+          </div>}
+        </div>
 
         <label className="text-sm">
           Total Quantity
-          <input
-            readOnly
-            type="number"
-            value={breakdownTotal}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 font-medium text-slate-700"
-          />
-          <span className="mt-1 block text-xs text-slate-500">Automatically calculated from the size breakdown below.</span>
+          <input readOnly type="number" value={breakdownTotal} className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 font-medium text-slate-700" />
+          <span className="mt-1 block text-xs text-slate-500">Automatically calculated from the size breakdown.</span>
         </label>
 
-        <label className="text-sm sm:col-span-2">
+        <label className="text-sm">
           Order description
-          <input required value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Customer reference image - formal thobe" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+          <input required value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. Formal customer thobe" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
         </label>
       </div>
 
       <section className="rounded-lg border border-slate-200 p-4">
         <h4 className="font-semibold text-navy-900">Size breakdown</h4>
-        <p className="mt-1 text-xs text-slate-500">Enter the quantity for each size. Total Quantity will be calculated automatically.</p>
-
+        <p className="mt-1 text-xs text-slate-500">Enter the quantity for each size. Total Quantity is calculated automatically.</p>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-          {defaultSizes.map(size => (
-            <label key={size} className="text-xs font-medium text-slate-600">
-              {size}
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={sizeBreakdowns[size]}
-                onChange={e => updateSize(size, e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-              />
-            </label>
-          ))}
+          {defaultSizes.map(size => <label key={size} className="text-xs font-medium text-slate-600">
+            {size}
+            <input type="number" min="0" step="1" value={sizeBreakdowns[size]} onChange={e => updateSize(size, e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+          </label>)}
         </div>
-
         <p className="mt-3 text-sm font-medium text-emerald-700">Total pieces: {breakdownTotal}</p>
       </section>
 
       <section className="rounded-lg border border-slate-200 p-4">
-        <h4 className="font-semibold text-navy-900">Customer reference image</h4>
-        <p className="mt-1 text-xs text-slate-500">This image will stay attached to the order and be shown in production/order details.</p>
-        <input required type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setReferenceImage(e.target.files?.[0] ?? null)} className="mt-3 w-full text-sm" />
-        {referenceImage && <p className="mt-2 text-xs text-slate-600">{referenceImage.name}</p>}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><h4 className="font-semibold text-navy-900">Design image</h4><p className="mt-1 text-xs text-slate-500">The design supplied by the customer stays attached to this order.</p></div>
+          <div className="flex rounded-md border border-slate-200 p-1 text-xs">
+            <button type="button" onClick={() => setDesignSource("existing")} className={"rounded px-3 py-1.5 " + (designSource === "existing" ? "bg-navy-900 text-white" : "text-slate-600")}>Existing design</button>
+            <button type="button" onClick={() => setDesignSource("upload")} className={"rounded px-3 py-1.5 " + (designSource === "upload" ? "bg-navy-900 text-white" : "text-slate-600")}>Upload new</button>
+          </div>
+        </div>
+
+        {designSource === "existing" ? <div className="mt-3">
+          <select required value={selectedDesignId} onChange={e => setSelectedDesignId(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+            <option value="">Choose a design from Design Library…</option>
+            {designs.map(d => <option key={d.id} value={d.id}>{d.designNo} · {d.name}</option>)}
+          </select>
+          {!designs.length && <p className="mt-2 text-xs text-amber-700">No reusable designs for this garment yet. Choose “Upload new”.</p>}
+        </div> : <div className="mt-3">
+          <input required type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setDesignImage(e.target.files?.[0] ?? null)} className="w-full text-sm" />
+          {designImage && <p className="mt-2 text-xs text-slate-600">{designImage.name}</p>}
+        </div>}
+      </section>
+
+      <section className="rounded-lg border border-slate-200 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><h4 className="font-semibold text-navy-900">Assign master <span className="font-normal text-slate-500">(optional)</span></h4><p className="mt-1 text-xs text-slate-500">You can assign now, or leave it blank and assign later from Orders, Production, or Masters.</p></div>
+          <button type="button" onClick={addAssignment} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium">+ Add assignment</button>
+        </div>
+
+        {assignments.length === 0 && <p className="mt-3 rounded-md bg-slate-50 p-3 text-xs text-slate-500">No master assigned yet. This is completely optional.</p>}
+
+        <div className="mt-3 space-y-2">
+          {assignments.map(row => <div key={row.id} className="grid gap-2 rounded-lg bg-slate-50 p-3 md:grid-cols-5">
+            <select value={row.size} onChange={e => updateAssignment(row.id, { size: e.target.value })} className="rounded-md border border-slate-300 px-3 py-2 text-sm">
+              {breakdown.map(s => <option key={s.size} value={s.size}>{s.size}</option>)}
+            </select>
+            <select value={row.masterId} onChange={e => updateAssignment(row.id, { masterId: e.target.value })} className="rounded-md border border-slate-300 px-3 py-2 text-sm">
+              <option value="">Choose master…</option>
+              {masters.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <input type="number" min="1" value={row.quantity} onChange={e => updateAssignment(row.id, { quantity: e.target.value })} placeholder="Qty" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <input value={row.notes} onChange={e => updateAssignment(row.id, { notes: e.target.value })} placeholder="Note (optional)" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            <button type="button" onClick={() => removeAssignment(row.id)} className="rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-700">Remove</button>
+          </div>)}
+        </div>
+        {assignments.length > 0 && !shopId && <p className="mt-2 text-xs text-amber-700">Select a stitching shop to load masters.</p>}
       </section>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <label className="text-sm">
-          Total amount (KWD)
-          <input required min="0" step="0.001" type="number" value={total} onChange={e => setTotal(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        <label className="text-sm">
-          Paid amount (KWD)
-          <input min="0" step="0.001" type="number" value={paid} onChange={e => setPaid(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        <label className="text-sm">
-          Delivery date
-          <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
-        </label>
-        <label className="text-sm sm:col-span-3">
-          Notes
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
-        </label>
+        <label className="text-sm">Total amount (KWD)<input required min="0" step="0.001" type="number" value={total} onChange={e => setTotal(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
+        <label className="text-sm">Paid amount (KWD)<input min="0" step="0.001" type="number" value={paid} onChange={e => setPaid(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
+        <label className="text-sm">Delivery date<input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
+        <label className="text-sm sm:col-span-3">Notes<textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
       </div>
 
       <div className="flex justify-end gap-3">
         <button type="button" onClick={() => navigate("/orders")} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button>
-        <button className="rounded-md bg-navy-900 px-5 py-2 text-sm font-medium text-white">Create order</button>
+        <button disabled={saving} className="rounded-md bg-navy-900 px-5 py-2 text-sm font-medium text-white">{saving ? "Saving…" : "Save Order & Done"}</button>
       </div>
     </form>
   </div>;
