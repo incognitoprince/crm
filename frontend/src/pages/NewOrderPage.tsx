@@ -126,14 +126,7 @@ export function NewOrderPage() {
       setError("Add at least one piece in the size breakdown.");
       return;
     }
-    if (designSource === "existing" && !selectedDesignId) {
-      setError("Select a design from the Design Library or choose Upload new design image.");
-      return;
-    }
-    if (designSource === "upload" && !designImage) {
-      setError("Upload a design image before saving the order.");
-      return;
-    }
+    // Design is optional. The owner can create the order first and attach a design later.
 
     const assignmentTotals: Record<string, number> = {};
     for (const row of assignments) {
@@ -170,18 +163,25 @@ export function NewOrderPage() {
         sizeBreakdowns: breakdown,
       });
 
-      const orderDesign = await createOrderDesign(order.data.id, {
-        designId: designSource === "existing" ? selectedDesignId : undefined,
-        file: designSource === "upload" ? designImage ?? undefined : undefined,
-      });
-
-      for (const row of assignments) {
-        await createMasterAssignment(orderDesign.data.id, {
-          masterId: row.masterId,
-          size: row.size,
-          quantity: Number(row.quantity),
-          notes: row.notes || undefined,
+      let orderDesignId: string | null = null;
+      const hasDesign = (designSource === "existing" && !!selectedDesignId) || (designSource === "upload" && !!designImage);
+      if (hasDesign) {
+        const orderDesign = await createOrderDesign(order.data.id, {
+          designId: designSource === "existing" ? selectedDesignId : undefined,
+          file: designSource === "upload" ? designImage ?? undefined : undefined,
         });
+        orderDesignId = orderDesign.data.id;
+      }
+
+      if (assignments.length && orderDesignId) {
+        for (const row of assignments) {
+          await createMasterAssignment(orderDesignId, {
+            masterId: row.masterId,
+            size: row.size,
+            quantity: Number(row.quantity),
+            notes: row.notes || undefined,
+          });
+        }
       }
 
       navigate("/orders/" + order.data.id);
@@ -260,7 +260,7 @@ export function NewOrderPage() {
 
       <section className="rounded-lg border border-slate-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h4 className="font-semibold text-navy-900">Design image</h4><p className="mt-1 text-xs text-slate-500">The design supplied by the customer stays attached to this order.</p></div>
+          <div><h4 className="font-semibold text-navy-900">Design image <span className="font-normal text-slate-500">(optional)</span></h4><p className="mt-1 text-xs text-slate-500">You can attach a reusable design, upload a customer image, or create the order without a design and add it later.</p></div>
           <div className="flex rounded-md border border-slate-200 p-1 text-xs">
             <button type="button" onClick={() => setDesignSource("existing")} className={"rounded px-3 py-1.5 " + (designSource === "existing" ? "bg-navy-900 text-white" : "text-slate-600")}>Existing design</button>
             <button type="button" onClick={() => setDesignSource("upload")} className={"rounded px-3 py-1.5 " + (designSource === "upload" ? "bg-navy-900 text-white" : "text-slate-600")}>Upload new</button>
@@ -268,13 +268,13 @@ export function NewOrderPage() {
         </div>
 
         {designSource === "existing" ? <div className="mt-3">
-          <select required value={selectedDesignId} onChange={e => setSelectedDesignId(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+          <select value={selectedDesignId} onChange={e => setSelectedDesignId(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
             <option value="">Choose a design from Design Library…</option>
             {designs.map(d => <option key={d.id} value={d.id}>{d.designNo} · {d.name}</option>)}
           </select>
-          {!designs.length && <p className="mt-2 text-xs text-amber-700">No reusable designs for this garment yet. Choose “Upload new”.</p>}
+          {!designs.length && <p className="mt-2 text-xs text-amber-700">No reusable designs for this garment yet. You can upload one later or leave the order without a design.</p>}
         </div> : <div className="mt-3">
-          <input required type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setDesignImage(e.target.files?.[0] ?? null)} className="w-full text-sm" />
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setDesignImage(e.target.files?.[0] ?? null)} className="w-full text-sm" />
           {designImage && <p className="mt-2 text-xs text-slate-600">{designImage.name}</p>}
         </div>}
       </section>
