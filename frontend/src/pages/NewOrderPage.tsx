@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   createGarment,
   createMasterAssignment,
+  createOrderAssignment,
   createOrder,
   createOrderDesign,
   getCustomers,
@@ -173,18 +174,19 @@ export function NewOrderPage() {
         orderDesignId = orderDesign.data.id;
       }
 
-      if (assignments.length && !orderDesignId) {
-        throw new Error("Attach a design before assigning master work now, or remove the assignments and assign the master later.");
-      }
-
-      if (assignments.length && orderDesignId) {
+      if (assignments.length) {
         for (const row of assignments) {
-          await createMasterAssignment(orderDesignId, {
+          const data = {
             masterId: row.masterId,
             size: row.size,
             quantity: Number(row.quantity),
             notes: row.notes || undefined,
-          });
+          };
+          if (orderDesignId) {
+            await createMasterAssignment(orderDesignId, data);
+          } else {
+            await createOrderAssignment(order.data.id, data);
+          }
         }
       }
 
