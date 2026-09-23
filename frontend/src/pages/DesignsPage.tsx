@@ -126,12 +126,11 @@ export function DesignsPage() {
         <div><p className="text-xs uppercase tracking-wide text-slate-500">Design details</p><h4 className="mt-1 text-xl font-semibold text-navy-900">Add new design</h4></div>
         <button type="button" onClick={() => setShow(false)} className="text-sm text-slate-500 hover:underline">Close</button>
       </div>
-      <form onSubmit={submit} className="mt-4 grid gap-3 md:grid-cols-4">
+      <form onSubmit={submit} className="mt-4 grid items-start gap-3 md:grid-cols-4">
         <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <div className="text-sm">
-          <span>Garment</span>
-          <select required value={garment} onChange={e => setGarment(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
+          <select required value={garment} onChange={e => setGarment(e.target.value)} className="h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
           <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
           {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
         </div>
@@ -143,7 +142,7 @@ export function DesignsPage() {
       </form>
     </section>}    {selected && <section className="rounded-xl border border-navy-100 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-wide text-slate-500">Design details</p><h4 className="mt-1 text-xl font-semibold text-navy-900">Edit design</h4></div><button type="button" onClick={() => setSelected(null)} className="text-sm text-slate-500 hover:underline">Close</button></div>
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
+      <div className="mt-4 grid items-start gap-3 md:grid-cols-4">
         <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <div className="text-sm">
