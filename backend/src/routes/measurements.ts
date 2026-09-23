@@ -5,6 +5,7 @@ import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
+const garmentTypes = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
 
 const measurementSchema = z.object({
   customerId: z.string().trim().min(1).max(100),
@@ -31,7 +32,7 @@ router.post("/", asyncHandler(async (req, res) => {
       },
     },
     update: { values: input.values, notes: input.notes ?? null },
-    create: { ...input, garment: garment.name },
+    create: { ...input, garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER", garmentId: garment.id },
   });
 
   res.status(201).json({ data: measurement });
@@ -45,7 +46,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   }
   const measurement = await prisma.measurement.update({
     where: { id: req.params.id },
-    data: input,
+    data: input.garment ? { ...input, garment: (garmentTypes as readonly string[]).includes(input.garment) ? input.garment as typeof garmentTypes[number] : "OTHER", garmentId: (await prisma.garment.findFirst({ where: { name: input.garment, active: true } }))?.id } : input,
   }).catch(() => null);
   if (!measurement) throw new AppError("Measurement not found", 404, "MEASUREMENT_NOT_FOUND");
   res.json({ data: measurement });
