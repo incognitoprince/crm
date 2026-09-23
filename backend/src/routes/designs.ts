@@ -9,6 +9,7 @@ import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
+const garmentTypes = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
 const upload = multer({
   dest: path.resolve(process.cwd(), "uploads"),
   limits: { fileSize: 8 * 1024 * 1024 },
@@ -41,7 +42,8 @@ router.post("/", asyncHandler(async (req, res) => {
     data: {
       designNo: input.designNo,
       name: input.name,
-      garment: garment.name,
+      garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER",
+      garmentId: garment.id,
       description: input.description ?? null,
       active: input.active ?? true,
     },
@@ -61,7 +63,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
 
   const design = await prisma.design.update({
     where: { id: req.params.id },
-    data: input,
+    data: input.garment ? { ...input, garment: (garmentTypes as readonly string[]).includes(input.garment) ? input.garment as typeof garmentTypes[number] : "OTHER", garmentId: (await prisma.garment.findFirst({ where: { name: input.garment, active: true } }))?.id } : input,
   }).catch(error => {
     if (error?.code === "P2002") throw new AppError("Design number already exists", 409, "DESIGN_EXISTS");
     return null;
