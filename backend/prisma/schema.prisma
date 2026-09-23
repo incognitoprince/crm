@@ -121,6 +121,7 @@ model Order {
   referenceImages OrderReferenceImage[]
   designs OrderDesign[]
   masterAssignments MasterAssignment[]
+  payments Payment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([customerId])
@@ -219,4 +220,27 @@ model OrderReferenceImage {
   sortOrder Int @default(0)
   createdAt DateTime @default(now())
   @@index([orderId])
+}
+
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  OTHER
+}
+
+model Payment {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amountFils Int
+  method PaymentMethod
+  reference String?
+  notes String?
+  receivedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([orderId])
+  @@index([receivedAt])
 }
