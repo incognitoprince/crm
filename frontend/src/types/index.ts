@@ -38,5 +38,23 @@ export interface Order {
   masterAssignments?: MasterAssignment[];
 }
 export interface CustomerDetail extends Customer { measurements: Measurement[]; orders: Order[]; }
-export interface DashboardSummary { customers: number; orders: number; pending: number; production: number; quality: number; ready: number; delivered: number; revenueFils: number; shops: Array<{ id: string; name: string; area: string; customers: number; orders: number }>; }
+export interface DashboardSummary {
+  customers: number;
+  orders: number;
+  pending: number;
+  production: number;
+  quality: number;
+  ready: number;
+  delivered: number;
+  revenueFils: number;
+  paidFils: number;
+  outstandingFils: number;
+  delayed: number;
+  shops: Array<{ id: string; name: string; area: string; customers: number; orders: number; revenueFils: number }>;
+  orderStatus: Record<OrderStatus, number>;
+  upcomingDeliveries: Array<{ id: string; orderNo: string; customerName: string; garment: string; deliveryDate: string | null; status: OrderStatus }>;
+  pendingPayments: Array<{ id: string; orderNo: string; customerName: string; totalAmountFils: number; paidAmountFils: number; outstandingFils: number }>;
+  activity: Array<{ id: string; type: "ORDER_CREATED" | "ORDER_UPDATED"; orderId: string; orderNo: string; customerName: string; status: OrderStatus; amountFils: number; paidAmountFils: number; timestamp: string }>;
+  topDesigns: Array<{ id: string; designNo: string; name: string; imagePath?: string | null; garment: string; orders: number }>;
+}
 export interface ProductionOrder extends Order {}
