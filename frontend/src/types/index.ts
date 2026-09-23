@@ -17,6 +17,14 @@ export interface MasterAssignment { id: string; masterId: string; orderId?: stri
 export interface OrderDesign { id: string; orderId: string; designId?: string | null; designName?: string | null; imagePath?: string | null; design?: Design | null; notes?: string | null; assignments: MasterAssignment[]; }
 export type PaymentMethod = "CASH" | "CARD" | "BANK_TRANSFER" | "OTHER";
 export interface Payment { id: string; orderId: string; amountFils: number; method: PaymentMethod; reference?: string | null; notes?: string | null; receivedAt: string; createdAt: string; order: { id: string; orderNo: string; customer: Customer; shop?: Shop | null }; }
+export interface Invoice {
+  id: string;
+  invoiceNo: string;
+  orderId: string;
+  issuedAt: string;
+  order: Order & { payments?: Payment[] };
+}
+
 export interface Order {
   id: string;
   orderNo: string;
