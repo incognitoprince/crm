@@ -92,7 +92,7 @@ router.post("/", asyncHandler(async (req, res) => {
       shopId: input.shopId ?? null,
       garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER",
       garmentId: garment.id,
-      description: input.description?.trim() || null,
+      description: input.description?.trim() || "",
       quantity: input.quantity,
       totalAmountFils: input.totalAmountFils,
       paidAmountFils: input.paidAmountFils,
