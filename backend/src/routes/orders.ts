@@ -39,7 +39,10 @@ const includes = {
   sizeBreakdowns: { orderBy: { size: "asc" as const } },
   referenceImages: { orderBy: { sortOrder: "asc" as const } },
   designs: {
-    include: { design: true },
+    include: {
+      design: true,
+      assignments: { include: { master: true }, orderBy: { createdAt: "asc" as const } },
+    },
     orderBy: { createdAt: "asc" as const },
   },
 };
