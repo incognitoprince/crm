@@ -11,6 +11,8 @@ import { ShopsPage } from "./pages/ShopsPage";
 import { MastersPage } from "./pages/MastersPage";
 import { DesignsPage } from "./pages/DesignsPage";
 import { ProductionPage } from "./pages/ProductionPage";
+import { BillsPage } from "./pages/BillsPage";
+import { BillPage } from "./pages/BillPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
@@ -29,6 +31,8 @@ export default function App() {
         <Route path="masters" element={<MastersPage />} />
         <Route path="designs" element={<DesignsPage />} />
         <Route path="production" element={<ProductionPage />} />
+        <Route path="bills" element={<BillsPage />} />
+        <Route path="bills/:id" element={<BillPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="home" element={<Navigate to="/dashboard" replace />} />
         <Route path="overview" element={<LandingPage />} />
