@@ -196,6 +196,7 @@ model MasterAssignment {
   quantity Int
   notes String?
   startedAt DateTime?
+  completedAt DateTime?
   orderDesign OrderDesign @relation(fields: [orderDesignId], references: [id], onDelete: Cascade)
   master Master @relation(fields: [masterId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
