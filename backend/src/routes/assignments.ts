@@ -102,6 +102,76 @@ router.post("/orders/:orderId/designs", upload.single("image"), asyncHandler(asy
   res.status(201).json({ data: row });
 }));
 
+
+router.patch("/orders/:orderId/designs/:orderDesignId", upload.single("image"), asyncHandler(async (req, res) => {
+  const designId = typeof req.body.designId === "string" && req.body.designId.trim() ? req.body.designId.trim() : null;
+  const notes = typeof req.body.notes === "string" && req.body.notes.trim() ? req.body.notes.trim() : null;
+
+  const current = await prisma.orderDesign.findFirst({
+    where: { id: req.params.orderDesignId, orderId: req.params.orderId },
+    include: { assignments: true, order: true },
+  });
+  if (!current) throw new AppError("Order design not found", 404, "ORDER_DESIGN_NOT_FOUND");
+  if (current.assignments.length) {
+    throw new AppError("Design cannot be changed while master work is assigned. Remove the assignments first.", 400, "DESIGN_LOCKED");
+  }
+  if (designId && req.file) {
+    throw new AppError("Choose an existing design or upload a new design image, not both", 400, "DESIGN_SOURCE_CONFLICT");
+  }
+  if (!designId && !req.file) {
+    throw new AppError("Select an existing design or upload a design image", 400, "DESIGN_REQUIRED");
+  }
+
+  let designName: string | null = null;
+  let imagePath: string | null = null;
+
+  if (designId) {
+    const design = await prisma.design.findUnique({ where: { id: designId } });
+    if (!design || !design.active) throw new AppError("Design not found or inactive", 404, "DESIGN_NOT_FOUND");
+    if (design.garmentId && current.order.garmentId ? design.garmentId !== current.order.garmentId : design.garment !== current.order.garment) {
+      throw new AppError("Design garment must match the order garment", 400, "GARMENT_MISMATCH");
+    }
+  } else if (req.file) {
+    const ext = path.extname(req.file.originalname).toLowerCase() || ".img";
+    const finalName = "order-design-" + crypto.randomUUID() + ext;
+    const finalPath = path.resolve(process.cwd(), "uploads", finalName);
+    await fs.rename(req.file.path, finalPath);
+    imagePath = "/uploads/" + finalName;
+    designName = req.file.originalname;
+  }
+
+  if (current.imagePath?.startsWith("/uploads/")) {
+    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^/uploads//, "uploads/"));
+    await fs.unlink(oldPath).catch(() => undefined);
+  }
+
+  const row = await prisma.orderDesign.update({
+    where: { id: current.id },
+    data: { designId, designName, imagePath, notes },
+    include: orderDesignInclude,
+  });
+  res.json({ data: row });
+}));
+
+router.delete("/orders/:orderId/designs/:orderDesignId", asyncHandler(async (req, res) => {
+  const current = await prisma.orderDesign.findFirst({
+    where: { id: req.params.orderDesignId, orderId: req.params.orderId },
+    include: { assignments: true },
+  });
+  if (!current) throw new AppError("Order design not found", 404, "ORDER_DESIGN_NOT_FOUND");
+  if (current.assignments.length) {
+    throw new AppError("Design cannot be removed while master work is assigned. Remove the assignments first.", 400, "DESIGN_LOCKED");
+  }
+
+  if (current.imagePath?.startsWith("/uploads/")) {
+    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^/uploads//, "uploads/"));
+    await fs.unlink(oldPath).catch(() => undefined);
+  }
+
+  await prisma.orderDesign.delete({ where: { id: current.id } });
+  res.status(204).send();
+}));
+
 router.post("/order-designs/:orderDesignId/assignments", asyncHandler(async (req, res) => {
   const input = assignmentSchema.parse(req.body);
   const od = await prisma.orderDesign.findUnique({
