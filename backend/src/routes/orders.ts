@@ -136,7 +136,10 @@ router.patch("/:id/status", asyncHandler(async (req, res) => {
       await tx.masterAssignment.updateMany({
         where: {
           completedAt: null,
-          orderDesign: { orderId: updated.id },
+          OR: [
+            { orderId: updated.id },
+            { orderDesign: { orderId: updated.id } },
+          ],
         },
         data: { completedAt: new Date() },
       });
