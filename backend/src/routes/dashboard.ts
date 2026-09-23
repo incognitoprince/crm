@@ -4,8 +4,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 
-const closedStatuses = { notIn: ["CANCELLED"] as const };
-const activeOrderStatuses = { notIn: ["DELIVERED", "CANCELLED"] as const };
+const closedStatuses = { notIn: ["CANCELLED" as const] };
+const activeOrderStatuses = { notIn: ["DELIVERED" as const, "CANCELLED" as const] };
 
 router.get("/summary", asyncHandler(async (_req, res) => {
   const now = new Date();
@@ -45,7 +45,7 @@ router.get("/summary", asyncHandler(async (_req, res) => {
     prisma.order.count({ where: { status: "READY" } }),
     prisma.order.count({ where: { status: "DELIVERED" } }),
     prisma.order.count({ where: { status: "CANCELLED" } }),
-    prisma.order.aggregate({ _sum: { totalAmountFils: true } }),
+    prisma.order.aggregate({ where: { status: closedStatuses }, _sum: { totalAmountFils: true } }),
     prisma.order.aggregate({
       where: { status: closedStatuses },
       _sum: { paidAmountFils: true },
