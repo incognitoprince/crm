@@ -2,8 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { getOrder, updateOrderStatus } from "../services/api";
-import type { Order, OrderStatus } from "../types";
+import {
+  createOrderDesign,
+  deleteOrderDesign,
+  getDesigns,
+  getOrder,
+  updateOrderDesign,
+  updateOrderStatus,
+} from "../services/api";
+import type { Design, Order, OrderStatus } from "../types";
 
 const statuses: OrderStatus[] = ["PENDING","MEASUREMENT","CUTTING","STITCHING","QUALITY_CHECK","READY","DELIVERED","CANCELLED"];
 const label = (v: string) => v.replaceAll("_", " ");
@@ -12,10 +19,23 @@ const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 export function OrderDetailPage() {
   const { id } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
+  const [designs, setDesigns] = useState<Design[]>([]);
+  const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
+  const [designSource, setDesignSource] = useState<"existing" | "upload">("existing");
+  const [selectedDesignId, setSelectedDesignId] = useState("");
+  const [designImage, setDesignImage] = useState<File | null>(null);
+  const [designSaving, setDesignSaving] = useState(false);
+  const [designError, setDesignError] = useState("");
   const [error, setError] = useState("");
 
+  async function loadOrder() {
+    if (!id) return;
+    const result = await getOrder(id);
+    setOrder(result.data);
+  }
+
   useEffect(() => {
-    if (id) getOrder(id).then(r => setOrder(r.data)).catch(e => setError(e.message));
+    if (id) loadOrder().catch(e => setError(e instanceof Error ? e.message : "Unable to load order"));
   }, [id]);
 
   async function change(status: OrderStatus) {
@@ -24,27 +44,134 @@ export function OrderDetailPage() {
     catch (e) { setError(e instanceof Error ? e.message : "Unable to update order"); }
   }
 
+  async function openDesignEditor(orderDesignId: string | null, currentDesignId?: string | null) {
+    setDesignError("");
+    setDesignImage(null);
+    setEditingDesignId(orderDesignId);
+    setSelectedDesignId(currentDesignId ?? "");
+    setDesignSource(currentDesignId ? "existing" : "upload");
+    if (order) {
+      try {
+        const result = await getDesigns(order.garment);
+        setDesigns(result.data);
+      } catch (e) {
+        setDesignError(e instanceof Error ? e.message : "Unable to load Design Library");
+      }
+    }
+  }
+
+  function closeDesignEditor() {
+    setEditingDesignId(null);
+    setDesignImage(null);
+    setDesignError("");
+  }
+
+  async function saveDesign() {
+    if (!order) return;
+    setDesignError("");
+    if (designSource === "existing" && !selectedDesignId) {
+      setDesignError("Select a Design Library design.");
+      return;
+    }
+    if (designSource === "upload" && !designImage) {
+      setDesignError("Choose an image to upload.");
+      return;
+    }
+
+    setDesignSaving(true);
+    try {
+      if (editingDesignId) {
+        await updateOrderDesign(order.id, editingDesignId, {
+          designId: designSource === "existing" ? selectedDesignId : undefined,
+          file: designSource === "upload" ? designImage ?? undefined : undefined,
+        });
+      } else {
+        await createOrderDesign(order.id, {
+          designId: designSource === "existing" ? selectedDesignId : undefined,
+          file: designSource === "upload" ? designImage ?? undefined : undefined,
+        });
+      }
+      await loadOrder();
+      closeDesignEditor();
+    } catch (e) {
+      setDesignError(e instanceof Error ? e.message : "Unable to save design");
+    } finally {
+      setDesignSaving(false);
+    }
+  }
+
+  async function removeDesign(orderDesignId: string) {
+    if (!order) return;
+    if (!window.confirm("Remove this design from the order?")) return;
+    setDesignError("");
+    try {
+      await deleteOrderDesign(order.id, orderDesignId);
+      await loadOrder();
+    } catch (e) {
+      setDesignError(e instanceof Error ? e.message : "Unable to remove design");
+    }
+  }
+
   if (error) return <ErrorState message={error} />;
   if (!order) return <LoadingState label="Loading order…" />;
   const balance = order.totalAmountFils - order.paidAmountFils;
+  const editingDesign = order.designs.find(d => d.id === editingDesignId);
+  const editingLocked = !!editingDesign?.assignments?.length;
 
   return <div className="mx-auto max-w-5xl space-y-5">
     <Link to="/orders" className="text-sm text-slate-500 hover:underline">← Back to orders</Link>
 
     <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div><p className="text-xs text-slate-500">{order.orderNo}</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">{order.customer.name}</h3><p className="mt-1 text-sm text-slate-600">{order.description}</p></div>
+        <div><p className="text-xs text-slate-500">{order.orderNo}</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">{order.customer.name}</h3><p className="mt-1 text-sm text-slate-600">{order.description || "No order description"}</p></div>
         <div className="flex items-center gap-2"><Link to={"/production?orderId=" + order.id} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium">Manage masters</Link><select value={order.status} onChange={e => change(e.target.value as OrderStatus)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">{statuses.map(s => <option key={s} value={s}>{label(s)}</option>)}</select></div>
       </div>
     </section>
 
     <div className="grid gap-5 lg:grid-cols-3">
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm lg:col-span-2">
-        <div className="flex items-center justify-between gap-3"><h4 className="font-semibold text-navy-900">Design image</h4><span className="text-xs text-slate-500">Customer supplied</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><h4 className="font-semibold text-navy-900">Design</h4><p className="mt-1 text-xs text-slate-500">Optional. Attach a reusable Design Library design or a customer-supplied image at any time.</p></div>
+          {!editingDesignId && <button onClick={() => openDesignEditor(null)} className="rounded-md bg-navy-900 px-3 py-2 text-sm font-medium text-white">+ Add design</button>}
+        </div>
+
+        {designError && <p className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700">{designError}</p>}
+
+        {editingDesignId !== null && <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div><h5 className="font-semibold text-navy-900">{editingDesign ? "Edit order design" : "Add order design"}</h5><p className="mt-1 text-xs text-slate-500">Choose an existing design or upload a customer image.</p></div>
+            <button type="button" onClick={closeDesignEditor} className="text-sm text-slate-500 hover:underline">Cancel</button>
+          </div>
+
+          {editingLocked ? <p className="mt-3 rounded-md bg-amber-50 p-3 text-xs text-amber-800">This design is locked because master work has already been assigned to it. Remove the master assignments before changing or removing the design.</p> : <>
+            <div className="mt-3 flex rounded-md border border-slate-200 bg-white p-1 text-xs w-fit">
+              <button type="button" onClick={() => setDesignSource("existing")} className={"rounded px-3 py-1.5 " + (designSource === "existing" ? "bg-navy-900 text-white" : "text-slate-600")}>Existing design</button>
+              <button type="button" onClick={() => setDesignSource("upload")} className={"rounded px-3 py-1.5 " + (designSource === "upload" ? "bg-navy-900 text-white" : "text-slate-600")}>Upload image</button>
+            </div>
+
+            {designSource === "existing" ? <div className="mt-3">
+              <select value={selectedDesignId} onChange={e => setSelectedDesignId(e.target.value)} className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">
+                <option value="">Choose from Design Library…</option>
+                {designs.map(d => <option key={d.id} value={d.id}>{d.designNo} · {d.name}</option>)}
+              </select>
+              {!designs.length && <p className="mt-2 text-xs text-amber-700">No reusable designs for this garment yet. You can upload the customer's image instead.</p>}
+            </div> : <div className="mt-3">
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setDesignImage(e.target.files?.[0] ?? null)} className="w-full rounded-md bg-white text-sm" />
+              {designImage && <p className="mt-2 text-xs text-slate-600">{designImage.name}</p>}
+            </div>}
+
+            <div className="mt-4 flex justify-end gap-2">
+              {editingDesign && <button type="button" onClick={() => removeDesign(editingDesign.id)} className="mr-auto rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-700">Remove design</button>}
+              <button type="button" onClick={closeDesignEditor} className="rounded-md border border-slate-300 px-3 py-2 text-sm">Cancel</button>
+              <button type="button" disabled={designSaving} onClick={saveDesign} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">{designSaving ? "Saving…" : "Save design"}</button>
+            </div>
+          </>}
+        </div>}
+
         {order.designs.length ? <div className="mt-4 grid gap-4 sm:grid-cols-2">{order.designs.map(design => <figure key={design.id} className="overflow-hidden rounded-lg border border-slate-200">
           {design.imagePath || design.design?.imagePath ? <img src={design.imagePath || design.design?.imagePath || ""} alt={design.design?.name ?? design.designName ?? "Customer design"} className="max-h-96 w-full object-contain bg-slate-50" /> : <div className="flex h-64 items-center justify-center bg-slate-50 text-sm text-slate-400">No image uploaded</div>}
-          <figcaption className="p-3"><p className="font-medium text-slate-800">{design.design?.name ?? design.designName ?? "Customer design"}</p><p className="text-xs text-slate-500">{design.design?.designNo ?? "Order-specific design"}</p></figcaption>
-        </figure>)}</div> : <p className="mt-3 text-sm text-slate-500">No design image attached.</p>}
+          <figcaption className="p-3"><div className="flex items-start justify-between gap-3"><div><p className="font-medium text-slate-800">{design.design?.name ?? design.designName ?? "Customer design"}</p><p className="text-xs text-slate-500">{design.design?.designNo ?? "Order-specific design"}</p></div><button onClick={() => openDesignEditor(design.id, design.designId)} className="text-xs font-medium text-navy-900 hover:underline">Edit</button></div></figcaption>
+        </figure>)}</div> : !editingDesignId && <p className="mt-4 rounded-md bg-slate-50 p-3 text-sm text-slate-500">No design attached. You can add one now or later.</p>}
       </section>
 
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><p className="text-xs text-slate-500">Stitching shop</p><p className="mt-1 text-xl font-semibold text-navy-900">{order.shop?.name ?? "Unassigned"}</p><p className="mt-1 text-sm text-slate-600">{order.shop?.area ?? ""}</p><p className="mt-5 text-xs text-slate-500">Production status</p><p className="mt-1 font-medium">{label(order.status)}</p></section>
