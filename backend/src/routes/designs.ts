@@ -26,10 +26,20 @@ const designSchema = z.object({
 
 router.get("/", asyncHandler(async (req, res) => {
   const garment = typeof req.query.garment === "string" ? req.query.garment : undefined;
-  const designs = await prisma.design.findMany({
-    where: { ...(garment ? { garment } : {}), active: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let where: any = { active: true };
+  if (garment) {
+    const garmentRecord = await prisma.garment.findFirst({ where: { name: garment, active: true } });
+    if (!garmentRecord) return res.json({ data: [] });
+    const standard = (garmentTypes as readonly string[]).includes(garment);
+    where = {
+      active: true,
+      OR: [
+        { garmentId: garmentRecord.id },
+        ...(standard ? [{ garment: garment as typeof garmentTypes[number] }] : []),
+      ],
+    };
+  }
+  const designs = await prisma.design.findMany({ where, orderBy: { createdAt: "desc" } });
   res.json({ data: designs });
 }));
 
