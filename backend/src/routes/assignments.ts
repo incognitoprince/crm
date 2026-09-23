@@ -45,6 +45,10 @@ router.get("/orders/:orderId", asyncHandler(async (req, res) => {
         include: orderDesignInclude,
         orderBy: { createdAt: "asc" },
       },
+      masterAssignments: {
+        include: { master: { include: { shop: true } }, orderDesign: { include: { design: true } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
