@@ -58,7 +58,7 @@ export function OrderDetailPage() {
 
     <div className="grid gap-5 md:grid-cols-3">
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><p className="text-xs text-slate-500">Customer</p><Link to={"/customers/" + order.customer.id} className="mt-1 block font-semibold text-navy-900 hover:underline">{order.customer.name}</Link><p className="text-sm text-slate-600">{order.customer.phone}</p></section>
-      <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><p className="text-xs text-slate-500">Garment</p><p className="mt-1 font-semibold">{label(order.garment)}</p><p className="text-sm text-slate-600">{order.quantity} item(s)</p></section>
+      <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><p className="text-xs text-slate-500">Garment</p><p className="mt-1 font-semibold">{label(order.garmentMaster?.name ?? order.garment)}</p><p className="text-sm text-slate-600">{order.quantity} item(s)</p></section>
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><p className="text-xs text-slate-500">Delivery</p><p className="mt-1 font-semibold">{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "Not scheduled"}</p></section>
     </div>
 
