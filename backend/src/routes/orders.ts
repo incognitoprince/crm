@@ -27,6 +27,7 @@ const orderSchema = z.object({
   quantity: z.number().int().min(1).max(100000).default(1),
   totalAmountFils: z.number().int().min(0).max(100000000),
   paidAmountFils: z.number().int().min(0).max(100000000).default(0),
+  paymentMethod: z.enum(["CASH", "CARD", "BANK_TRANSFER", "OTHER"]).default("CASH"),
   deliveryDate: z.string().datetime().nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
   sizeBreakdowns: z.array(z.object({ size: z.string().trim().min(1).max(20), quantity: z.number().int().min(1).max(100000) })).max(20).default([]),
@@ -45,6 +46,7 @@ const includes = {
     },
     orderBy: { createdAt: "asc" as const },
   },
+  payments: { orderBy: { receivedAt: "desc" as const } },
   masterAssignments: {
     include: { master: true, orderDesign: { include: { design: true } } },
     orderBy: { createdAt: "asc" as const },
@@ -93,23 +95,32 @@ router.post("/", asyncHandler(async (req, res) => {
     throw new AppError("Size quantities must equal total quantity", 400, "INVALID_SIZE_BREAKDOWN");
   }
 
-  const order = await prisma.order.create({
-    data: {
-      customerId: input.customerId,
-      shopId: input.shopId ?? null,
-      garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER",
-      garmentId: garment.id,
-      description: input.description?.trim() || "",
-      quantity: input.quantity,
-      totalAmountFils: input.totalAmountFils,
-      paidAmountFils: input.paidAmountFils,
-      paymentStatus,
-      deliveryDate: input.deliveryDate ? new Date(input.deliveryDate) : null,
-      notes: input.notes ?? null,
-      orderNo: "ORD-" + new Date().getFullYear() + "-" + String(count + 1).padStart(3, "0"),
-      sizeBreakdowns: { create: input.sizeBreakdowns },
-    },
-    include: includes,
+  const order = await prisma.$transaction(async tx => {
+    const created = await tx.order.create({
+      data: {
+        customerId: input.customerId,
+        shopId: input.shopId ?? null,
+        garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER",
+        garmentId: garment.id,
+        description: input.description?.trim() || "",
+        quantity: input.quantity,
+        totalAmountFils: input.totalAmountFils,
+        paidAmountFils: input.paidAmountFils,
+        paymentStatus,
+        deliveryDate: input.deliveryDate ? new Date(input.deliveryDate) : null,
+        notes: input.notes ?? null,
+        orderNo: "ORD-" + new Date().getFullYear() + "-" + String(count + 1).padStart(3, "0"),
+        sizeBreakdowns: { create: input.sizeBreakdowns },
+        payments: input.paidAmountFils > 0 ? {
+          create: {
+            amountFils: input.paidAmountFils,
+            method: input.paymentMethod,
+          },
+        } : undefined,
+      },
+      include: includes,
+    });
+    return created;
   });
   res.status(201).json({ data: order });
 }));
