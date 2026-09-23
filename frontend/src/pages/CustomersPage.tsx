@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { createCustomer, getCustomers, getShops } from "../services/api";
 import type { Customer, Shop } from "../types";
 
 export function CustomersPage() {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
   const [q, setQ] = useState("");
@@ -51,8 +52,8 @@ export function CustomersPage() {
         <div className="overflow-hidden rounded-xl border border-sand-100 bg-white shadow-sm">
           <div className="overflow-x-auto"><table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Phone</th><th className="px-4 py-3">Shop</th><th className="px-4 py-3">Orders</th></tr></thead>
-            <tbody className="divide-y divide-slate-100">{customers.map(c => <tr key={c.id} className="hover:bg-slate-50">
-              <td className="px-4 py-3"><Link className="font-medium text-navy-900 hover:underline" to={"/customers/" + c.id}>{c.name}</Link><p className="text-xs text-slate-500">{c.customerNo}</p></td>
+            <tbody className="divide-y divide-slate-100">{customers.map(c => <tr key={c.id} onClick={() => navigate("/customers/" + c.id)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") navigate("/customers/" + c.id); }} role="button" tabIndex={0} className="cursor-pointer hover:bg-slate-50">
+              <td className="px-4 py-3"><p className="font-medium text-navy-900">{c.name}</p><p className="text-xs text-slate-500">{c.customerNo}</p></td>
               <td className="px-4 py-3 text-slate-600">{c.phone}</td><td className="px-4 py-3 text-slate-600">{c.shop?.name ?? "—"}</td><td className="px-4 py-3 text-slate-600">{c._count?.orders ?? 0}</td>
             </tr>)}</tbody>
           </table></div>
