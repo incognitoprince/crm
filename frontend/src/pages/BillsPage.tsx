@@ -60,6 +60,18 @@ export function BillsPage() {
       <p className="mt-1 text-sm text-slate-600">Create a bill for an order and print it for the customer.</p>
     </section>
     {error && <ErrorState message={error} onRetry={() => void load()} />}
+
+    <div className="grid gap-3 sm:grid-cols-3">
+      {[
+        ["Total invoiced", money(invoices.reduce((sum, item) => sum + item.order.totalAmountFils, 0)), "bg-emerald-50 text-emerald-700"],
+        ["Outstanding", money(invoices.reduce((sum, item) => sum + Math.max(0, item.order.totalAmountFils - item.order.paidAmountFils), 0)), "bg-amber-50 text-amber-700"],
+        ["Invoices", String(invoices.length), "bg-blue-50 text-blue-700"],
+      ].map(([label, value, tone]) => <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between"><span className="text-sm text-slate-500">{label}</span><span className={"h-8 min-w-8 rounded-full px-2 text-center text-xs font-semibold leading-8 " + tone}>{label === "Invoices" ? "▤" : "₹"}</span></div>
+        <p className="mt-2 text-2xl font-semibold tracking-tight text-navy-900">{value}</p>
+      </article>)}
+    </div>
+
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <label className="flex-1 text-sm"><span className="mb-1 block text-xs text-slate-500">Order to bill</span>
