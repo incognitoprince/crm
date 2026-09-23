@@ -101,7 +101,7 @@ export function MastersPage() {
       <div className="mt-3 flex justify-between gap-3"><button disabled={saving} onClick={saveEdit} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Save changes</button><button onClick={() => toggle(selected)} className="text-sm font-medium text-red-700">Deactivate master</button></div>
       <div className="mt-5 border-t border-slate-100 pt-4"><h5 className="font-semibold text-navy-900">Current work</h5>
         {selected.assignments?.length ? <div className="mt-3 grid gap-3 md:grid-cols-2">{selected.assignments.map(a => <div key={a.id} className="rounded-lg bg-slate-50 p-3">
-          <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign.orderDesign?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
+          <div className="flex items-center justify-between gap-3"><span className="font-medium">{a.orderDesign.order?.orderNo}</span><span className="text-xs text-slate-500">{a.size} · {a.quantity} pcs</span></div>
           <p className="mt-1 text-sm text-slate-700">{a.orderDesign.order?.customer?.name}</p>
           <p className="mt-1 text-xs text-slate-500">{a.orderDesign.design?.name ?? a.orderDesign.designName ?? "Customer design"}</p>
           <p className="mt-1 text-[11px] text-slate-500">{a.startedAt ? "Work started" : "Not started"}</p>
