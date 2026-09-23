@@ -14,26 +14,51 @@ const masterSchema = z.object({
   active: z.boolean().optional(),
 });
 
-const assignmentView = {
-  include: {
-    orderDesign: {
-      include: {
-        order: { select: { id: true, orderNo: true, customer: { select: { name: true } }, garment: true, quantity: true } },
-        design: true,
-      },
+const assignmentInclude = {
+  orderDesign: {
+    include: {
+      order: { select: { id: true, orderNo: true, status: true, customer: { select: { name: true } }, garment: true, quantity: true } },
+      design: true,
     },
   },
-  orderBy: { createdAt: "asc" as const },
 } as const;
 
 router.get("/", asyncHandler(async (req, res) => {
   const shopId = typeof req.query.shopId === "string" ? req.query.shopId : undefined;
   const masters = await prisma.master.findMany({
     where: { ...(shopId ? { shopId } : {}), active: true },
-    include: { shop: true, _count: { select: { assignments: true } }, assignments: assignmentView },
+    include: { shop: true, _count: { select: { assignments: true } } },
     orderBy: [{ shopId: "asc" }, { name: "asc" }],
   });
-  res.json({ data: masters });
+
+  const data = await Promise.all(masters.map(async master => {
+    const [currentAssignments, completedAssignments] = await Promise.all([
+      prisma.masterAssignment.findMany({
+        where: {
+          masterId: master.id,
+          completedAt: null,
+          orderDesign: { order: { status: { notIn: ["DELIVERED", "CANCELLED"] } } },
+        },
+        include: assignmentInclude,
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.masterAssignment.findMany({
+        where: {
+          masterId: master.id,
+          OR: [
+            { completedAt: { not: null } },
+            { orderDesign: { order: { status: { in: ["DELIVERED", "CANCELLED"] } } } },
+          ],
+        },
+        include: assignmentInclude,
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      }),
+    ]);
+    return { ...master, currentAssignments, completedAssignments };
+  }));
+
+  res.json({ data });
 }));
 
 router.post("/", asyncHandler(async (req, res) => {
