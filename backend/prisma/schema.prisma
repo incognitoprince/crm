@@ -122,6 +122,7 @@ model Order {
   designs OrderDesign[]
   masterAssignments MasterAssignment[]
   payments Payment[]
+  invoice Invoice?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([customerId])
@@ -243,4 +244,16 @@ model Payment {
   updatedAt DateTime @updatedAt
   @@index([orderId])
   @@index([receivedAt])
+}
+
+
+model Invoice {
+  id String @id @default(cuid())
+  invoiceNo String @unique
+  orderId String @unique
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  issuedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([issuedAt])
 }
