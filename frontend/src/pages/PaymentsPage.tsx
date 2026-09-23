@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { createPayment, getOrders, getPayments } from "../services/api";
@@ -14,9 +14,10 @@ const methods: Array<{ value: PaymentMethod; label: string }> = [
 ];
 
 export function PaymentsPage() {
+  const [searchParams] = useSearchParams();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [orderId, setOrderId] = useState("");
+  const [orderId, setOrderId] = useState(searchParams.get("orderId") ?? "");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("CASH");
   const [reference, setReference] = useState("");
