@@ -10,6 +10,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 const statuses = ["PENDING", "MEASUREMENT", "CUTTING", "STITCHING", "QUALITY_CHECK", "READY", "DELIVERED", "CANCELLED"] as const;
+const garmentTypes = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
 const upload = multer({
   dest: path.resolve(process.cwd(), "uploads"),
   limits: { fileSize: 8 * 1024 * 1024 },
@@ -34,6 +35,7 @@ const orderSchema = z.object({
 const includes = {
   customer: true,
   shop: true,
+  garmentMaster: true,
   sizeBreakdowns: { orderBy: { size: "asc" as const } },
   referenceImages: { orderBy: { sortOrder: "asc" as const } },
   designs: {
@@ -88,7 +90,8 @@ router.post("/", asyncHandler(async (req, res) => {
     data: {
       customerId: input.customerId,
       shopId: input.shopId ?? null,
-      garment: garment.name,
+      garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER",
+      garmentId: garment.id,
       description: input.description,
       quantity: input.quantity,
       totalAmountFils: input.totalAmountFils,
