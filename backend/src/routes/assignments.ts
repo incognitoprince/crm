@@ -170,6 +170,7 @@ router.patch("/assignments/:id", asyncHandler(async (req, res) => {
   });
 
   if (!current) throw new AppError("Assignment not found", 404, "ASSIGNMENT_NOT_FOUND");
+  if (current.completedAt) throw new AppError("Completed assignments cannot be changed", 400, "ASSIGNMENT_COMPLETED");
 
   if (current.startedAt && input.masterId && input.masterId !== current.masterId) {
     throw new AppError("Master cannot be changed after work has started", 400, "ASSIGNMENT_LOCKED");
@@ -217,6 +218,9 @@ router.patch("/assignments/:id/complete", asyncHandler(async (req, res) => {
 }));
 
 router.patch("/assignments/:id/start", asyncHandler(async (req, res) => {
+  const current = await prisma.masterAssignment.findUnique({ where: { id: req.params.id } });
+  if (!current) throw new AppError("Assignment not found", 404, "ASSIGNMENT_NOT_FOUND");
+  if (current.completedAt) throw new AppError("Assignment is already completed", 400, "ASSIGNMENT_COMPLETED");
   const row = await prisma.masterAssignment.update({
     where: { id: req.params.id },
     data: { startedAt: new Date() },
