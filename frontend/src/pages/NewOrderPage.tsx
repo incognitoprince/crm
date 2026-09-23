@@ -173,6 +173,10 @@ export function NewOrderPage() {
         orderDesignId = orderDesign.data.id;
       }
 
+      if (assignments.length && !orderDesignId) {
+        throw new Error("Attach a design before assigning master work now, or remove the assignments and assign the master later.");
+      }
+
       if (assignments.length && orderDesignId) {
         for (const row of assignments) {
           await createMasterAssignment(orderDesignId, {
