@@ -1,4 +1,4 @@
-import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment } from "../types";
+import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment, Invoice } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -80,3 +80,8 @@ export function deleteMasterAssignment(id: string) { return request<void>("/api/
 
 export function getPayments(orderId = "") { return request<{ data: Payment[] }>("/api/payments" + (orderId ? "?orderId=" + encodeURIComponent(orderId) : "")); }
 export function createPayment(data: { orderId: string; amountFils: number; method: PaymentMethod; reference?: string; notes?: string; receivedAt?: string }) { return request<{ data: Payment }>("/api/payments", { method: "POST", body: JSON.stringify(data) }); }
+
+
+export function getBills() { return request<{ data: Invoice[] }>("/api/bills"); }
+export function getBill(id: string) { return request<{ data: Invoice }>("/api/bills/" + id); }
+export function createBill(orderId: string) { return request<{ data: Invoice; existing: boolean }>("/api/bills", { method: "POST", body: JSON.stringify({ orderId }) }); }
