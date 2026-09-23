@@ -123,10 +123,22 @@ router.post("/:id/reference-images", upload.single("image"), asyncHandler(async 
 
 router.patch("/:id/status", asyncHandler(async (req, res) => {
   const input = z.object({ status: z.enum(statuses) }).parse(req.body);
-  const order = await prisma.order.update({
-    where: { id: req.params.id },
-    data: { status: input.status },
-    include: includes,
+  const order = await prisma.$transaction(async tx => {
+    const updated = await tx.order.update({
+      where: { id: req.params.id },
+      data: { status: input.status },
+      include: includes,
+    });
+    if (input.status === "DELIVERED" || input.status === "CANCELLED") {
+      await tx.masterAssignment.updateMany({
+        where: {
+          completedAt: null,
+          orderDesign: { orderId: updated.id },
+        },
+        data: { completedAt: new Date() },
+      });
+    }
+    return updated;
   }).catch(() => null);
   if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
   res.json({ data: order });
