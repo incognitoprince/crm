@@ -2,6 +2,14 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const garments = [
+  ["THOBE", "Thobe", 1],
+  ["SHIRT", "Shirt", 2],
+  ["TROUSER", "Trouser", 3],
+  ["SUIT", "Suit", 4],
+  ["OTHER", "Other", 5],
+];
+
 const shops = [
   { id: "demo-shop-kuwait-city", name: "Shop1", area: "Area 1", phone: "+965 2200 1001" },
   { id: "demo-shop-hawally", name: "Shop2", area: "Area 2", phone: "+965 2200 1002" },
@@ -76,6 +84,14 @@ function dateFromOffset(days) {
 
 async function main() {
   if (process.env.SEED_DEMO_DATA !== "true") return;
+
+  for (const [id, name, sortOrder] of garments) {
+    await prisma.garment.upsert({
+      where: { name: id },
+      update: { active: true, sortOrder },
+      create: { name: id, active: true, sortOrder },
+    });
+  }
 
   for (const shop of shops) {
     await prisma.shop.upsert({ where: { id: shop.id }, update: shop, create: shop });
