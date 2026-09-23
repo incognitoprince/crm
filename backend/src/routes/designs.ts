@@ -66,14 +66,28 @@ router.post("/", asyncHandler(async (req, res) => {
 
 router.patch("/:id", asyncHandler(async (req, res) => {
   const input = designSchema.partial().parse(req.body);
+  let data: Parameters<typeof prisma.design.update>[0]["data"];
+
   if (input.garment) {
-    const garment = await prisma.garment.findFirst({ where: { name: input.garment, active: true } });
-    if (!garment) throw new AppError("Garment not found or inactive", 400, "GARMENT_NOT_FOUND");
+    const garmentRecord = await prisma.garment.findFirst({ where: { name: input.garment, active: true } });
+    if (!garmentRecord) throw new AppError("Garment not found or inactive", 400, "GARMENT_NOT_FOUND");
+
+    const { garment: garmentName, ...rest } = input;
+    data = {
+      ...rest,
+      garment: (garmentTypes as readonly string[]).includes(garmentName)
+        ? garmentName as typeof garmentTypes[number]
+        : "OTHER",
+      garmentId: garmentRecord.id,
+    };
+  } else {
+    const { garment: _garment, ...rest } = input;
+    data = rest;
   }
 
   const design = await prisma.design.update({
     where: { id: req.params.id },
-    data: input.garment ? { ...input, garment: (garmentTypes as readonly string[]).includes(input.garment) ? input.garment as typeof garmentTypes[number] : "OTHER", garmentId: (await prisma.garment.findFirst({ where: { name: input.garment, active: true } }))?.id } : input,
+    data,
   }).catch(error => {
     if (error?.code === "P2002") throw new AppError("Design number already exists", 409, "DESIGN_EXISTS");
     return null;
