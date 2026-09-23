@@ -21,13 +21,6 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
 }
-enum GarmentType {
-  THOBE
-  SHIRT
-  TROUSER
-  SUIT
-  OTHER
-}
 enum PaymentStatus {
   UNPAID
   PARTIAL
@@ -46,6 +39,16 @@ model Shop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([active])
+}
+
+model Garment {
+  id String @id @default(cuid())
+  name String @unique
+  active Boolean @default(true)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([active, sortOrder])
 }
 
 model Customer {
@@ -72,7 +75,7 @@ model Measurement {
   id String @id @default(cuid())
   customerId String
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  garment GarmentType
+  garment String
   profileName String @default("Standard")
   values Json
   notes String?
@@ -90,7 +93,7 @@ model Order {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
   shop Shop? @relation(fields: [shopId], references: [id], onDelete: SetNull)
   status OrderStatus @default(PENDING)
-  garment GarmentType
+  garment String
   description String
   quantity Int @default(1)
   totalAmountFils Int
@@ -139,7 +142,7 @@ model Design {
   id String @id @default(cuid())
   designNo String @unique
   name String
-  garment GarmentType
+  garment String
   description String?
   imagePath String?
   active Boolean @default(true)
@@ -153,9 +156,11 @@ model Design {
 model OrderDesign {
   id String @id @default(cuid())
   orderId String
-  designId String
+  designId String?
+  designName String?
+  imagePath String?
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  design Design @relation(fields: [designId], references: [id], onDelete: Restrict)
+  design Design? @relation(fields: [designId], references: [id], onDelete: Restrict)
   notes String?
   assignments MasterAssignment[]
   createdAt DateTime @default(now())
