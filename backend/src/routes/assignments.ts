@@ -70,7 +70,7 @@ router.post("/orders/:orderId/designs", upload.single("image"), asyncHandler(asy
   if (designId) {
     const design = await prisma.design.findUnique({ where: { id: designId } });
     if (!design || !design.active) throw new AppError("Design not found or inactive", 404, "DESIGN_NOT_FOUND");
-    if (design.garment !== order.garment) {
+    if (design.garmentId && order.garmentId ? design.garmentId !== order.garmentId : design.garment !== order.garment) {
       throw new AppError("Design garment must match the order garment", 400, "GARMENT_MISMATCH");
     }
   } else if (req.file) {
