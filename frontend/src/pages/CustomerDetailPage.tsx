@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { getCustomer, getShops, saveMeasurement, updateCustomer } from "../services/api";
-import type { CustomerDetail, GarmentType, Shop } from "../types";
+import { createGarment, getCustomer, getGarments, getShops, saveMeasurement, updateCustomer } from "../services/api";
+import type { CustomerDetail, Garment, GarmentType, Shop } from "../types";
 
 const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 const label = (v: string) => v.replaceAll("_", " ");
@@ -19,32 +19,59 @@ export function CustomerDetailPage() {
   const { id } = useParams();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [shops, setShops] = useState<Shop[]>([]);
+  const [garments, setGarments] = useState<Garment[]>([]);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
   const [measurementOpen, setMeasurementOpen] = useState(false);
-  const [garment, setGarment] = useState<GarmentType>("THOBE");
+  const [garment, setGarment] = useState<GarmentType>("");
+  const [showGarmentForm, setShowGarmentForm] = useState(false);
+  const [newGarmentName, setNewGarmentName] = useState("");
   const [profileName, setProfileName] = useState("Standard");
   const [values, setValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
 
   async function load() {
     if (!id) return;
-    try { setCustomer((await getCustomer(id)).data); setShops((await getShops()).data); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load customer"); }
+    try { setCustomer((await getCustomer(id)).data); setShops((await getShops()).data); setGarments((await getGarments()).data); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load customer"); }
   }
   useEffect(() => { load(); }, [id]);
 
-  const measurementFields = useMemo(() => fields[garment], [garment]);
+  const measurementFields = useMemo(() => garment ? (fields[garment] ?? fields.OTHER) : [], [garment]);
 
   function startMeasurement() {
-    const existing = customer?.measurements.find(m => m.garment === garment);
-    setValues(Object.fromEntries(measurementFields.map(f => [f, existing?.values[f]?.toString() ?? ""])));
+    setGarment("");
+    setValues({});
+    setProfileName("Standard");
+    setNotes("");
+    setMeasurementOpen(true);
+  }
+
+  function selectMeasurementGarment(value: string) {
+    const g = value as GarmentType;
+    const existing = customer?.measurements.find(m => m.garment === g);
+    const nextFields = fields[g] ?? fields.OTHER;
+    setGarment(g);
+    setValues(Object.fromEntries(nextFields.map(f => [f, existing?.values[f]?.toString() ?? ""])));
     setProfileName(existing?.profileName ?? "Standard");
     setNotes(existing?.notes ?? "");
-    setMeasurementOpen(true);
+  }
+
+  async function addGarment() {
+    const name = newGarmentName.trim();
+    if (!name) return;
+    setError("");
+    try {
+      const result = await createGarment({ name });
+      setGarments(current => [...current, result.data].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)));
+      setNewGarmentName("");
+      setShowGarmentForm(false);
+      setGarment("");
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to add garment"); }
   }
 
   async function submitMeasurement() {
     try {
+      if (!garment) { setError("Choose a garment before saving the measurement."); return; }
       const parsed = Object.fromEntries(Object.entries(values).filter(([,v]) => v !== "").map(([k,v]) => [k, Number(v)]));
       await saveMeasurement({ customerId: id!, garment, profileName, values: parsed, notes: notes || null });
       setMeasurementOpen(false); await load();
@@ -84,7 +111,11 @@ export function CustomerDetailPage() {
         <div className="flex items-center justify-between"><div><h4 className="font-semibold text-navy-900">Measurements</h4><p className="text-xs text-slate-500">Store garment measurements in cm.</p></div><button onClick={startMeasurement} className="rounded-md bg-navy-900 px-3 py-2 text-xs font-medium text-white">+ Measurement</button></div>
         {measurementOpen && <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <select value={garment} onChange={e => { const g=e.target.value as GarmentType; setGarment(g); }} className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm">{Object.keys(fields).map(g => <option key={g} value={g}>{label(g)}</option>)}</select>
+            <div className="text-sm">
+              <div className="flex items-center justify-between gap-2"><span>Garment</span><button type="button" onClick={() => setShowGarmentForm(v => !v)} className="text-xs font-medium text-navy-900 hover:underline">+ Add garment</button></div>
+              <select value={garment} onChange={e => selectMeasurementGarment(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
+              {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-white p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
+            </div>
             <input value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="Profile name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
             {measurementFields.map(field => <label key={field} className="text-xs font-medium text-slate-600">{label(field)} (cm)<input type="number" min="0" step="0.1" value={values[field] ?? ""} onChange={e => setValues(v => ({...v, [field]: e.target.value}))} className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" /></label>)}
             <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Measurement notes" rows={2} className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm sm:col-span-2" />

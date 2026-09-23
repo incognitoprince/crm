@@ -57,7 +57,6 @@ export function NewOrderPage() {
         if (selected.shop?.id) setShopId(selected.shop.id);
       }
       if (s.data[0] && !selected?.shop?.id) setShopId(s.data[0].id);
-      if (g.data[0]) setGarment(g.data[0].name);
     }).catch(e => setError(e instanceof Error ? e.message : "Unable to load order form"));
   }, [searchParams]);
 
@@ -95,7 +94,7 @@ export function NewOrderPage() {
     try {
       const result = await createGarment({ name });
       setGarments(current => [...current, result.data].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)));
-      setGarment(result.data.name);
+      setGarment("");
       setNewGarmentName("");
       setShowGarmentForm(false);
     } catch (e) {

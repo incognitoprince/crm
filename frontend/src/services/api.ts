@@ -22,6 +22,7 @@ export function updateCustomer(id: string, data: { name?: string; phone?: string
 
 export function getShops() { return request<{ data: Shop[] }>("/api/shops"); }
 export function createShop(data: { name: string; area: string; phone?: string }) { return request<{ data: Shop }>("/api/shops", { method: "POST", body: JSON.stringify(data) }); }
+export function updateShop(id: string, data: { name?: string; area?: string; phone?: string | null }) { return request<{ data: Shop }>("/api/shops/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
 export function getGarments() { return request<{ data: Garment[] }>("/api/garments"); }
 export function createGarment(data: { name: string }) { return request<{ data: Garment }>("/api/garments", { method: "POST", body: JSON.stringify(data) }); }
