@@ -33,6 +33,11 @@ services:
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL:-postgresql://tailoring:tailoring@postgres:5432/tailoring_crm?schema=public}
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      AUTH_SECRET: ${AUTH_SECRET:-change-this-auth-secret-before-production-2026}
+      OWNER_EMAIL: ${OWNER_EMAIL:-owner@tailoring.local}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:-Owner@2026!}
+      STAFF_EMAIL: ${STAFF_EMAIL:-staff@tailoring.local}
+      STAFF_PASSWORD: ${STAFF_PASSWORD:-Staff@2026!}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
