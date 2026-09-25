@@ -18,6 +18,8 @@ export function BillsPage() {
   const [shops,setShops]=useState<Shop[]>([]);
   const [shopId,setShopId]=useState("");
   const [customerId,setCustomerId]=useState("");
+  const [invoiceNo,setInvoiceNo]=useState("");
+  const [invoiceDate,setInvoiceDate]=useState(new Date().toISOString().slice(0,10));
   const [subject,setSubject]=useState("");
   const [modelNo,setModelNo]=useState("");
   const [notes,setNotes]=useState("");
@@ -44,7 +46,7 @@ export function BillsPage() {
       if(!shopId||!customerId) throw new Error("Select a shop and customer.");
       const valid=lines.filter(l=>l.description.trim()&&Number(l.quantity)>0&&Number(l.rate)>=0);
       if(!valid.length) throw new Error("Add at least one bill item.");
-      const result=await createBill({shopId,customerId,subject:subject||undefined,modelNo:modelNo||undefined,notes:notes||undefined,lines:valid.map(l=>({orderId:l.orderId||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)}))});
+      const result=await createBill({invoiceNo:invoiceNo||undefined,issuedAt:invoiceDate?new Date(invoiceDate+"T12:00:00").toISOString():undefined,shopId,customerId,subject:subject||undefined,modelNo:modelNo||undefined,notes:notes||undefined,lines:valid.map(l=>({orderId:l.orderId||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)}))});
       if(modelImage) await uploadInvoiceModelImage(result.data.id,modelImage);
       navigate("/bills/"+result.data.id);
     }catch(e){setError(e instanceof Error?e.message:"Unable to create bill");}finally{setSaving(false);}
@@ -63,8 +65,10 @@ export function BillsPage() {
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="border-b border-slate-100 pb-4"><h4 className="font-semibold text-navy-900">Bill Information</h4><p className="mt-1 text-xs text-slate-500">Shop information is taken from the selected shop profile.</p></div>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <label className="text-sm font-medium text-slate-700">Invoice No.<input value={invoiceNo} onChange={e=>setInvoiceNo(e.target.value)} placeholder="Auto if blank" className="mt-1.5 h-11 w-full px-3"/></label>
+            <label className="text-sm font-medium text-slate-700">Invoice Date<input type="date" value={invoiceDate} onChange={e=>setInvoiceDate(e.target.value)} className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Shop<select value={shopId} onChange={e=>setShopId(e.target.value)} className="mt-1.5 h-11 w-full px-3"><option value="">Select shop…</option>{shops.map(s=><option key={s.id} value={s.id}>{s.name} · {s.area}</option>)}</select></label>
-            <label className="text-sm font-medium text-slate-700">Customer<select value={customerId} onChange={e=>setCustomerId(e.target.value)} className="mt-1.5 h-11 w-full px-3"><option value="">Select customer…</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name} · {c.phone}</option>)}</select></label>
+<label className="text-sm font-medium text-slate-700">Customer<select value={customerId} onChange={e=>setCustomerId(e.target.value)} className="mt-1.5 h-11 w-full px-3"><option value="">Select customer…</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name} · {c.phone}</option>)}</select></label>
             <label className="text-sm font-medium text-slate-700">Subject<input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="e.g. Bill of Model No: 20" className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Model No.<input value={modelNo} onChange={e=>setModelNo(e.target.value)} placeholder="Optional model number" className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700 md:col-span-2">Model image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setModelImage(e.target.files?.[0]??null)} className="mt-1.5 block w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2.5 text-sm"/></label>
@@ -98,7 +102,7 @@ export function BillsPage() {
             {(()=>{const shop=shops.find(s=>s.id===shopId);const customer=customers.find(c=>c.id===customerId);return <>
               <div className="border-b border-slate-800 pb-3 text-center">{shop?.logoUrl&&<img src={shop.logoUrl} className="mx-auto mb-2 max-h-14 max-w-28 object-contain" />}{shop?.arabicName&&<p className="text-base font-semibold">{shop.arabicName}</p>}{shop?.englishName&&<p className="text-base font-bold">{shop.englishName}</p>}{!shop?.arabicName&&!shop?.englishName&&<p className="text-base font-bold">{shop?.name||"Shop name"}</p>}{shop?.address&&<p>{shop.address}</p>}{shop?.phone&&<p>Tel: {shop.phone}</p>}{shop?.whatsapp&&<p>WhatsApp: {shop.whatsapp}</p>}{shop?.email&&<p>{shop.email}</p>}</div>
               <div className="py-4 text-center"><p className="text-lg font-bold underline">INVOICE</p><p className="mt-1">{subject||"Bill / Invoice"}</p></div>
-              <div className="grid grid-cols-2 gap-3 border-y border-slate-300 py-3"><div><b>Bill To</b><p>{customer?.name||"Customer"}</p>{customer?.phone&&<p>{customer.phone}</p>}</div><div className="text-right"><p>Invoice Date: {new Date().toLocaleDateString()}</p><p>Invoice No: —</p></div></div>
+              <div className="grid grid-cols-2 gap-3 border-y border-slate-300 py-3"><div><b>Bill To</b><p>{customer?.name||"Customer"}</p>{customer?.phone&&<p>{customer.phone}</p>}</div><div className="text-right"><p>Invoice Date: {invoiceDate ? new Date(invoiceDate+"T12:00:00").toLocaleDateString() : "—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p></div></div>
               {modelImage&&<div className="py-3 text-center"><img src={URL.createObjectURL(modelImage)} className="mx-auto max-h-32 max-w-40 object-contain" /><p className="mt-1">Model No: {modelNo||"—"}</p></div>}
               <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.filter(l=>l.description.trim()).map((l,i)=><tr key={i}><td className="border border-slate-400 p-1">{l.orderId?customerOrders.find(o=>o.id===l.orderId)?.orderNo:"—"}</td><td className="border border-slate-400 p-1">{l.description}</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>)}</tbody></table>
               <div className="mt-4 text-right font-bold">GRAND TOTAL&nbsp;&nbsp; {total?money(total):"K.D. 0.000"}</div>
