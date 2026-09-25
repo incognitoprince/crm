@@ -78,7 +78,8 @@ router.get("/:id", asyncHandler(async (req, res) => {
 }));
 
 router.post("/", asyncHandler(async (req, res) => {
-  const input = orderSchema.parse(req.body);
+  const parsed = orderSchema.parse(req.body);
+  const input = req.user?.role === "OWNER" ? parsed : { ...parsed, totalAmountFils: 0, paidAmountFils: 0 };
   if (input.paidAmountFils > input.totalAmountFils) {
     throw new AppError("Paid amount cannot exceed order value", 400, "INVALID_PAYMENT");
   }
