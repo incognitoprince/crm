@@ -4,7 +4,7 @@ import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { adminOnly } from "../middleware/auth.js";
-import { imageUpload, saveValidatedImage } from "../utils/imageUpload.js";
+import { imageUpload, saveValidatedImage, deleteStoredImage } from "../utils/imageUpload.js";
 
 const router = Router();
 router.use(adminOnly);
@@ -84,6 +84,7 @@ router.post("/:id/model-image", imageUpload.single("image"), asyncHandler(async 
   if (!invoice) throw new AppError("Invoice not found", 404, "INVOICE_NOT_FOUND");
   if (!req.file) throw new AppError("A JPG, PNG, or WEBP image is required", 400, "IMAGE_REQUIRED");
   const stored = await saveValidatedImage(req.file, "invoice-model");
+  await deleteStoredImage(invoice.modelImagePath);
   const updated = await prisma.invoice.update({ where: { id: invoice.id }, data: { modelImagePath: stored.path }, include });
   res.status(201).json({ data: updated });
 }));
