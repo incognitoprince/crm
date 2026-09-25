@@ -1,22 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
-import multer from "multer";
-import path from "node:path";
-import crypto from "node:crypto";
-import { promises as fs } from "node:fs";
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { imageUpload, saveValidatedImage } from "../utils/imageUpload.js";
 
 const router = Router();
 const statuses = ["PENDING", "MEASUREMENT", "CUTTING", "STITCHING", "QUALITY_CHECK", "READY", "DELIVERED", "CANCELLED"] as const;
 const garmentTypes = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
-const upload = multer({
-  dest: path.resolve(process.cwd(), "uploads"),
-  limits: { fileSize: 8 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, ["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)),
-});
-
 const idSchema = z.string().trim().min(1).max(100);
 
 const orderSchema = z.object({
@@ -132,16 +123,13 @@ router.post("/", asyncHandler(async (req, res) => {
   res.status(201).json({ data: order });
 }));
 
-router.post("/:id/reference-images", upload.single("image"), asyncHandler(async (req, res) => {
+router.post("/:id/reference-images", imageUpload.single("image"), asyncHandler(async (req, res) => {
   const order = await prisma.order.findUnique({ where: { id: req.params.id } });
   if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
   if (!req.file) throw new AppError("A JPG, PNG, or WEBP image is required", 400, "IMAGE_REQUIRED");
-  const ext = path.extname(req.file.originalname).toLowerCase() || ".img";
-  const finalName = crypto.randomUUID() + ext;
-  const finalPath = path.resolve(process.cwd(), "uploads", finalName);
-  await fs.rename(req.file.path, finalPath);
+  const stored = await saveValidatedImage(req.file, "order-reference");
   const image = await prisma.orderReferenceImage.create({
-    data: { orderId: order.id, fileName: req.file.originalname, storagePath: "/uploads/" + finalName, mimeType: req.file.mimetype },
+    data: { orderId: order.id, fileName: stored.fileName, storagePath: stored.path, mimeType: stored.mimeType },
   });
   res.status(201).json({ data: image });
 }));
