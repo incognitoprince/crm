@@ -2,8 +2,10 @@ import { Router } from "express";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.js";
+import { ownerOnly } from "../middleware/auth.js";
 
 const router = Router();
+router.use(ownerOnly);
 
 const invoiceInclude = {
   order: {
