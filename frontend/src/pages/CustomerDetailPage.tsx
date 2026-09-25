@@ -129,7 +129,7 @@ export function CustomerDetailPage() {
 
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between"><div><h4 className="font-semibold text-navy-900">Order history</h4><p className="text-xs text-slate-500">{customer.orders.length} recent order(s)</p></div><Link to="/orders/new" className="text-sm font-medium text-navy-900 hover:underline">New order</Link></div>
-        <div className="mt-4 space-y-3">{customer.orders.map(o => <Link to={"/orders/" + o.id} key={o.id} className="block rounded-lg border border-slate-100 p-4 hover:bg-slate-50"><div className="flex justify-between gap-3"><div><strong>{o.orderNo}</strong><p className="mt-1 text-sm text-slate-600">{o.description}</p></div><span className="text-xs font-medium text-navy-900">{label(o.status)}</span></div><div className="mt-2 flex justify-between text-xs text-slate-500"><span>{o.quantity} item(s)</span>{user?.role === "OWNER" && <span>{money(o.totalAmountFils)}</span>}</div></Link>)}</div>
+        <div className="mt-4 space-y-3">{customer.orders.map(o => <Link to={"/orders/" + o.id} key={o.id} className="block rounded-lg border border-slate-100 p-4 hover:bg-slate-50"><div className="flex justify-between gap-3"><div><strong>{o.orderNo}</strong><p className="mt-1 text-sm text-slate-600">{o.description}</p></div><span className="text-xs font-medium text-navy-900">{label(o.status)}</span></div><div className="mt-2 flex justify-between text-xs text-slate-500"><span>{o.quantity} item(s)</span>{user?.role === "ADMIN" && <span>{money(o.totalAmountFils)}</span>}</div></Link>)}</div>
       </section>
     </div>
   </div>;
