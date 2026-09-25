@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   startMasterAssignment,
   completeMasterAssignment,
-  createMasterAssignment,
   createOrderAssignment,
   deleteMasterAssignment,
   getDesigns,
@@ -73,18 +72,6 @@ export function ProductionPage() {
       await loadOrder(orderId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to link design");
-    } finally { setSaving(false); }
-  }
-
-  async function assign(designId: string) {
-    if (!form.size || !form.masterId || !form.quantity) return;
-    setSaving(true); setError("");
-    try {
-      await createMasterAssignment(designId, { masterId: form.masterId, size: form.size, quantity: Number(form.quantity), notes: form.notes || undefined });
-      setForm(f => ({ ...f, quantity: "", notes: "" }));
-      await loadOrder(orderId);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to assign master");
     } finally { setSaving(false); }
   }
 
@@ -175,7 +162,7 @@ export function ProductionPage() {
         <div className="mt-5 flex flex-wrap gap-2">{production.sizeBreakdowns.map(s => <span key={s.id} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium">{s.size}: {s.quantity}</span>)}</div>
       </section>
 
-      {production.designs.map(od => <DesignAssignmentCard key={od.id} od={od} production={production} masters={masters} form={form} setForm={setForm} saving={saving} editing={editing} editForm={editForm} setEditForm={setEditForm} onAssign={assign} onEdit={beginEdit} onSaveEdit={saveEdit} onStart={start} onComplete={complete} onRemove={remove} onCancelEdit={() => setEditing(null)} />)}
+      {production.designs.length > 0 && <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><div><h4 className="font-semibold text-navy-900">Attached designs</h4><p className="mt-1 text-xs text-slate-500">Designs are reference material only. Master assignments are managed below by order size and quantity.</p></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{production.designs.map(od => <div key={od.id} className="overflow-hidden rounded-lg border border-slate-200">{od.imagePath || od.design?.imagePath ? <img src={od.imagePath || od.design?.imagePath || ""} alt="" className="h-36 w-full object-cover bg-slate-50" /> : <div className="flex h-36 items-center justify-center bg-slate-50 text-xs text-slate-400">No image</div>}<div className="p-3"><p className="font-medium text-slate-800">{od.design?.name ?? od.designName ?? "Customer design"}</p><p className="mt-1 text-xs text-slate-500">{od.design?.designNo ?? "Order reference"}</p></div></div>)}</div></section>}
 
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
         <div className="flex items-start justify-between gap-3">
