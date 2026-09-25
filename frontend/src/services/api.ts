@@ -1,4 +1,4 @@
-import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment, Invoice } from "../types";
+import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment, Invoice, AuthUser } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -7,7 +7,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (!(options?.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-  const response = await fetch(API_BASE + path, { ...options, headers });
+  const response = await fetch(API_BASE + path, { ...options, headers, credentials: "include" });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.message ?? "Request failed (" + response.status + ")");
   return body as T;
@@ -21,15 +21,15 @@ export function createCustomer(data: { name: string; phone: string; email?: stri
 export function updateCustomer(id: string, data: { name?: string; phone?: string; email?: string; address?: string; notes?: string; shopId?: string | null }) { return request<{ data: Customer }>("/api/customers/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
 export function getShops() { return request<{ data: Shop[] }>("/api/shops"); }
-export function createShop(data: { name: string; area: string; phone?: string }) { return request<{ data: Shop }>("/api/shops", { method: "POST", body: JSON.stringify(data) }); }
-export function updateShop(id: string, data: { name?: string; area?: string; phone?: string | null }) { return request<{ data: Shop }>("/api/shops/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
+export function createShop(data: { name: string; area: string; phone?: string; whatsapp?: string; email?: string; arabicName?: string; englishName?: string; address?: string; logoUrl?: string }) { return request<{ data: Shop }>("/api/shops", { method: "POST", body: JSON.stringify(data) }); }
+export function updateShop(id: string, data: { name?: string; area?: string; phone?: string | null; whatsapp?: string | null; email?: string | null; arabicName?: string | null; englishName?: string | null; address?: string | null; logoUrl?: string | null }) { return request<{ data: Shop }>("/api/shops/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
 export function getGarments() { return request<{ data: Garment[] }>("/api/garments"); }
 export function createGarment(data: { name: string }) { return request<{ data: Garment }>("/api/garments", { method: "POST", body: JSON.stringify(data) }); }
 
 export function getOrders() { return request<{ data: Order[] }>("/api/orders"); }
 export function getOrder(id: string) { return request<{ data: Order }>("/api/orders/" + id); }
-export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils: number; paidAmountFils: number; paymentMethod?: PaymentMethod; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
+export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils?: number; paidAmountFils?: number; paymentMethod?: PaymentMethod; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
 export function updateOrderStatus(id: string, status: Order["status"]) { return request<{ data: Order }>("/api/orders/" + id + "/status", { method: "PATCH", body: JSON.stringify({ status }) }); }
 
 export function uploadOrderReferenceImage(orderId: string, file: File) {
@@ -84,4 +84,17 @@ export function createPayment(data: { orderId: string; amountFils: number; metho
 
 export function getBills() { return request<{ data: Invoice[] }>("/api/bills"); }
 export function getBill(id: string) { return request<{ data: Invoice }>("/api/bills/" + id); }
-export function createBill(orderId: string) { return request<{ data: Invoice; existing: boolean }>("/api/bills", { method: "POST", body: JSON.stringify({ orderId }) }); }
+export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId: string; customerId: string; subject?: string; modelNo?: string; notes?: string; lines: Array<{ orderId?: string; description: string; quantity: number; unitPriceFils: number }> }) { return request<{ data: Invoice }>("/api/bills", { method: "POST", body: JSON.stringify(data) }); }
+export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
+
+
+export function login(username: string, password: string, rememberMe = true) { return request<{ data: { user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password, rememberMe }) }); }
+export function getMe() { return request<{ data: AuthUser }>("/api/auth/me"); }
+export function logout() { return request<void>("/api/auth/logout", { method: "POST" }); }
+
+export interface ManagedUser { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF"; active: boolean; createdAt: string; }
+export function getUsers() { return request<{data: ManagedUser[]}>("/api/users"); }
+export function createUser(data:{name:string;username:string;password:string;role:"ADMIN"|"STAFF"}) { return request<{data:ManagedUser}>("/api/users",{method:"POST",body:JSON.stringify(data)}); }
+export function updateUser(id:string,data:{name?:string;role?:"ADMIN"|"STAFF";active?:boolean;password?:string}) { return request<{data:ManagedUser}>("/api/users/"+id,{method:"PATCH",body:JSON.stringify(data)}); }
+
+export function deleteUser(id:string) { return request<void>("/api/users/"+id, { method: "DELETE" }); }

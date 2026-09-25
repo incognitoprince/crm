@@ -39,10 +39,18 @@ model Shop {
   name String
   area String
   phone String?
+  whatsapp String?
+  email String?
+  arabicName String?
+  englishName String?
+  logoPath String?
+  logoUrl String?
+  address String?
   active Boolean @default(true)
   customers Customer[]
   orders Order[]
   masters Master[]
+  invoices Invoice[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([active])
@@ -61,6 +69,35 @@ model Garment {
   @@index([active, sortOrder])
 }
 
+model User {
+  id String @id @default(cuid())
+  name String
+  username String? @unique
+  email String? @unique
+  passwordHash String
+  role UserRole @default(STAFF)
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model Session {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 model Customer {
   id String @id @default(cuid())
   customerNo String @unique
@@ -74,6 +111,7 @@ model Customer {
   shop Shop? @relation(fields: [shopId], references: [id], onDelete: SetNull)
   measurements Measurement[]
   orders Order[]
+  invoices Invoice[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([name])
@@ -122,7 +160,9 @@ model Order {
   designs OrderDesign[]
   masterAssignments MasterAssignment[]
   payments Payment[]
-  invoice Invoice?
+  invoices Invoice[]
+  invoiceLines InvoiceLine[]
+  sizePrices Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([customerId])
@@ -250,10 +290,39 @@ model Payment {
 model Invoice {
   id String @id @default(cuid())
   invoiceNo String @unique
-  orderId String @unique
-  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  shopId String?
+  customerId String?
+  orderId String?
+  subject String?
+  modelNo String?
+  modelImagePath String?
+  totalFils Int @default(0)
+  notes String?
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  lines InvoiceLine[]
   issuedAt DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([shopId])
+  @@index([customerId])
+  @@index([orderId])
   @@index([issuedAt])
+}
+
+model InvoiceLine {
+  id String @id @default(cuid())
+  invoiceId String
+  orderId String?
+  orderDate DateTime?
+  description String
+  quantity Int
+  unitPriceFils Int
+  totalFils Int
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  @@index([invoiceId])
+  @@index([orderId])
 }

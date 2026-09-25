@@ -3,8 +3,10 @@ import { z } from "zod";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.js";
+import { adminOnly } from "../middleware/auth.js";
 
 const router = Router();
+router.use(adminOnly);
 
 const methods = ["CASH", "CARD", "BANK_TRANSFER", "OTHER"] as const;
 const paymentSchema = z.object({

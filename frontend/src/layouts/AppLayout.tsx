@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../auth/AuthContext";
 import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "../utils/cn";
 
@@ -12,11 +13,14 @@ const links = [
   { to: "/production", label: "Production", icon: "◈" },
   { to: "/payments", label: "Payments", icon: "₹" },
   { to: "/bills", label: "Bills / Invoices", icon: "▤" },
+  { to: "/users", label: "Users", icon: "♙" },
   { to: "/overview", label: "System status", icon: "⚙" },
 ];
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const visibleLinks = links.filter(link => user?.role === "ADMIN" || !["/dashboard","/payments","/bills","/users"].includes(link.to));
 
   return (
     <div className="min-h-screen bg-[#f5f9fd] lg:grid lg:grid-cols-[236px_1fr]">
@@ -31,7 +35,7 @@ export function AppLayout() {
           </div>
         </div>
         <nav className="flex-1 space-y-1.5 px-3 py-5">
-          {links.map(link => (
+          {visibleLinks.map(link => (
             <NavLink key={link.to} to={link.to} className={({ isActive }) => cn(
               "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all",
               isActive ? "bg-[#1976e8] text-white shadow-[0_5px_16px_rgba(25,118,232,0.28)]" : "text-blue-50/90 hover:bg-white/10 hover:text-white"
@@ -42,7 +46,7 @@ export function AppLayout() {
           ))}
         </nav>
         <div className="border-t border-white/10 px-5 py-5">
-          <p className="text-[11px] text-blue-100/60">Owner workspace</p>
+          <p className="text-[11px] text-blue-100/60">Admin workspace</p>
           <p className="mt-1 text-xs text-white/80">Tailoring management</p>
         </div>
       </aside>
@@ -74,7 +78,7 @@ export function AppLayout() {
               </button>
             </div>
             <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-5">
-              {links.map(link => (
+              {visibleLinks.map(link => (
                 <NavLink
                   key={link.to}
                   to={link.to}
@@ -90,7 +94,7 @@ export function AppLayout() {
               ))}
             </nav>
             <div className="border-t border-white/10 px-5 py-5">
-              <p className="text-[11px] text-blue-100/60">Owner workspace</p>
+              <p className="text-[11px] text-blue-100/60">Admin workspace</p>
               <p className="mt-1 text-xs text-white/80">Tailoring management</p>
             </div>
           </aside>
@@ -114,14 +118,11 @@ export function AppLayout() {
             <input aria-label="Global search" placeholder="Search customers, orders, designs..." className="h-10 w-full rounded-lg border border-slate-200 bg-[#f6f8fb] pl-10 pr-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <button type="button" aria-label="Notifications" className="relative flex h-10 w-10 items-center justify-center rounded-lg text-xl text-navy-900 hover:bg-slate-100">
-              ♧<span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">3</span>
-            </button>
             <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">OM</div>
-              <span className="hidden text-sm font-semibold text-slate-800 sm:block">Owner</span>
-              <span className="text-slate-500">⌄</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">{(user?.name ?? "U").slice(0,2).toUpperCase()}</div>
+              <span className="hidden text-sm font-semibold text-slate-800 sm:block">{user?.name ?? "User"}</span>
+              <button type="button" onClick={logout} className="text-xs font-medium text-slate-500 hover:text-slate-800">Sign out</button>
             </div>
           </div>
         </header>

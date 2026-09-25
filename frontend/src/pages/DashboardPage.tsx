@@ -121,8 +121,8 @@ export function DashboardPage() {
   return <div className="mx-auto max-w-7xl space-y-5">
     <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Owner dashboard</p>
-        <h3 className="mt-1 text-3xl font-semibold tracking-tight text-navy-900">{greeting}, Owner! 👋</h3>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Admin dashboard</p>
+        <h3 className="mt-1 text-3xl font-semibold tracking-tight text-navy-900">{greeting}, Admin! 👋</h3>
         <p className="mt-1 text-sm text-slate-600">Here’s what’s happening across your tailoring business today.</p>
       </div>
       <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">

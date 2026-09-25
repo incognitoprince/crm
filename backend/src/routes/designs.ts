@@ -1,21 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import multer from "multer";
-import path from "node:path";
-import crypto from "node:crypto";
-import { promises as fs } from "node:fs";
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { imageUpload, saveValidatedImage } from "../utils/imageUpload.js";
 
 const router = Router();
 const garmentTypes = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
-const upload = multer({
-  dest: path.resolve(process.cwd(), "uploads"),
-  limits: { fileSize: 8 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, ["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)),
-});
-
 const designSchema = z.object({
   designNo: z.string().trim().min(2).max(40),
   name: z.string().trim().min(2).max(120),
@@ -96,19 +87,16 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   res.json({ data: design });
 }));
 
-router.post("/:id/image", upload.single("image"), asyncHandler(async (req, res) => {
+router.post("/:id/image", imageUpload.single("image"), asyncHandler(async (req, res) => {
   const design = await prisma.design.findUnique({ where: { id: req.params.id } });
   if (!design) throw new AppError("Design not found", 404, "DESIGN_NOT_FOUND");
   if (!req.file) throw new AppError("A JPG, PNG, or WEBP image is required", 400, "IMAGE_REQUIRED");
 
-  const ext = path.extname(req.file.originalname).toLowerCase() || ".img";
-  const finalName = "design-" + crypto.randomUUID() + ext;
-  const finalPath = path.resolve(process.cwd(), "uploads", finalName);
-  await fs.rename(req.file.path, finalPath);
+  const stored = await saveValidatedImage(req.file, "design");
 
   const updated = await prisma.design.update({
     where: { id: design.id },
-    data: { imagePath: "/uploads/" + finalName },
+    data: { imagePath: stored.path },
   });
   res.status(201).json({ data: updated });
 }));
