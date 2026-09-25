@@ -13,13 +13,14 @@ const links = [
   { to: "/production", label: "Production", icon: "◈" },
   { to: "/payments", label: "Payments", icon: "₹" },
   { to: "/bills", label: "Bills / Invoices", icon: "▤" },
+  { to: "/users", label: "Users", icon: "♙" },
   { to: "/overview", label: "System status", icon: "⚙" },
 ];
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
-  const visibleLinks = links.filter(link => user?.role === "OWNER" || !["/dashboard","/payments","/bills"].includes(link.to));
+  const visibleLinks = links.filter(link => user?.role === "OWNER" || !["/dashboard","/payments","/bills","/users"].includes(link.to));
 
   return (
     <div className="min-h-screen bg-[#f5f9fd] lg:grid lg:grid-cols-[236px_1fr]">
