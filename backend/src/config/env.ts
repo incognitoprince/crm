@@ -13,6 +13,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  AUTH_SECRET: z.string().min(32).default("change-this-auth-secret-before-production-2026"),
 });
 
 const parsed = envSchema.safeParse(process.env);
