@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { getOrders, updateOrderStatus } from "../services/api";
-import type { Order, OrderStatus } from "../types";
+import { getOrders, getShops, updateOrderStatus } from "../services/api";
+import type { Order, OrderStatus, Shop } from "../types";
 
 const statuses: OrderStatus[] = ["PENDING","MEASUREMENT","CUTTING","STITCHING","QUALITY_CHECK","READY","DELIVERED","CANCELLED"];
 const label = (v: string) => v.replaceAll("_", " ");
@@ -14,12 +14,14 @@ export function OrdersPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [shopFilter, setShopFilter] = useState("");
   const [view, setView] = useState<"in-progress" | "completed">("in-progress");
   const [error, setError] = useState("");
 
   const load = () => getOrders().then(r => setOrders(r.data)).catch(e => setError(e.message));
-  const visibleOrders = orders.filter(o => view === "completed" ? ["DELIVERED","CANCELLED"].includes(o.status) : !["DELIVERED","CANCELLED"].includes(o.status));
-  useEffect(() => { load(); }, []);
+  const visibleOrders = orders.filter(o => (shopFilter ? o.shop?.id === shopFilter : true) && (view === "completed" ? ["DELIVERED","CANCELLED"].includes(o.status) : !["DELIVERED","CANCELLED"].includes(o.status)));
+  useEffect(() => { load(); getShops().then(r => setShops(r.data)).catch(e => setError(e.message)); }, []);
 
   async function change(id: string, status: OrderStatus) {
     try { await updateOrderStatus(id, status); await load(); }
@@ -52,7 +54,8 @@ export function OrdersPage() {
     </div>
 
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 bg-slate-50/70 p-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/70 p-3">
+        <select value={shopFilter} onChange={e => setShopFilter(e.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700"><option value="">All shops</option>{shops.map(shop => <option key={shop.id} value={shop.id}>{shop.name}</option>)}</select>
         <button onClick={() => setView("in-progress")} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "in-progress" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>In progress <span className="ml-1 text-xs">{pending}</span></button>
         <button onClick={() => setView("completed")} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "completed" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>Completed <span className="ml-1 text-xs">{orders.length - pending}</span></button>
       </div>
