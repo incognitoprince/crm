@@ -26,7 +26,7 @@ function ProtectedRoutes() {
   return <Routes>
     <Route element={<AppLayout />}>
       <Route index element={<Navigate to="/dashboard" replace />} />
-      <Route path="dashboard" element={user.role === "OWNER" ? <DashboardPage /> : <Navigate to="/orders" replace />} />
+      <Route path="dashboard" element={user.role === "ADMIN" ? <DashboardPage /> : <Navigate to="/orders" replace />} />
       <Route path="customers" element={<CustomersPage />} />
       <Route path="customers/:id" element={<CustomerDetailPage />} />
       <Route path="orders" element={<OrdersPage />} />
@@ -36,10 +36,10 @@ function ProtectedRoutes() {
       <Route path="masters" element={<MastersPage />} />
       <Route path="designs" element={<DesignsPage />} />
       <Route path="production" element={<ProductionPage />} />
-      <Route path="bills" element={user.role === "OWNER" ? <BillsPage /> : <Navigate to="/orders" replace />} />
-      <Route path="bills/:id" element={user.role === "OWNER" ? <BillPage /> : <Navigate to="/orders" replace />} />
-      <Route path="payments" element={user.role === "OWNER" ? <PaymentsPage /> : <Navigate to="/orders" replace />} />
-      <Route path="users" element={user.role === "OWNER" ? <UsersPage /> : <Navigate to="/orders" replace />} />
+      <Route path="bills" element={user.role === "ADMIN" ? <BillsPage /> : <Navigate to="/orders" replace />} />
+      <Route path="bills/:id" element={user.role === "ADMIN" ? <BillPage /> : <Navigate to="/orders" replace />} />
+      <Route path="payments" element={user.role === "ADMIN" ? <PaymentsPage /> : <Navigate to="/orders" replace />} />
+      <Route path="users" element={user.role === "ADMIN" ? <UsersPage /> : <Navigate to="/orders" replace />} />
       <Route path="home" element={<Navigate to="/orders" replace />} />
       <Route path="overview" element={<LandingPage />} />
       <Route path="*" element={<NotFoundPage />} />
