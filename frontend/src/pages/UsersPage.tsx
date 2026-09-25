@@ -1,8 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createUser, deleteUser, getUsers, updateUser, type ManagedUser } from "../services/api";
-import { useAuth } from "../auth/AuthContext";
 export function UsersPage(){
- const { user: currentUser } = useAuth();
  const [users,setUsers]=useState<ManagedUser[]>([]); const [form,setForm]=useState({name:"",username:"",password:"",role:"STAFF" as "ADMIN"|"STAFF"}); const [error,setError]=useState(""); const [saving,setSaving]=useState(false);
  const load=()=>getUsers().then(r=>setUsers(r.data)).catch(e=>setError(e instanceof Error?e.message:"Unable to load users")); useEffect(()=>{void load();},[]);
  async function submit(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{await createUser(form);setForm({name:"",username:"",password:"",role:"STAFF"});await load();}catch(e){setError(e instanceof Error?e.message:"Unable to create user");}finally{setSaving(false);}}
