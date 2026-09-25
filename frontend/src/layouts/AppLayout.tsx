@@ -118,9 +118,6 @@ export function AppLayout() {
             <input aria-label="Global search" placeholder="Search customers, orders, designs..." className="h-10 w-full rounded-lg border border-slate-200 bg-[#f6f8fb] pl-10 pr-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <button type="button" aria-label="Notifications" className="relative flex h-10 w-10 items-center justify-center rounded-lg text-xl text-navy-900 hover:bg-slate-100">
-              ♧<span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">3</span>
-            </button>
             <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">{(user?.name ?? "U").slice(0,2).toUpperCase()}</div>
