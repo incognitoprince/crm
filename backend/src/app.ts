@@ -7,12 +7,14 @@ import { pinoHttp } from "pino-http";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { apiRouter } from "./routes/index.js";
+import { authenticate, verifySameOrigin } from "./middleware/auth.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  app.set("trust proxy", 1);
   app.use(helmet());
   app.use(
     cors({
@@ -37,9 +39,20 @@ export function createApp() {
       },
     }),
   );
+  app.use(verifySameOrigin);
 
-  // Uploaded order reference images are stored in the persistent uploads volume.
-  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+  // Uploaded images are private application data and require an authenticated session.
+  app.use(
+    "/uploads",
+    authenticate,
+    express.static(path.resolve(process.cwd(), "uploads"), {
+      fallthrough: false,
+      setHeaders: (res) => {
+        res.setHeader("Cache-Control", "private, no-store");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+      },
+    }),
+  );
 
   app.use("/api", apiRouter);
   app.use(notFoundHandler);
