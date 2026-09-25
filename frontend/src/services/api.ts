@@ -90,11 +90,13 @@ export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId
 export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
 
 
-export function login(email: string, password: string) { return request<{ data: { token: string; user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }); }
+export function login(username: string, password: string) { return request<{ data: { token: string; user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }); }
 export function getMe() { return request<{ data: AuthUser }>("/api/auth/me"); }
 export function logout() { return request<void>("/api/auth/logout", { method: "POST" }); }
 
-export interface ManagedUser { id: string; name: string; email: string; role: "OWNER" | "STAFF"; active: boolean; createdAt: string; }
+export interface ManagedUser { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF"; active: boolean; createdAt: string; }
 export function getUsers() { return request<{data: ManagedUser[]}>("/api/users"); }
 export function createUser(data:{name:string;email:string;password:string;role:"OWNER"|"STAFF"}) { return request<{data:ManagedUser}>("/api/users",{method:"POST",body:JSON.stringify(data)}); }
-export function updateUser(id:string,data:{name?:string;active?:boolean;password?:string}) { return request<{data:ManagedUser}>("/api/users/"+id,{method:"PATCH",body:JSON.stringify(data)}); }
+export function updateUser(id:string,data:{name?:string;role?:"ADMIN"|"STAFF";active?:boolean;password?:string}) { return request<{data:ManagedUser}>("/api/users/"+id,{method:"PATCH",body:JSON.stringify(data)}); }
+
+export function deleteUser(id:string) { return request<void>("/api/users/"+id, { method: "DELETE" }); }
