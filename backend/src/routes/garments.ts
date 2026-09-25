@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { adminOnly } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get("/", asyncHandler(async (_req, res) => {
   res.json({ data: garments });
 }));
 
-router.post("/", asyncHandler(async (req, res) => {
+router.post("/", adminOnly, asyncHandler(async (req, res) => {
   const input = garmentSchema.parse(req.body);
   const name = input.name.replace(/\s+/g, " ");
   const garment = await prisma.garment.create({
@@ -31,7 +32,7 @@ router.post("/", asyncHandler(async (req, res) => {
   res.status(201).json({ data: garment });
 }));
 
-router.patch("/:id", asyncHandler(async (req, res) => {
+router.patch("/:id", adminOnly, asyncHandler(async (req, res) => {
   const input = garmentSchema.partial().parse(req.body);
   const garment = await prisma.garment.update({
     where: { id: req.params.id },
