@@ -53,6 +53,12 @@ const includes = {
   },
 };
 
+function redactOrderFinancials<T extends Record<string, any>>(order: T, owner: boolean) {
+  if (owner) return order;
+  const { totalAmountFils: _total, paidAmountFils: _paid, paymentStatus: _status, payments: _payments, ...safe } = order;
+  return safe;
+}
+
 router.get("/", asyncHandler(async (req, res) => {
   const rawStatus = typeof req.query.status === "string" ? req.query.status : undefined;
   const status = rawStatus ? z.enum(statuses).parse(rawStatus) : undefined;
@@ -62,13 +68,13 @@ router.get("/", asyncHandler(async (req, res) => {
     orderBy: { orderDate: "desc" },
     take: 100,
   });
-  res.json({ data: orders });
+  res.json({ data: orders.map(order => redactOrderFinancials(order, req.user?.role === "OWNER")) });
 }));
 
 router.get("/:id", asyncHandler(async (req, res) => {
   const order = await prisma.order.findUnique({ where: { id: req.params.id }, include: includes });
   if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
-  res.json({ data: order });
+  res.json({ data: redactOrderFinancials(order, req.user?.role === "OWNER") });
 }));
 
 router.post("/", asyncHandler(async (req, res) => {
