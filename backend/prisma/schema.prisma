@@ -44,6 +44,7 @@ model Shop {
   arabicName String?
   englishName String?
   logoPath String?
+  logoUrl String?
   address String?
   active Boolean @default(true)
   customers Customer[]
