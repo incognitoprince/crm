@@ -7,7 +7,7 @@ export type OrderStatus = "PENDING" | "MEASUREMENT" | "CUTTING" | "STITCHING" | 
 export type GarmentType = string;
 
 export interface Garment { id: string; name: string; active: boolean; sortOrder: number; }
-export interface Shop { id: string; name: string; area: string; phone?: string | null; _count?: { customers: number; orders: number }; }
+export interface Shop { id: string; name: string; area: string; phone?: string | null; whatsapp?: string | null; email?: string | null; arabicName?: string | null; englishName?: string | null; address?: string | null; logoUrl?: string | null; _count?: { customers: number; orders: number }; }
 export interface Customer { id: string; customerNo: string; name: string; phone: string; email?: string | null; address?: string | null; notes?: string | null; status?: "ACTIVE" | "INACTIVE"; shop?: Shop | null; _count?: { orders: number }; }
 export interface Measurement { id: string; garment: GarmentType; profileName: string; values: Record<string, number>; notes?: string | null; }
 export interface OrderSizeBreakdown { id: string; size: string; quantity: number; }
@@ -19,12 +19,11 @@ export interface OrderDesign { id: string; orderId: string; designId?: string | 
 export type PaymentMethod = "CASH" | "CARD" | "BANK_TRANSFER" | "OTHER";
 export interface Payment { id: string; orderId: string; amountFils: number; method: PaymentMethod; reference?: string | null; notes?: string | null; receivedAt: string; createdAt: string; order: { id: string; orderNo: string; customer: Customer; shop?: Shop | null }; }
 export interface Invoice {
-  id: string;
-  invoiceNo: string;
-  orderId: string;
-  issuedAt: string;
-  order: Order & { payments?: Payment[] };
+  id: string; invoiceNo: string; shopId: string; customerId: string; orderId?: string | null;
+  subject?: string | null; modelNo?: string | null; modelImagePath?: string | null; totalFils: number; notes?: string | null;
+  issuedAt: string; shop: Shop; customer: Customer; order?: (Order & { payments?: Payment[] }) | null; lines: InvoiceLine[];
 }
+export interface InvoiceLine { id: string; orderId?: string | null; orderDate?: string | null; description: string; quantity: number; unitPriceFils: number; totalFils: number; order?: Order | null; }
 
 export interface Order {
   id: string;
