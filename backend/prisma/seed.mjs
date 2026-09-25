@@ -89,14 +89,14 @@ function dateFromOffset(days) {
 }
 
 async function main() {
-  if (process.env.SEED_DEMO_DATA !== "true") return;
-
   const ownerEmail = process.env.OWNER_EMAIL || "owner@tailoring.local";
   const ownerPassword = process.env.OWNER_PASSWORD || "Owner@2026!";
   const staffEmail = process.env.STAFF_EMAIL || "staff@tailoring.local";
   const staffPassword = process.env.STAFF_PASSWORD || "Staff@2026!";
   await prisma.user.upsert({ where: { email: ownerEmail }, update: { name: "Owner", role: "OWNER", active: true }, create: { name: "Owner", email: ownerEmail, passwordHash: passwordHash(ownerPassword), role: "OWNER" } });
   await prisma.user.upsert({ where: { email: staffEmail }, update: { name: "Staff", role: "STAFF", active: true }, create: { name: "Staff", email: staffEmail, passwordHash: passwordHash(staffPassword), role: "STAFF" } });
+
+  if (process.env.SEED_DEMO_DATA !== "true") return;
 
   for (const [id, name, sortOrder] of garments) {
     await prisma.garment.upsert({
