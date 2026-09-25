@@ -23,4 +23,4 @@ COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
 RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 EXPOSE 4000
-CMD ["sh", "-c", "mkdir -p /app/uploads && chown -R node:node /app/uploads && su-exec node sh -c 'npx prisma db push --skip-generate && node prisma/seed.mjs && node dist/index.js'"]
+CMD ["sh", "-c", "mkdir -p /app/uploads && chown -R node:node /app/uploads && su-exec node sh -c 'npx prisma db execute --file prisma/migrations/20260925_admin_username_transition/migration.sql && npx prisma db push --skip-generate && node prisma/seed.mjs && node dist/index.js'"]
