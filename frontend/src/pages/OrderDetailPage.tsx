@@ -4,7 +4,6 @@ import { useAuth } from "../auth/AuthContext";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import {
-  createBill,
   createOrderDesign,
   deleteOrderDesign,
   getDesigns,
@@ -40,16 +39,6 @@ export function OrderDetailPage() {
   useEffect(() => {
     if (id) loadOrder().catch(e => setError(e instanceof Error ? e.message : "Unable to load order"));
   }, [id]);
-
-  async function createOrOpenBill() {
-    if (!order) return;
-    try {
-      const result = await createBill(order.id);
-      window.location.href = "/bills/" + result.data.id;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to create bill");
-    }
-  }
 
   async function change(status: OrderStatus) {
     if (!order) return;
@@ -206,7 +195,7 @@ export function OrderDetailPage() {
     </div>
 
     {user?.role === "OWNER" &&     <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h4 className="font-semibold text-navy-900">Payment</h4><div className="flex gap-2">{balance > 0 && <Link to={"/payments?orderId=" + order.id} className="rounded-md bg-navy-900 px-3 py-2 text-xs font-medium text-white">Record payment</Link>}<button type="button" onClick={() => void createOrOpenBill()} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-navy-900 hover:bg-slate-50">Create / view bill</button></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h4 className="font-semibold text-navy-900">Payment</h4><div className="flex gap-2">{user?.role === "OWNER" && <Link to={"/bills"} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-navy-900 hover:bg-slate-50">Create bill</Link>}</div></div>
       <div className="mt-4 grid gap-4 sm:grid-cols-3"><div><p className="text-xs text-slate-500">Order value</p><p className="mt-1 text-lg font-semibold">{money(order.totalAmountFils)}</p></div><div><p className="text-xs text-slate-500">Paid</p><p className="mt-1 text-lg font-semibold">{money(order.paidAmountFils)}</p></div><div><p className="text-xs text-slate-500">Balance</p><p className={"mt-1 text-lg font-semibold " + (balance > 0 ? "text-rose-700" : "text-emerald-700")}>{money(balance)}</p></div></div>
       {order.payments?.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[520px] text-sm"><thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-2 font-medium">Date</th><th className="pb-2 font-medium">Method</th><th className="pb-2 font-medium">Reference</th><th className="pb-2 text-right font-medium">Amount</th></tr></thead><tbody>{order.payments.map(payment => <tr key={payment.id} className="border-b border-slate-50 last:border-0"><td className="py-2.5">{new Date(payment.receivedAt).toLocaleDateString()}</td><td className="py-2.5">{payment.method.replace("_", " ")}</td><td className="py-2.5 text-slate-500">{payment.reference || "—"}</td><td className="py-2.5 text-right font-semibold">{money(payment.amountFils)}</td></tr>)}</tbody></table></div> : <p className="mt-4 text-xs text-slate-500">No payment transactions recorded yet.</p>}
     </section>
