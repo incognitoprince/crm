@@ -25,7 +25,7 @@ const orderSchema = z.object({
   garment: z.string().trim().min(2).max(80),
   description: z.string().trim().max(250).nullable().optional(),
   quantity: z.number().int().min(1).max(100000).default(1),
-  totalAmountFils: z.number().int().min(0).max(100000000),
+  totalAmountFils: z.number().int().min(0).max(100000000).default(0),
   paidAmountFils: z.number().int().min(0).max(100000000).default(0),
   paymentMethod: z.enum(["CASH", "CARD", "BANK_TRANSFER", "OTHER"]).default("CASH"),
   deliveryDate: z.string().datetime().nullable().optional(),
