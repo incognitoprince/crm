@@ -16,7 +16,7 @@ function hashToken(token: string) {
   return crypto.createHmac("sha256", env.AUTH_SECRET).update(token).digest("hex");
 }
 
-function readCookie(req: Request, name: string) {
+export function readCookie(req: Request, name: string) {
   const header = req.header("cookie") ?? "";
   for (const part of header.split(";")) {
     const [key, ...value] = part.trim().split("=");
