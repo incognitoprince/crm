@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   createGarment,
-  createMasterAssignment,
   createOrderAssignment,
   createOrder,
   createOrderDesign,
@@ -159,14 +158,12 @@ export function NewOrderPage() {
         sizeBreakdowns: breakdown,
       });
 
-      let orderDesignId: string | null = null;
       const hasDesign = (designSource === "existing" && !!selectedDesignId) || (designSource === "upload" && !!designImage);
       if (hasDesign) {
-        const orderDesign = await createOrderDesign(order.data.id, {
+        await createOrderDesign(order.data.id, {
           designId: designSource === "existing" ? selectedDesignId : undefined,
           file: designSource === "upload" ? designImage ?? undefined : undefined,
         });
-        orderDesignId = orderDesign.data.id;
       }
 
       if (assignments.length) {
@@ -177,11 +174,7 @@ export function NewOrderPage() {
             quantity: Number(row.quantity),
             notes: row.notes || undefined,
           };
-          if (orderDesignId) {
-            await createMasterAssignment(orderDesignId, data);
-          } else {
-            await createOrderAssignment(order.data.id, data);
-          }
+          await createOrderAssignment(order.data.id, data);
         }
       }
 
