@@ -7,10 +7,10 @@ import { promises as fs } from "node:fs";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.js";
-import { ownerOnly } from "../middleware/auth.js";
+import { adminOnly } from "../middleware/auth.js";
 
 const router = Router();
-router.use(ownerOnly);
+router.use(adminOnly);
 const upload = multer({ dest: path.resolve(process.cwd(), "uploads"), limits: { fileSize: 8 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, ["image/jpeg","image/png","image/webp"].includes(file.mimetype)) });
 
 const lineSchema = z.object({
