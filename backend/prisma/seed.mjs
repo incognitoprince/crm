@@ -89,12 +89,24 @@ function dateFromOffset(days) {
 }
 
 async function main() {
-  const ownerEmail = process.env.OWNER_EMAIL || "owner@tailoring.local";
-  const ownerPassword = process.env.OWNER_PASSWORD || "Owner@2026!";
-  const staffEmail = process.env.STAFF_EMAIL || "staff@tailoring.local";
+  const adminUsername = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@2026!";
+  const staffUsername = (process.env.STAFF_USERNAME || "staff").toLowerCase();
   const staffPassword = process.env.STAFF_PASSWORD || "Staff@2026!";
-  await prisma.user.upsert({ where: { email: ownerEmail }, update: { name: "Owner", role: "OWNER", active: true }, create: { name: "Owner", email: ownerEmail, passwordHash: passwordHash(ownerPassword), role: "OWNER" } });
-  await prisma.user.upsert({ where: { email: staffEmail }, update: { name: "Staff", role: "STAFF", active: true }, create: { name: "Staff", email: staffEmail, passwordHash: passwordHash(staffPassword), role: "STAFF" } });
+
+  const legacyAdmin = await prisma.user.findFirst({ where: { OR: [{ username: adminUsername }, { email: "owner@tailoring.local" }] } });
+  if (legacyAdmin) {
+    await prisma.user.update({ where: { id: legacyAdmin.id }, data: { name: "Admin", username: adminUsername, role: "ADMIN", active: true, passwordHash: passwordHash(adminPassword) } });
+  } else {
+    await prisma.user.create({ data: { name: "Admin", username: adminUsername, passwordHash: passwordHash(adminPassword), role: "ADMIN" } });
+  }
+
+  const legacyStaff = await prisma.user.findFirst({ where: { OR: [{ username: staffUsername }, { email: "staff@tailoring.local" }] } });
+  if (legacyStaff) {
+    await prisma.user.update({ where: { id: legacyStaff.id }, data: { name: "Staff", username: staffUsername, role: "STAFF", active: true, passwordHash: passwordHash(staffPassword) } });
+  } else {
+    await prisma.user.create({ data: { name: "Staff", username: staffUsername, passwordHash: passwordHash(staffPassword), role: "STAFF" } });
+  }
 
   if (process.env.SEED_DEMO_DATA !== "true") return;
 
