@@ -1,4 +1,4 @@
-export interface AuthUser { id: string; name: string; email: string; role: "OWNER" | "STAFF"; }
+export interface AuthUser { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF"; }
 export type HealthStatus = "ok" | "degraded" | "error";
 export interface DatabaseCheck { status: HealthStatus | "error"; latencyMs: number; }
 export interface HealthResponse { status: HealthStatus; service: string; version?: string; timestamp: string; uptimeSeconds: number; checks?: { database: DatabaseCheck }; }
