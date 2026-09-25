@@ -34,9 +34,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://tailoring:tailoring@postgres:5432/tailoring_crm?schema=public}
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
       AUTH_SECRET: ${AUTH_SECRET:-change-this-auth-secret-before-production-2026}
-      OWNER_EMAIL: ${OWNER_EMAIL:-owner@tailoring.local}
-      OWNER_PASSWORD: ${OWNER_PASSWORD:-Owner@2026!}
-      STAFF_EMAIL: ${STAFF_EMAIL:-staff@tailoring.local}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@2026!}
+      STAFF_USERNAME: ${STAFF_USERNAME:-staff}
       STAFF_PASSWORD: ${STAFF_PASSWORD:-Staff@2026!}
     volumes:
       - uploads_data:/app/uploads
