@@ -12,6 +12,7 @@ import { assignmentsRouter } from "./assignments.js";
 import { garmentsRouter } from "./garments.js";
 import { paymentsRouter } from "./payments.js";
 import { billsRouter } from "./bills.js";
+import { usersRouter } from "./users.js";
 import { authenticate } from "../middleware/auth.js";
 
 export const apiRouter = Router();
@@ -31,3 +32,4 @@ apiRouter.use("/production", assignmentsRouter);
 apiRouter.use("/garments", garmentsRouter);
 apiRouter.use("/payments", paymentsRouter);
 apiRouter.use("/bills", billsRouter);
+apiRouter.use("/users", usersRouter);
