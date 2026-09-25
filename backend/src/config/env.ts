@@ -14,8 +14,8 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
   AUTH_SECRET: z.string().min(32),
-  ADMIN_USERNAME: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/),
-  ADMIN_PASSWORD: z.string().min(12).max(200),
+  ADMIN_USERNAME: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/).optional(),
+  ADMIN_PASSWORD: z.string().min(12).max(200).optional(),
   SEED_DEMO_DATA: z.enum(["true", "false"]).default("false"),
 });
 
@@ -28,3 +28,7 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export const isProduction = env.NODE_ENV === "production";
+
+if (isProduction && (!env.ADMIN_USERNAME || !env.ADMIN_PASSWORD)) {
+  throw new Error("Invalid environment configuration: ADMIN_USERNAME and ADMIN_PASSWORD are required in production");
+}
