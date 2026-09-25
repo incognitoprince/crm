@@ -41,7 +41,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
     },
   });
   if (!customer) throw new AppError("Customer not found", 404, "CUSTOMER_NOT_FOUND");
-  if (req.user?.role !== "OWNER") {
+  if (req.user?.role !== "ADMIN") {
     customer.orders = customer.orders.map(({ totalAmountFils: _total, paidAmountFils: _paid, paymentStatus: _status, ...safe }) => safe as typeof customer.orders[number]);
   }
   res.json({ data: customer });
