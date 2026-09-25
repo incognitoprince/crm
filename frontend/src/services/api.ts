@@ -7,7 +7,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (!(options?.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-  const token = localStorage.getItem("tailoring_token");
+  const token = localStorage.getItem("tailoring_token") ?? sessionStorage.getItem("tailoring_token");
   if (token && !headers.has("Authorization")) headers.set("Authorization", "Bearer " + token);
   const response = await fetch(API_BASE + path, { ...options, headers });
   const body = await response.json().catch(() => null);
@@ -90,13 +90,13 @@ export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId
 export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
 
 
-export function login(username: string, password: string) { return request<{ data: { token: string; user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }); }
+export function login(username: string, password: string, rememberMe = true) { return request<{ data: { token: string; user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password, rememberMe }) }); }
 export function getMe() { return request<{ data: AuthUser }>("/api/auth/me"); }
 export function logout() { return request<void>("/api/auth/logout", { method: "POST" }); }
 
 export interface ManagedUser { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF"; active: boolean; createdAt: string; }
 export function getUsers() { return request<{data: ManagedUser[]}>("/api/users"); }
-export function createUser(data:{name:string;email:string;password:string;role:"OWNER"|"STAFF"}) { return request<{data:ManagedUser}>("/api/users",{method:"POST",body:JSON.stringify(data)}); }
+export function createUser(data:{name:string;username:string;password:string;role:"ADMIN"|"STAFF"}) { return request<{data:ManagedUser}>("/api/users",{method:"POST",body:JSON.stringify(data)}); }
 export function updateUser(id:string,data:{name?:string;role?:"ADMIN"|"STAFF";active?:boolean;password?:string}) { return request<{data:ManagedUser}>("/api/users/"+id,{method:"PATCH",body:JSON.stringify(data)}); }
 
 export function deleteUser(id:string) { return request<void>("/api/users/"+id, { method: "DELETE" }); }
