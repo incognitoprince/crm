@@ -1,0 +1,12 @@
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../config/prisma.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { AppError } from "../middleware/errorHandler.js";
+import { ownerOnly, passwordHash } from "../middleware/auth.js";
+const router=Router(); router.use(ownerOnly);
+const schema=z.object({name:z.string().trim().min(2).max(100),email:z.string().email(),password:z.string().min(8).max(100),role:z.enum(["OWNER","STAFF"]).default("STAFF")});
+router.get("/",asyncHandler(async(_req,res)=>{const users=await prisma.user.findMany({select:{id:true,name:true,email:true,role:true,active:true,createdAt:true},orderBy:{createdAt:"asc"}});res.json({data:users});}));
+router.post("/",asyncHandler(async(req,res)=>{const input=schema.parse(req.body);const user=await prisma.user.create({data:{name:input.name,email:input.email.toLowerCase(),passwordHash:passwordHash(input.password),role:input.role}}).catch(e=>{if(e?.code==="P2002")throw new AppError("Email already exists",409,"USER_EXISTS");throw e;});res.status(201).json({data:{id:user.id,name:user.name,email:user.email,role:user.role,active:user.active}});}));
+router.patch("/:id",asyncHandler(async(req,res)=>{const input=z.object({name:z.string().trim().min(2).max(100).optional(),active:z.boolean().optional(),password:z.string().min(8).max(100).optional()}).parse(req.body);const data={...input,passwordHash:input.password?passwordHash(input.password):undefined};delete (data as any).password;const user=await prisma.user.update({where:{id:req.params.id},data,select:{id:true,name:true,email:true,role:true,active:true,createdAt:true}}).catch(()=>null);if(!user)throw new AppError("User not found",404,"USER_NOT_FOUND");res.json({data:user});}));
+export {router as usersRouter};
