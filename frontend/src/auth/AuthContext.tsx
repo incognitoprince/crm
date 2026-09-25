@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { login as loginRequest, getMe } from "../services/api";
+import { login as loginRequest, getMe, logout as logoutRequest } from "../services/api";
 import type { AuthUser } from "../types";
 
 interface AuthContextValue {
@@ -18,17 +18,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     async function restoreSession() {
-      const token = localStorage.getItem("tailoring_token") ?? sessionStorage.getItem("tailoring_token");
-      if (!token) {
-        if (active) setLoading(false);
-        return;
-      }
       try {
         const result = await getMe();
         if (active) setUser(result.data);
       } catch {
-        localStorage.removeItem("tailoring_token");
-        sessionStorage.removeItem("tailoring_token");
+        if (active) setUser(null);
       } finally {
         if (active) setLoading(false);
       }
@@ -41,16 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(username: string, password: string, rememberMe: boolean) {
     const result = await loginRequest(username, password, rememberMe);
-    localStorage.removeItem("tailoring_token");
-    sessionStorage.removeItem("tailoring_token");
-    (rememberMe ? localStorage : sessionStorage).setItem("tailoring_token", result.data.token);
     setUser(result.data.user);
   }
 
   function logout() {
-    localStorage.removeItem("tailoring_token");
-    sessionStorage.removeItem("tailoring_token");
-    setUser(null);
+    void logoutRequest().catch(() => undefined).finally(() => setUser(null));
   }
 
   return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
