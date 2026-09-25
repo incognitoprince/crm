@@ -1,13 +1,32 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const navigate = useNavigate();
+  const { login, user } = useAuth();
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
-  async function submit(e: FormEvent){e.preventDefault();setSaving(true);setError("");try{await login(email,password);}catch(e){setError(e instanceof Error?e.message:"Unable to sign in");}finally{setSaving(false);}}
+
+  useEffect(() => {
+    if (user) navigate(user.role === "OWNER" ? "/dashboard" : "/orders", { replace: true });
+  }, [user, navigate]);
+
+  async function submit(e: FormEvent){
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await login(email,password);
+    } catch(e) {
+      setError(e instanceof Error ? e.message : "Unable to sign in");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return <div className="min-h-screen bg-[#f5f9fd] flex items-center justify-center p-5">
     <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_18px_50px_rgba(15,31,53,.10)]">
       <div className="mb-7 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-2xl text-white">✂</div><div><h1 className="text-2xl font-bold text-navy-900">Tailoring CRM</h1><p className="text-sm text-slate-500">Tailor shop management</p></div></div>
