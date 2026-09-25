@@ -34,9 +34,9 @@ export interface Order {
   garmentMaster?: Garment | null;
   description: string;
   quantity: number;
-  totalAmountFils: number;
-  paidAmountFils: number;
-  paymentStatus: "UNPAID" | "PARTIAL" | "PAID";
+  totalAmountFils?: number;
+  paidAmountFils?: number;
+  paymentStatus?: "UNPAID" | "PARTIAL" | "PAID";
   orderDate: string;
   deliveryDate?: string | null;
   notes?: string | null;
