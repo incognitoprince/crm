@@ -86,7 +86,8 @@ export function createPayment(data: { orderId: string; amountFils: number; metho
 
 export function getBills() { return request<{ data: Invoice[] }>("/api/bills"); }
 export function getBill(id: string) { return request<{ data: Invoice }>("/api/bills/" + id); }
-export function createBill(orderId: string) { return request<{ data: Invoice; existing: boolean }>("/api/bills", { method: "POST", body: JSON.stringify({ orderId }) }); }
+export function createBill(data: { shopId: string; customerId: string; subject?: string; modelNo?: string; notes?: string; lines: Array<{ orderId?: string; description: string; quantity: number; unitPriceFils: number }> }) { return request<{ data: Invoice }>("/api/bills", { method: "POST", body: JSON.stringify(data) }); }
+export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
 
 
 export function login(email: string, password: string) { return request<{ data: { token: string; user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }); }
