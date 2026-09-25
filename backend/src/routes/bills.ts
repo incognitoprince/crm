@@ -1,17 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
-import multer from "multer";
-import path from "node:path";
-import crypto from "node:crypto";
-import { promises as fs } from "node:fs";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { adminOnly } from "../middleware/auth.js";
+import { imageUpload, saveValidatedImage } from "../utils/imageUpload.js";
 
 const router = Router();
 router.use(adminOnly);
-const upload = multer({ dest: path.resolve(process.cwd(), "uploads"), limits: { fileSize: 8 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, ["image/jpeg","image/png","image/webp"].includes(file.mimetype)) });
 
 const lineSchema = z.object({
   orderId: z.string().optional().nullable(),
@@ -83,15 +79,12 @@ router.post("/", asyncHandler(async (req, res) => {
   res.status(201).json({ data: invoice });
 }));
 
-router.post("/:id/model-image", upload.single("image"), asyncHandler(async (req, res) => {
+router.post("/:id/model-image", imageUpload.single("image"), asyncHandler(async (req, res) => {
   const invoice = await prisma.invoice.findUnique({ where: { id: req.params.id } });
   if (!invoice) throw new AppError("Invoice not found", 404, "INVOICE_NOT_FOUND");
   if (!req.file) throw new AppError("A JPG, PNG, or WEBP image is required", 400, "IMAGE_REQUIRED");
-  const ext = path.extname(req.file.originalname).toLowerCase() || ".img";
-  const finalName = "invoice-model-" + crypto.randomUUID() + ext;
-  const finalPath = path.resolve(process.cwd(), "uploads", finalName);
-  await fs.rename(req.file.path, finalPath);
-  const updated = await prisma.invoice.update({ where: { id: invoice.id }, data: { modelImagePath: "/uploads/" + finalName }, include });
+  const stored = await saveValidatedImage(req.file, "invoice-model");
+  const updated = await prisma.invoice.update({ where: { id: invoice.id }, data: { modelImagePath: stored.path }, include });
   res.status(201).json({ data: updated });
 }));
 
