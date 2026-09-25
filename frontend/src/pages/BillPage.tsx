@@ -31,7 +31,7 @@ export function BillPage(){
  const totalQty=invoice.lines.reduce((s,l)=>s+l.quantity,0);
  return <div className="mx-auto max-w-[1050px] space-y-5">
    <div className="flex items-center justify-between print:hidden"><Link to="/bills" className="text-sm font-medium text-blue-700">← Back to Bills</Link><div className="flex gap-2"><button onClick={()=>window.print()} className="rounded-lg border bg-white px-4 py-2 text-sm">Print preview</button><button onClick={()=>window.print()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Print / Save PDF</button></div></div>
-   <article className="invoice-paper bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
+   <article className="invoice-paper invoice-printable bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
      <header className="border-b-2 border-slate-800 pb-4 text-center">
        {shop?.logoUrl&&<img src={shop.logoUrl} className="mx-auto mb-2 max-h-16 max-w-36 object-contain"/>}
        {shop?.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
