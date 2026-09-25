@@ -23,8 +23,8 @@ export function createCustomer(data: { name: string; phone: string; email?: stri
 export function updateCustomer(id: string, data: { name?: string; phone?: string; email?: string; address?: string; notes?: string; shopId?: string | null }) { return request<{ data: Customer }>("/api/customers/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
 export function getShops() { return request<{ data: Shop[] }>("/api/shops"); }
-export function createShop(data: { name: string; area: string; phone?: string }) { return request<{ data: Shop }>("/api/shops", { method: "POST", body: JSON.stringify(data) }); }
-export function updateShop(id: string, data: { name?: string; area?: string; phone?: string | null }) { return request<{ data: Shop }>("/api/shops/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
+export function createShop(data: { name: string; area: string; phone?: string; whatsapp?: string; email?: string; arabicName?: string; englishName?: string; address?: string; logoUrl?: string }) { return request<{ data: Shop }>("/api/shops", { method: "POST", body: JSON.stringify(data) }); }
+export function updateShop(id: string, data: { name?: string; area?: string; phone?: string | null; whatsapp?: string | null; email?: string | null; arabicName?: string | null; englishName?: string | null; address?: string | null; logoUrl?: string | null }) { return request<{ data: Shop }>("/api/shops/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
 export function getGarments() { return request<{ data: Garment[] }>("/api/garments"); }
 export function createGarment(data: { name: string }) { return request<{ data: Garment }>("/api/garments", { method: "POST", body: JSON.stringify(data) }); }
