@@ -16,11 +16,14 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache wget su-exec
+RUN apk add --no-cache wget
 COPY package.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
-RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN mkdir -p /app/uploads && chown -R node:node /app && chmod 0555 /app/docker-entrypoint.sh
+USER node
 EXPOSE 4000
-CMD ["sh", "-c", "mkdir -p /app/uploads && chown -R node:node /app/uploads && su-exec node sh -c 'npx prisma db execute --schema prisma/schema.prisma --file prisma/migrations/20260925_admin_username_transition/migration.sql && npx prisma db push --skip-generate && node prisma/seed.mjs && node dist/index.js'"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD wget -qO- http://127.0.0.1:4000/api/health/live || exit 1
+CMD ["sh", "./docker-entrypoint.sh"]
