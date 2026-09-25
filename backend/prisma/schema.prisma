@@ -288,16 +288,16 @@ model Payment {
 model Invoice {
   id String @id @default(cuid())
   invoiceNo String @unique
-  shopId String
-  customerId String
+  shopId String?
+  customerId String?
   orderId String?
   subject String?
   modelNo String?
   modelImagePath String?
   totalFils Int @default(0)
   notes String?
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Restrict)
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Restrict)
   order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
   lines InvoiceLine[]
   issuedAt DateTime @default(now())
