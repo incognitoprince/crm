@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import {
@@ -19,6 +20,7 @@ const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 
 export function OrderDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [designs, setDesigns] = useState<Design[]>([]);
   const [editingDesignId, setEditingDesignId] = useState<string | "new" | null>(null);
@@ -203,11 +205,11 @@ export function OrderDetailPage() {
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><p className="text-xs text-slate-500">Delivery</p><p className="mt-1 font-semibold">{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "Not scheduled"}</p></section>
     </div>
 
-    <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
+    {user?.role === "OWNER" &&     <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3"><h4 className="font-semibold text-navy-900">Payment</h4><div className="flex gap-2">{balance > 0 && <Link to={"/payments?orderId=" + order.id} className="rounded-md bg-navy-900 px-3 py-2 text-xs font-medium text-white">Record payment</Link>}<button type="button" onClick={() => void createOrOpenBill()} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-navy-900 hover:bg-slate-50">Create / view bill</button></div></div>
       <div className="mt-4 grid gap-4 sm:grid-cols-3"><div><p className="text-xs text-slate-500">Order value</p><p className="mt-1 text-lg font-semibold">{money(order.totalAmountFils)}</p></div><div><p className="text-xs text-slate-500">Paid</p><p className="mt-1 text-lg font-semibold">{money(order.paidAmountFils)}</p></div><div><p className="text-xs text-slate-500">Balance</p><p className={"mt-1 text-lg font-semibold " + (balance > 0 ? "text-rose-700" : "text-emerald-700")}>{money(balance)}</p></div></div>
       {order.payments?.length ? <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[520px] text-sm"><thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-2 font-medium">Date</th><th className="pb-2 font-medium">Method</th><th className="pb-2 font-medium">Reference</th><th className="pb-2 text-right font-medium">Amount</th></tr></thead><tbody>{order.payments.map(payment => <tr key={payment.id} className="border-b border-slate-50 last:border-0"><td className="py-2.5">{new Date(payment.receivedAt).toLocaleDateString()}</td><td className="py-2.5">{payment.method.replace("_", " ")}</td><td className="py-2.5 text-slate-500">{payment.reference || "—"}</td><td className="py-2.5 text-right font-semibold">{money(payment.amountFils)}</td></tr>)}</tbody></table></div> : <p className="mt-4 text-xs text-slate-500">No payment transactions recorded yet.</p>}
     </section>
-    <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><h4 className="font-semibold text-navy-900">Notes</h4><p className="mt-3 text-sm text-slate-600">{order.notes || "No notes added."}</p></section>
+}    <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm"><h4 className="font-semibold text-navy-900">Notes</h4><p className="mt-3 text-sm text-slate-600">{order.notes || "No notes added."}</p></section>
   </div>;
 }
