@@ -158,7 +158,7 @@ model Order {
   designs OrderDesign[]
   masterAssignments MasterAssignment[]
   payments Payment[]
-  invoice Invoice?
+  invoices Invoice[]
   invoiceLines InvoiceLine[]
   sizePrices Json?
   createdAt DateTime @default(now())
