@@ -11,7 +11,7 @@ const shopSchema = z.object({
   area: z.string().trim().min(2).max(100),
   phone: z.string().trim().max(30).optional().nullable(),
   whatsapp: z.string().trim().max(30).optional().nullable(),
-  email: z.string().trim().email().optional().nullable(),
+  email: z.string().trim().email().optional().nullable().or(z.literal("")),
   arabicName: z.string().trim().max(200).optional().nullable(),
   englishName: z.string().trim().max(200).optional().nullable(),
   address: z.string().trim().max(300).optional().nullable(),
