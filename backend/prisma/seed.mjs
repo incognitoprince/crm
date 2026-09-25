@@ -89,23 +89,30 @@ function dateFromOffset(days) {
 }
 
 async function main() {
-  const adminUsername = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
-  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@2026!";
-  const staffUsername = (process.env.STAFF_USERNAME || "staff").toLowerCase();
-  const staffPassword = process.env.STAFF_PASSWORD || "Staff@2026!";
+  const adminUsername = (process.env.ADMIN_USERNAME || "").toLowerCase().trim();
+  const adminPassword = process.env.ADMIN_PASSWORD || "";
+  const staffUsername = (process.env.STAFF_USERNAME || "").toLowerCase().trim();
+  const staffPassword = process.env.STAFF_PASSWORD || "";
 
-  const legacyAdmin = await prisma.user.findFirst({ where: { OR: [{ username: adminUsername }, { email: "owner@tailoring.local" }] } });
+  const legacyAdmin = await prisma.user.findFirst({ where: { OR: [{ username: adminUsername || "__missing__" }, { email: "owner@tailoring.local" }] } });
   if (legacyAdmin) {
-    await prisma.user.update({ where: { id: legacyAdmin.id }, data: { name: "Admin", username: adminUsername, role: "ADMIN", active: true, passwordHash: passwordHash(adminPassword) } });
+    if (!legacyAdmin.username) {
+      await prisma.user.update({ where: { id: legacyAdmin.id }, data: { username: adminUsername || "admin", role: "ADMIN", active: true } });
+    }
   } else {
+    if (!adminUsername || !adminPassword) throw new Error("No admin account exists. Set ADMIN_USERNAME and ADMIN_PASSWORD before first startup.");
     await prisma.user.create({ data: { name: "Admin", username: adminUsername, passwordHash: passwordHash(adminPassword), role: "ADMIN" } });
   }
 
-  const legacyStaff = await prisma.user.findFirst({ where: { OR: [{ username: staffUsername }, { email: "staff@tailoring.local" }] } });
-  if (legacyStaff) {
-    await prisma.user.update({ where: { id: legacyStaff.id }, data: { name: "Staff", username: staffUsername, role: "STAFF", active: true, passwordHash: passwordHash(staffPassword) } });
-  } else {
-    await prisma.user.create({ data: { name: "Staff", username: staffUsername, passwordHash: passwordHash(staffPassword), role: "STAFF" } });
+  if (staffUsername && staffPassword) {
+    const legacyStaff = await prisma.user.findFirst({ where: { OR: [{ username: staffUsername }, { email: "staff@tailoring.local" }] } });
+    if (legacyStaff) {
+      if (!legacyStaff.username) {
+        await prisma.user.update({ where: { id: legacyStaff.id }, data: { username: staffUsername, role: "STAFF", active: true } });
+      }
+    } else {
+      await prisma.user.create({ data: { name: "Staff", username: staffUsername, passwordHash: passwordHash(staffPassword), role: "STAFF" } });
+    }
   }
 
   if (process.env.SEED_DEMO_DATA !== "true") return;
