@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../auth/AuthContext";
 import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "../utils/cn";
 
@@ -17,6 +18,8 @@ const links = [
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const visibleLinks = links.filter(link => user?.role === "OWNER" || !["/dashboard","/payments","/bills"].includes(link.to));
 
   return (
     <div className="min-h-screen bg-[#f5f9fd] lg:grid lg:grid-cols-[236px_1fr]">
@@ -31,7 +34,7 @@ export function AppLayout() {
           </div>
         </div>
         <nav className="flex-1 space-y-1.5 px-3 py-5">
-          {links.map(link => (
+          {visibleLinks.map(link => (
             <NavLink key={link.to} to={link.to} className={({ isActive }) => cn(
               "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all",
               isActive ? "bg-[#1976e8] text-white shadow-[0_5px_16px_rgba(25,118,232,0.28)]" : "text-blue-50/90 hover:bg-white/10 hover:text-white"
@@ -74,7 +77,7 @@ export function AppLayout() {
               </button>
             </div>
             <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-5">
-              {links.map(link => (
+              {visibleLinks.map(link => (
                 <NavLink
                   key={link.to}
                   to={link.to}
@@ -119,9 +122,9 @@ export function AppLayout() {
             </button>
             <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">OM</div>
-              <span className="hidden text-sm font-semibold text-slate-800 sm:block">Owner</span>
-              <span className="text-slate-500">⌄</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">{(user?.name ?? "U").slice(0,2).toUpperCase()}</div>
+              <span className="hidden text-sm font-semibold text-slate-800 sm:block">{user?.name ?? "User"}</span>
+              <button type="button" onClick={logout} className="text-xs font-medium text-slate-500 hover:text-slate-800">Sign out</button>
             </div>
           </div>
         </header>
