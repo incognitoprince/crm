@@ -17,6 +17,7 @@ import { BillsPage } from "./pages/BillsPage";
 import { BillPage } from "./pages/BillPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { UsersPage } from "./pages/UsersPage";
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
@@ -38,6 +39,7 @@ function ProtectedRoutes() {
       <Route path="bills" element={user.role === "OWNER" ? <BillsPage /> : <Navigate to="/orders" replace />} />
       <Route path="bills/:id" element={user.role === "OWNER" ? <BillPage /> : <Navigate to="/orders" replace />} />
       <Route path="payments" element={user.role === "OWNER" ? <PaymentsPage /> : <Navigate to="/orders" replace />} />
+      <Route path="users" element={user.role === "OWNER" ? <UsersPage /> : <Navigate to="/orders" replace />} />
       <Route path="home" element={<Navigate to="/orders" replace />} />
       <Route path="overview" element={<LandingPage />} />
       <Route path="*" element={<NotFoundPage />} />
