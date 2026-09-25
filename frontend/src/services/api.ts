@@ -7,9 +7,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (!(options?.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-  const token = localStorage.getItem("tailoring_token") ?? sessionStorage.getItem("tailoring_token");
-  if (token && !headers.has("Authorization")) headers.set("Authorization", "Bearer " + token);
-  const response = await fetch(API_BASE + path, { ...options, headers });
+  const response = await fetch(API_BASE + path, { ...options, headers, credentials: "include" });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.message ?? "Request failed (" + response.status + ")");
   return body as T;
@@ -90,7 +88,7 @@ export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId
 export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
 
 
-export function login(username: string, password: string, rememberMe = true) { return request<{ data: { token: string; user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password, rememberMe }) }); }
+export function login(username: string, password: string, rememberMe = true) { return request<{ data: { user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password, rememberMe }) }); }
 export function getMe() { return request<{ data: AuthUser }>("/api/auth/me"); }
 export function logout() { return request<void>("/api/auth/logout", { method: "POST" }); }
 
