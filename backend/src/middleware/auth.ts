@@ -4,7 +4,7 @@ import { prisma } from "../config/prisma.js";
 import { env } from "../config/env.js";
 import { AppError } from "./errorHandler.js";
 
-export type AuthUser = { id: string; name: string; email: string; role: "OWNER" | "STAFF" };
+export type AuthUser = { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF" };
 
 declare global {
   namespace Express { interface Request { user?: AuthUser } }
@@ -37,13 +37,13 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     if (!token) throw new AppError("Authentication required", 401, "AUTH_REQUIRED");
     const session = await prisma.session.findUnique({ where: { tokenHash: hashToken(token) }, include: { user: true } });
     if (!session || session.expiresAt < new Date() || !session.user.active) throw new AppError("Session expired or invalid", 401, "AUTH_INVALID");
-    req.user = { id: session.user.id, name: session.user.name, email: session.user.email, role: session.user.role };
+    req.user = { id: session.user.id, name: session.user.name, username: session.user.username ?? session.user.name, email: session.user.email, role: session.user.role };
     next();
   } catch (error) { next(error); }
 }
 
-export function ownerOnly(req: Request, _res: Response, next: NextFunction) {
-  if (req.user?.role !== "OWNER") return next(new AppError("Owner access required", 403, "OWNER_REQUIRED"));
+export function adminOnly(req: Request, _res: Response, next: NextFunction) {
+  if (req.user?.role !== "ADMIN") return next(new AppError("Admin access required", 403, "ADMIN_REQUIRED"));
   next();
 }
 
