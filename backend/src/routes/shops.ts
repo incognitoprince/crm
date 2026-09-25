@@ -10,6 +10,12 @@ const shopSchema = z.object({
   name: z.string().trim().min(2).max(100),
   area: z.string().trim().min(2).max(100),
   phone: z.string().trim().max(30).optional().nullable(),
+  whatsapp: z.string().trim().max(30).optional().nullable(),
+  email: z.string().trim().email().optional().nullable(),
+  arabicName: z.string().trim().max(200).optional().nullable(),
+  englishName: z.string().trim().max(200).optional().nullable(),
+  address: z.string().trim().max(300).optional().nullable(),
+  logoUrl: z.string().trim().url().optional().nullable(),
 });
 
 router.get("/", asyncHandler(async (_req, res) => {
