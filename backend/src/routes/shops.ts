@@ -15,7 +15,7 @@ const shopSchema = z.object({
   arabicName: z.string().trim().max(200).optional().nullable(),
   englishName: z.string().trim().max(200).optional().nullable(),
   address: z.string().trim().max(300).optional().nullable(),
-  logoUrl: z.string().trim().url().optional().nullable(),
+  logoUrl: z.string().trim().url().optional().nullable().or(z.literal("")),
 });
 
 router.get("/", asyncHandler(async (_req, res) => {
