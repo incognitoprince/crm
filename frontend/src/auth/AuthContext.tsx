@@ -16,7 +16,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem("tailoring_token") ?? sessionStorage.getItem("tailoring_token");
     if (!token) { setLoading(false); return; }
-    getMe().then(r => setUser(r.data)).catch(() => localStorage.removeItem("tailoring_token"); sessionStorage.removeItem("tailoring_token")).finally(() => setLoading(false));
+    getMe().then(r => setUser(r.data)).catch(() => {
+      localStorage.removeItem("tailoring_token");
+      sessionStorage.removeItem("tailoring_token");
+    }).finally(() => setLoading(false));
   }, []);
   async function login(username: string, password: string, rememberMe: boolean) {
     const result = await loginRequest(username, password, rememberMe);
