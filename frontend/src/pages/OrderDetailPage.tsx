@@ -116,8 +116,7 @@ export function OrderDetailPage() {
 
   if (error) return <ErrorState message={error} />;
   if (!order) return <LoadingState label="Loading order…" />;
-  const balance = order.totalAmountFils - order.paidAmountFils;
-  const editingDesign = typeof editingDesignId === "string" && editingDesignId !== "new" ? order.designs.find(d => d.id === editingDesignId) : undefined;
+   const editingDesign = typeof editingDesignId === "string" && editingDesignId !== "new" ? order.designs.find(d => d.id === editingDesignId) : undefined;
   const editingLocked = !!editingDesign?.assignments?.length;
 
   return <div className="mx-auto max-w-5xl space-y-5">
