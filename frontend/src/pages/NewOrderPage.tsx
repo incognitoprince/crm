@@ -31,8 +31,8 @@ export function NewOrderPage() {
   const [showGarmentForm, setShowGarmentForm] = useState(false);
   const [newGarmentName, setNewGarmentName] = useState("");
   const [description, setDescription] = useState("");
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [notes, setNotes] = useState("");
+  const [deliveryDate] = useState("");
+  const [notes] = useState("");
   const [sizeBreakdowns, setSizeBreakdowns] = useState<Record<string, string>>(
     Object.fromEntries(defaultSizes.map(s => [s, ""]))
   );
