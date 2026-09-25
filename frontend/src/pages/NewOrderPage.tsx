@@ -12,7 +12,7 @@ import {
   getMasters,
   getShops,
 } from "../services/api";
-import type { Customer, Design, Garment, GarmentType, Master, Shop, PaymentMethod } from "../types";
+import type { Customer, Design, Garment, GarmentType, Master, Shop } from "../types";
 
 const defaultSizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
@@ -32,9 +32,6 @@ export function NewOrderPage() {
   const [showGarmentForm, setShowGarmentForm] = useState(false);
   const [newGarmentName, setNewGarmentName] = useState("");
   const [description, setDescription] = useState("");
-  const [total, setTotal] = useState("");
-  const [paid, setPaid] = useState("0");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [notes, setNotes] = useState("");
   const [sizeBreakdowns, setSizeBreakdowns] = useState<Record<string, string>>(
@@ -157,9 +154,6 @@ export function NewOrderPage() {
         garment,
         description,
         quantity: breakdownTotal,
-        totalAmountFils: Math.round(Number(total) * 1000),
-        paidAmountFils: Math.round(Number(paid) * 1000),
-        paymentMethod,
         deliveryDate: deliveryDate ? new Date(deliveryDate + "T00:00:00").toISOString() : null,
         notes: notes || null,
         sizeBreakdowns: breakdown,
@@ -311,13 +305,7 @@ export function NewOrderPage() {
         {assignments.length > 0 && !shopId && <p className="mt-2 text-xs text-amber-700">Select a stitching shop to load masters.</p>}
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <label className="text-sm">Total amount (KWD)<input required min="0" step="0.001" type="number" value={total} onChange={e => setTotal(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-        <label className="text-sm">Paid amount (KWD)<input min="0" step="0.001" type="number" value={paid} onChange={e => setPaid(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-        <label className="text-sm">Payment method<select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as PaymentMethod)} disabled={Number(paid) <= 0} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 disabled:bg-slate-50">{[["CASH","Cash"],["CARD","Card"],["BANK_TRANSFER","Bank transfer"],["OTHER","Other"]].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="text-sm">Delivery date<input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-        <label className="text-sm sm:col-span-3">Notes<textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-      </div>
+      <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-4"><p className="text-sm font-semibold text-navy-900">Billing is handled by the owner</p><p className="mt-1 text-xs leading-5 text-slate-600">Order users only record the operational order, quantities, sizes and production details. Rates, payments and bills are entered by the owner in Bills / Invoices.</p></div>
 
       <div className="flex justify-end gap-3">
         <button type="button" onClick={() => navigate("/orders")} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button>
