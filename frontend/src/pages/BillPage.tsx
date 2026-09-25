@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getBill } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
@@ -27,23 +27,23 @@ export function BillPage(){
  const {id}=useParams(); const [invoice,setInvoice]=useState<Invoice|null>(null); const [error,setError]=useState("");
  useEffect(()=>{if(id)getBill(id).then(r=>setInvoice(r.data)).catch(e=>setError(e instanceof Error?e.message:"Unable to load invoice"));},[id]);
  if(error)return <ErrorState message={error}/>; if(!invoice)return <LoadingState label="Loading invoice…"/>;
- const shop=invoice.shop, customer=invoice.customer;
- const quantities=useMemo(()=>invoice.lines.reduce<Record<string,number>>((a,l)=>(a[l.description]=(a[l.description]??0)+l.quantity,a),{}),[invoice.lines]);
+ const shop=invoice.shop ?? invoice.order?.shop ?? null, customer=invoice.customer ?? invoice.order?.customer ?? null;
+ const quantities=invoice.lines.reduce<Record<string,number>>((a,l)=>(a[l.description]=(a[l.description]??0)+l.quantity,a),{});
  const totalQty=invoice.lines.reduce((s,l)=>s+l.quantity,0);
  return <div className="mx-auto max-w-[1050px] space-y-5">
    <div className="flex items-center justify-between print:hidden"><Link to="/bills" className="text-sm font-medium text-blue-700">← Back to Bills</Link><div className="flex gap-2"><button onClick={()=>window.print()} className="rounded-lg border bg-white px-4 py-2 text-sm">Print preview</button><button onClick={()=>window.print()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Print / Save PDF</button></div></div>
    <article className="invoice-paper bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
      <header className="border-b-2 border-slate-800 pb-4 text-center">
-       {shop.logoUrl&&<img src={shop.logoUrl} className="mx-auto mb-2 max-h-16 max-w-36 object-contain"/>}
-       {shop.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
-       {shop.englishName&&<p className="text-xl font-bold">{shop.englishName}</p>}
-       {!shop.arabicName&&!shop.englishName&&<p className="text-xl font-bold">{shop.name}</p>}
-       {shop.address&&<p className="mt-1 text-xs">{shop.address}</p>}
-       <div className="mt-1 flex flex-wrap justify-center gap-x-4 text-xs">{shop.phone&&<span>Tel: {shop.phone}</span>}{shop.whatsapp&&<span>WhatsApp: {shop.whatsapp}</span>}{shop.email&&<span>{shop.email}</span>}</div>
+       {shop?.logoUrl&&<img src={shop.logoUrl} className="mx-auto mb-2 max-h-16 max-w-36 object-contain"/>}
+       {shop?.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
+       {shop?.englishName&&<p className="text-xl font-bold">{shop.englishName}</p>}
+       {!shop?.arabicName&&!shop?.englishName&&<p className="text-xl font-bold">{shop?.name ?? "Tailor Shop"}</p>}
+       {shop?.address&&<p className="mt-1 text-xs">{shop.address}</p>}
+       <div className="mt-1 flex flex-wrap justify-center gap-x-4 text-xs">{shop?.phone&&<span>Tel: {shop.phone}</span>}{shop?.whatsapp&&<span>WhatsApp: {shop.whatsapp}</span>}{shop?.email&&<span>{shop.email}</span>}</div>
      </header>
      <div className="py-4 text-center"><h1 className="text-2xl font-bold underline">INVOICE</h1>{invoice.subject&&<p className="mt-1 text-sm">{invoice.subject}</p>}</div>
      <div className="grid gap-4 border-y border-slate-700 py-3 text-sm sm:grid-cols-2">
-       <div><p className="font-bold">Bill To</p><p>{customer.name}</p>{customer.phone&&<p>{customer.phone}</p>}{customer.address&&<p>{customer.address}</p>}</div>
+       <div><p className="font-bold">Bill To</p><p>{customer?.name ?? "Customer"}</p>{customer?.phone&&<p>{customer.phone}</p>}{customer?.address&&<p>{customer.address}</p>}</div>
        <div className="sm:text-right"><p>Invoice Date: {date(invoice.issuedAt)}</p><p>Invoice No: {invoice.invoiceNo}</p>{invoice.modelNo&&<p>Model No: {invoice.modelNo}</p>}</div>
      </div>
      {invoice.modelImagePath&&<div className="py-4 text-center"><img src={invoice.modelImagePath} className="mx-auto max-h-44 max-w-64 object-contain"/>{invoice.modelNo&&<p className="mt-1 text-sm">Model No: {invoice.modelNo}</p>}</div>}
