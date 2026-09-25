@@ -68,18 +68,18 @@ router.get("/", asyncHandler(async (req, res) => {
     orderBy: { orderDate: "desc" },
     take: 100,
   });
-  res.json({ data: orders.map(order => redactOrderFinancials(order, req.user?.role === "OWNER")) });
+  res.json({ data: orders.map(order => redactOrderFinancials(order, req.user?.role === "ADMIN")) });
 }));
 
 router.get("/:id", asyncHandler(async (req, res) => {
   const order = await prisma.order.findUnique({ where: { id: req.params.id }, include: includes });
   if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
-  res.json({ data: redactOrderFinancials(order, req.user?.role === "OWNER") });
+  res.json({ data: redactOrderFinancials(order, req.user?.role === "ADMIN") });
 }));
 
 router.post("/", asyncHandler(async (req, res) => {
   const parsed = orderSchema.parse(req.body);
-  const input = req.user?.role === "OWNER" ? parsed : { ...parsed, totalAmountFils: 0, paidAmountFils: 0 };
+  const input = req.user?.role === "ADMIN" ? parsed : { ...parsed, totalAmountFils: 0, paidAmountFils: 0 };
   if (input.paidAmountFils > input.totalAmountFils) {
     throw new AppError("Paid amount cannot exceed order value", 400, "INVALID_PAYMENT");
   }
