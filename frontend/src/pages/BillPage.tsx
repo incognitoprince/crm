@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import html2canvas from "html2canvas";
 import { Link, useParams } from "react-router-dom";
 import { getBill } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
@@ -23,15 +24,53 @@ function words(n:number){
 }
 
 export function BillPage(){
- const {id}=useParams(); const [invoice,setInvoice]=useState<Invoice|null>(null); const [error,setError]=useState("");
+ const {id}=useParams(); const [invoice,setInvoice]=useState<Invoice|null>(null); const [error,setError]=useState(""); const [sharing,setSharing]=useState(false); const [shareOpen,setShareOpen]=useState(false); const invoiceRef=useRef<HTMLElement|null>(null);
+ async function createInvoiceImage(){
+   if(!invoiceRef.current) throw new Error("Invoice is not ready");
+   await document.fonts?.ready;
+   const canvas=await html2canvas(invoiceRef.current,{backgroundColor:"#ffffff",scale:2,useCORS:true,logging:false});
+   return new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Unable to create invoice image")),"image/png"));
+ }
+ async function shareAsImage(){
+   setSharing(true); setError("");
+   try{
+     const blob=await createInvoiceImage();
+     const file=new File([blob],`invoice-${invoice.invoiceNo}.png`,{type:"image/png"});
+     if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+       await navigator.share({title:`Invoice ${invoice.invoiceNo}`,text:`Invoice ${invoice.invoiceNo}`,files:[file]});
+     }else{
+       const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=file.name; a.click(); URL.revokeObjectURL(url);
+       setError("Image sharing is not supported by this browser. The invoice image was downloaded instead.");
+     }
+   }catch(e){
+     if(e instanceof DOMException && e.name==="AbortError") return;
+     setError(e instanceof Error?e.message:"Unable to share invoice image");
+   }finally{setSharing(false);setShareOpen(false);}
+ }
+ async function downloadImage(){
+   setSharing(true); setError("");
+   try{const blob=await createInvoiceImage(); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`invoice-${invoice.invoiceNo}.png`; a.click(); URL.revokeObjectURL(url);}
+   catch(e){setError(e instanceof Error?e.message:"Unable to create invoice image");}
+   finally{setSharing(false);setShareOpen(false);}
+ }
  useEffect(()=>{if(id)getBill(id).then(r=>setInvoice(r.data)).catch(e=>setError(e instanceof Error?e.message:"Unable to load invoice"));},[id]);
  if(error)return <ErrorState message={error}/>; if(!invoice)return <LoadingState label="Loading invoice…"/>;
  const shop=invoice.shop ?? invoice.order?.shop ?? null, customer=invoice.customer ?? invoice.order?.customer ?? null;
  const quantities=invoice.lines.reduce<Record<string,number>>((a,l)=>(a[l.description]=(a[l.description]??0)+l.quantity,a),{});
  const totalQty=invoice.lines.reduce((s,l)=>s+l.quantity,0);
  return <div className="mx-auto max-w-[1050px] space-y-5">
-   <div className="flex items-center justify-between print:hidden"><Link to="/bills" className="text-sm font-medium text-blue-700">← Back to Bills</Link><div className="flex gap-2"><button onClick={()=>window.print()} className="rounded-lg border bg-white px-4 py-2 text-sm">Print preview</button><button onClick={()=>window.print()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Print / Save PDF</button></div></div>
-   <article className="invoice-paper invoice-printable bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
+   <div className="flex items-center justify-between print:hidden"><Link to="/bills" className="text-sm font-medium text-blue-700">← Back to Bills</Link><div className="flex gap-2">
+     <button onClick={()=>window.print()} className="rounded-lg border bg-white px-4 py-2 text-sm">Print preview</button>
+     <button onClick={()=>window.print()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Print / Save PDF</button>
+     <div className="relative">
+       <button disabled={sharing} onClick={()=>setShareOpen(v=>!v)} className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700">{sharing?"Preparing…":"Share"}</button>
+       {shareOpen&&<div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-xl">
+         <button onClick={()=>void shareAsImage()} className="block w-full rounded-lg px-3 py-2 text-sm hover:bg-slate-50">Share as Image (PNG)</button>
+         <button onClick={()=>void downloadImage()} className="block w-full rounded-lg px-3 py-2 text-sm hover:bg-slate-50">Download Image</button>
+       </div>}
+     </div>
+   </div></div>
+   <article ref={invoiceRef} className="invoice-paper invoice-printable bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
      <header className="border-b-2 border-slate-800 pb-4 text-center">
        {shop?.logoUrl&&<img src={shop.logoUrl} className="mx-auto mb-2 max-h-16 max-w-36 object-contain"/>}
        {shop?.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
