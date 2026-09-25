@@ -21,7 +21,7 @@ export interface Payment { id: string; orderId: string; amountFils: number; meth
 export interface Invoice {
   id: string; invoiceNo: string; shopId: string; customerId: string; orderId?: string | null;
   subject?: string | null; modelNo?: string | null; modelImagePath?: string | null; totalFils: number; notes?: string | null;
-  issuedAt: string; shop: Shop; customer: Customer; order?: (Order & { payments?: Payment[] }) | null; lines: InvoiceLine[];
+  issuedAt: string; shop?: Shop | null; customer?: Customer | null; order?: (Order & { payments?: Payment[] }) | null; lines: InvoiceLine[];
 }
 export interface InvoiceLine { id: string; orderId?: string | null; orderDate?: string | null; description: string; quantity: number; unitPriceFils: number; totalFils: number; order?: Order | null; }
 
