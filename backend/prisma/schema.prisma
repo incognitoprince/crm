@@ -72,7 +72,8 @@ model Garment {
 model User {
   id String @id @default(cuid())
   name String
-  email String @unique
+  username String? @unique
+  email String? @unique
   passwordHash String
   role UserRole @default(STAFF)
   active Boolean @default(true)
@@ -82,7 +83,7 @@ model User {
 }
 
 enum UserRole {
-  OWNER
+  ADMIN
   STAFF
 }
 
