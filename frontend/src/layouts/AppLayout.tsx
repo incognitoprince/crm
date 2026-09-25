@@ -20,7 +20,7 @@ const links = [
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
-  const visibleLinks = links.filter(link => user?.role === "OWNER" || !["/dashboard","/payments","/bills","/users"].includes(link.to));
+  const visibleLinks = links.filter(link => user?.role === "ADMIN" || !["/dashboard","/payments","/bills","/users"].includes(link.to));
 
   return (
     <div className="min-h-screen bg-[#f5f9fd] lg:grid lg:grid-cols-[236px_1fr]">
@@ -46,7 +46,7 @@ export function AppLayout() {
           ))}
         </nav>
         <div className="border-t border-white/10 px-5 py-5">
-          <p className="text-[11px] text-blue-100/60">Owner workspace</p>
+          <p className="text-[11px] text-blue-100/60">Admin workspace</p>
           <p className="mt-1 text-xs text-white/80">Tailoring management</p>
         </div>
       </aside>
@@ -94,7 +94,7 @@ export function AppLayout() {
               ))}
             </nav>
             <div className="border-t border-white/10 px-5 py-5">
-              <p className="text-[11px] text-blue-100/60">Owner workspace</p>
+              <p className="text-[11px] text-blue-100/60">Admin workspace</p>
               <p className="mt-1 text-xs text-white/80">Tailoring management</p>
             </div>
           </aside>
