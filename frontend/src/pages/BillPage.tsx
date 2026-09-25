@@ -32,6 +32,7 @@ export function BillPage(){
    return new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Unable to create invoice image")),"image/png"));
  }
  async function shareAsImage(){
+   if(!invoice) return;
    setSharing(true); setError("");
    try{
      const blob=await createInvoiceImage();
@@ -48,6 +49,7 @@ export function BillPage(){
    }finally{setSharing(false);setShareOpen(false);}
  }
  async function downloadImage(){
+   if(!invoice) return;
    setSharing(true); setError("");
    try{const blob=await createInvoiceImage(); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`invoice-${invoice.invoiceNo}.png`; a.click(); URL.revokeObjectURL(url);}
    catch(e){setError(e instanceof Error?e.message:"Unable to create invoice image");}
