@@ -87,6 +87,17 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
   }
 }
 
+export function verifySameOrigin(req: Request, _res: Response, next: NextFunction) {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return next();
+  const origin = req.header("origin");
+  if (!origin) return next();
+  const allowed = env.CORS_ORIGIN.split(",").map(value => value.trim()).filter(Boolean);
+  if (!allowed.includes(origin)) {
+    return next(new AppError("Request origin is not allowed", 403, "ORIGIN_NOT_ALLOWED"));
+  }
+  next();
+}
+
 export function adminOnly(req: Request, _res: Response, next: NextFunction) {
   if (req.user?.role !== "ADMIN") return next(new AppError("Admin access required", 403, "ADMIN_REQUIRED"));
   next();
