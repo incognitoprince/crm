@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { ownerOnly } from "../middleware/auth.js";
+import { adminOnly } from "../middleware/auth.js";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
-router.use(ownerOnly);
+router.use(adminOnly);
 
 const closedStatuses = { notIn: ["CANCELLED" as const] };
 const activeOrderStatuses = { notIn: ["DELIVERED" as const, "CANCELLED" as const] };
