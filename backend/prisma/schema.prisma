@@ -110,6 +110,7 @@ model Customer {
   shop Shop? @relation(fields: [shopId], references: [id], onDelete: SetNull)
   measurements Measurement[]
   orders Order[]
+  invoices Invoice[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([name])
