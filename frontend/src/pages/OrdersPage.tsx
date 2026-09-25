@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { getOrders, updateOrderStatus } from "../services/api";
@@ -11,6 +12,7 @@ const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 
 export function OrdersPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [view, setView] = useState<"in-progress" | "completed">("in-progress");
   const [error, setError] = useState("");
@@ -57,7 +59,7 @@ export function OrdersPage() {
       <div className="overflow-x-auto">
         <table className="min-w-[980px] w-full text-sm">
           <thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500">
-            <th className="px-4 py-3 font-semibold">Order</th><th className="px-4 py-3 font-semibold">Customer</th><th className="px-4 py-3 font-semibold">Shop</th><th className="px-4 py-3 font-semibold">Garment</th><th className="px-4 py-3 font-semibold">Qty</th><th className="px-4 py-3 font-semibold">Delivery</th><th className="px-4 py-3 font-semibold">Amount</th><th className="px-4 py-3 font-semibold">Status</th>
+            <th className="px-4 py-3 font-semibold">Order</th><th className="px-4 py-3 font-semibold">Customer</th><th className="px-4 py-3 font-semibold">Shop</th><th className="px-4 py-3 font-semibold">Garment</th><th className="px-4 py-3 font-semibold">Qty</th><th className="px-4 py-3 font-semibold">Delivery</th>{user?.role === "OWNER" && <th className="px-4 py-3 font-semibold">Amount</th>}<th className="px-4 py-3 font-semibold">Status</th>
           </tr></thead>
           <tbody className="divide-y divide-slate-100">
             {visibleOrders.map(o => <tr key={o.id} onClick={() => navigate("/orders/" + o.id)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") navigate("/orders/" + o.id); }} role="button" tabIndex={0} className="cursor-pointer transition hover:bg-blue-50/40">
@@ -67,7 +69,7 @@ export function OrdersPage() {
               <td className="px-4 py-3.5 text-slate-600">{o.garmentMaster?.name ?? label(o.garment)}</td>
               <td className="px-4 py-3.5 font-medium">{o.quantity}</td>
               <td className="px-4 py-3.5 text-slate-600">{o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : "—"}</td>
-              <td className="px-4 py-3.5 font-semibold text-slate-800">{money(o.totalAmountFils)}</td>
+              <td className="px-4 py-3.5 font-semibold text-slate-800">{user?.role === "OWNER" ? money(o.totalAmountFils) : "—"}</td>
               <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}><select value={o.status} onChange={e => void change(o.id, e.target.value as OrderStatus)} className={"rounded-full border-0 px-2.5 py-1.5 text-xs font-semibold " + (o.status === "READY" ? "bg-emerald-50 text-emerald-700" : o.status === "CANCELLED" ? "bg-red-50 text-red-700" : o.status === "DELIVERED" ? "bg-slate-100 text-slate-600" : "bg-blue-50 text-blue-700")} aria-label={"Status for " + o.orderNo}>{statuses.map(s => <option key={s} value={s}>{label(s)}</option>)}</select></td>
             </tr>)}
           </tbody>
