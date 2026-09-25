@@ -69,7 +69,7 @@ export function OrdersPage() {
               <td className="px-4 py-3.5 text-slate-600">{o.garmentMaster?.name ?? label(o.garment)}</td>
               <td className="px-4 py-3.5 font-medium">{o.quantity}</td>
               <td className="px-4 py-3.5 text-slate-600">{o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : "—"}</td>
-              <td className="px-4 py-3.5 font-semibold text-slate-800">{user?.role === "OWNER" ? money(o.totalAmountFils) : "—"}</td>
+              {user?.role === "OWNER" && <td className="px-4 py-3.5 font-semibold text-slate-800">{money(o.totalAmountFils)}</td>}
               <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}><select value={o.status} onChange={e => void change(o.id, e.target.value as OrderStatus)} className={"rounded-full border-0 px-2.5 py-1.5 text-xs font-semibold " + (o.status === "READY" ? "bg-emerald-50 text-emerald-700" : o.status === "CANCELLED" ? "bg-red-50 text-red-700" : o.status === "DELIVERED" ? "bg-slate-100 text-slate-600" : "bg-blue-50 text-blue-700")} aria-label={"Status for " + o.orderNo}>{statuses.map(s => <option key={s} value={s}>{label(s)}</option>)}</select></td>
             </tr>)}
           </tbody>
