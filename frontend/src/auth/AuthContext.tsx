@@ -5,7 +5,7 @@ import type { AuthUser } from "../types";
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) { setLoading(false); return; }
     getMe().then(r => setUser(r.data)).catch(() => localStorage.removeItem("tailoring_token")).finally(() => setLoading(false));
   }, []);
-  async function login(email: string, password: string) {
+  async function login(username: string, password: string) {
     const result = await loginRequest(email, password);
     localStorage.setItem("tailoring_token", result.data.token);
     setUser(result.data.user);
