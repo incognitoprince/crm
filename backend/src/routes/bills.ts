@@ -21,6 +21,8 @@ const lineSchema = z.object({
 });
 
 const billSchema = z.object({
+  invoiceNo: z.string().trim().max(80).optional().nullable(),
+  issuedAt: z.string().datetime().optional().nullable(),
   shopId: z.string().min(1),
   customerId: z.string().min(1),
   subject: z.string().trim().max(300).optional().nullable(),
@@ -65,7 +67,8 @@ router.post("/", asyncHandler(async (req, res) => {
   const count = await prisma.invoice.count();
   const invoice = await prisma.invoice.create({
     data: {
-      invoiceNo: `INV-${year}-${String(count + 1).padStart(4, "0")}`,
+      invoiceNo: input.invoiceNo?.trim() || `INV-${year}-${String(count + 1).padStart(4, "0")}`,
+      issuedAt: input.issuedAt ? new Date(input.issuedAt) : new Date(),
       shopId: shop.id,
       customerId: customer.id,
       orderId: orderIds[0] ?? null,
