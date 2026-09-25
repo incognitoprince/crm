@@ -5,7 +5,6 @@ import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import type { Invoice } from "../types";
 
-const money=(fils:number)=>"K.D. "+(fils/1000).toFixed(3);
 const date=(v:string)=>new Date(v).toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"});
 function words(n:number){
   const ones=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
