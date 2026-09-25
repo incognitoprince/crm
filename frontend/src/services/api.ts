@@ -1,4 +1,4 @@
-import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment, Invoice } from "../types";
+import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment, Invoice, AuthUser } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -7,6 +7,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   if (!(options?.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
+  const token = localStorage.getItem("tailoring_token");
+  if (token && !headers.has("Authorization")) headers.set("Authorization", "Bearer " + token);
   const response = await fetch(API_BASE + path, { ...options, headers });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(body?.message ?? "Request failed (" + response.status + ")");
@@ -85,3 +87,8 @@ export function createPayment(data: { orderId: string; amountFils: number; metho
 export function getBills() { return request<{ data: Invoice[] }>("/api/bills"); }
 export function getBill(id: string) { return request<{ data: Invoice }>("/api/bills/" + id); }
 export function createBill(orderId: string) { return request<{ data: Invoice; existing: boolean }>("/api/bills", { method: "POST", body: JSON.stringify({ orderId }) }); }
+
+
+export function login(email: string, password: string) { return request<{ data: { token: string; user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }); }
+export function getMe() { return request<{ data: AuthUser }>("/api/auth/me"); }
+export function logout() { return request<void>("/api/auth/logout", { method: "POST" }); }
