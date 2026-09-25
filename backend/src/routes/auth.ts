@@ -6,19 +6,19 @@ import { AppError } from "../middleware/errorHandler.js";
 import { createSessionToken, passwordMatches, sessionTokenHash } from "../middleware/auth.js";
 
 const router = Router();
-const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
+const loginSchema = z.object({ username: z.string().trim().min(1).max(100), password: z.string().min(1) });
 
 router.post("/login", asyncHandler(async (req, res) => {
-  const { email, password } = loginSchema.parse(req.body);
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+  const { username, password } = loginSchema.parse(req.body);
+  const user = await prisma.user.findUnique({ where: { username: username.toLowerCase().trim() } });
   if (!user || !user.active || !passwordMatches(password, user.passwordHash)) {
-    throw new AppError("Invalid email or password", 401, "LOGIN_FAILED");
+    throw new AppError("Invalid username or password", 401, "LOGIN_FAILED");
   }
   const token = createSessionToken();
   await prisma.session.create({
     data: { tokenHash: sessionTokenHash(token), userId: user.id, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) },
   });
-  res.json({ data: { token, user: { id: user.id, name: user.name, email: user.email, role: user.role } } });
+  res.json({ data: { token, user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role } } });
 }));
 
 router.post("/logout", asyncHandler(async (req, res) => {
