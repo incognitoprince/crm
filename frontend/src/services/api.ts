@@ -1,4 +1,4 @@
-import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment, Invoice, AuthUser } from "../types";
+import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measurement, Order, Payment, PaymentMethod, Shop, GarmentType, Master, Design, ProductionOrder, OrderDesign, MasterAssignment, Garment, Invoice, InvoiceLine, AuthUser } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
