@@ -4,7 +4,7 @@ import { prisma } from "../config/prisma.js";
 import { env, isProduction } from "../config/env.js";
 import { AppError } from "./errorHandler.js";
 
-export type AuthUser = { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF" };
+export type AuthUser = { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF" | "INVOICE_CREATOR" };
 
 export const SESSION_COOKIE = isProduction ? "__Host-tailoring-session" : "tailoring-session";
 
