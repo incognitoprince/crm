@@ -100,7 +100,7 @@ export function BillPage(){
          </div>
        </div>
      </header>
-     <div className="py-4 text-center"><h1 className="text-2xl font-bold underline">INVOICE</h1>{invoice.subject&&<p className="mt-1 text-sm">{invoice.subject}</p>}</div>
+     <div className="py-4 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1>{invoice.subject&&<p className="mt-1 text-sm">{invoice.subject}</p>}</div>
      <div className="grid gap-4 border-y border-slate-700 py-3 text-sm sm:grid-cols-2">
        <div><p className="font-bold">Bill To</p><p>{customer?.name ?? "Customer"}</p>{customer?.phone&&<p>{customer.phone}</p>}{customer?.address&&<p>{customer.address}</p>}</div>
        <div className="sm:text-right"><p>Invoice Date: {date(invoice.issuedAt)}</p><p>Invoice No: {invoice.invoiceNo}</p>{invoice.modelNo&&<p>Model No: {invoice.modelNo}</p>}</div>
