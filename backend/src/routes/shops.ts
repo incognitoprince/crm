@@ -4,6 +4,7 @@ import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { adminOnly } from "../middleware/auth.js";
+import { imageUpload, saveValidatedImage, deleteStoredImage } from "../utils/imageUpload.js";
 
 const router = Router();
 
@@ -32,6 +33,16 @@ router.post("/", adminOnly, asyncHandler(async (req, res) => {
   const input = shopSchema.parse(req.body);
   const shop = await prisma.shop.create({ data: input });
   res.status(201).json({ data: shop });
+}));
+
+router.post("/:id/logo", adminOnly, imageUpload.single("image"), asyncHandler(async (req, res) => {
+  const shop = await prisma.shop.findUnique({ where: { id: req.params.id } });
+  if (!shop) throw new AppError("Shop not found", 404, "SHOP_NOT_FOUND");
+  if (!req.file) throw new AppError("A JPG, PNG, or WEBP image is required", 400, "IMAGE_REQUIRED");
+  const stored = await saveValidatedImage(req.file, "shop-logo");
+  await deleteStoredImage(shop.logoPath);
+  const updated = await prisma.shop.update({ where: { id: shop.id }, data: { logoPath: stored.path, logoUrl: stored.path } });
+  res.status(201).json({ data: updated });
 }));
 
 router.patch("/:id", adminOnly, asyncHandler(async (req, res) => {
