@@ -6,7 +6,7 @@ import { pinoHttp } from "pino-http";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { apiRouter } from "./routes/index.js";
-import { authenticate, verifySameOrigin } from "./middleware/auth.js";
+import { authenticate } from "./middleware/auth.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 export function createApp() {
@@ -34,7 +34,8 @@ export function createApp() {
       },
     }),
   );
-  app.use(verifySameOrigin);
+  // Same-origin/CORS enforcement is temporarily disabled during development/testing.
+  // Re-enable before production deployment.
 
   // Uploaded images are private application data and require an authenticated session.
   app.use(
