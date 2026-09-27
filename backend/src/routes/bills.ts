@@ -13,7 +13,7 @@ const lineSchema = z.object({
   orderId: z.string().optional().nullable(),
   orderNo: z.string().trim().max(80).optional().nullable(),
   imagePath: z.string().trim().max(1000).optional().nullable(),
-  description: z.string().trim().min(1).max(300),
+  description: z.string().trim().max(300).default(""),
   quantity: z.coerce.number().int().positive(),
   unitPriceFils: z.coerce.number().int().nonnegative(),
 });
