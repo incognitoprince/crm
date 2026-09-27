@@ -1,4 +1,4 @@
-export interface AuthUser { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF"; }
+export interface AuthUser { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF" | "INVOICE_CREATOR"; }
 export type HealthStatus = "ok" | "degraded" | "error";
 export interface DatabaseCheck { status: HealthStatus | "error"; latencyMs: number; }
 export interface HealthResponse { status: HealthStatus; service: string; version?: string; timestamp: string; uptimeSeconds: number; checks?: { database: DatabaseCheck }; }
@@ -23,7 +23,7 @@ export interface Invoice {
   subject?: string | null; modelNo?: string | null; modelImagePath?: string | null; totalFils: number; notes?: string | null;
   issuedAt: string; shop?: Shop | null; customer?: Customer | null; order?: (Order & { payments?: Payment[] }) | null; lines: InvoiceLine[];
 }
-export interface InvoiceLine { id: string; orderId?: string | null; orderDate?: string | null; description: string; quantity: number; unitPriceFils: number; totalFils: number; order?: Order | null; }
+export interface InvoiceLine { id: string; orderId?: string | null; orderNo?: string | null; imagePath?: string | null; orderDate?: string | null; description: string; quantity: number; unitPriceFils: number; totalFils: number; order?: Order | null; }
 
 export interface Order {
   id: string;
