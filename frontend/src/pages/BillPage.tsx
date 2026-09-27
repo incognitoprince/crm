@@ -74,7 +74,6 @@ export function BillPage(){
  useEffect(()=>{if(id)getBill(id).then(r=>setInvoice(r.data)).catch(e=>setError(e instanceof Error?e.message:"Unable to load invoice"));},[id]);
  if(error&&!invoice)return <ErrorState message={error}/>; if(!invoice)return <LoadingState label="Loading invoice…"/>;
  const shop=invoice.shop ?? invoice.order?.shop ?? null, customer=invoice.customer ?? invoice.order?.customer ?? null;
- const quantities=invoice.lines.reduce<Record<string,number>>((a,l)=>(a[l.description]=(a[l.description]??0)+l.quantity,a),{});
  const totalQty=invoice.lines.reduce((s,l)=>s+l.quantity,0);
  return <div className="mx-auto max-w-[1050px] space-y-5">
    <div className="flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
@@ -88,13 +87,18 @@ export function BillPage(){
    </div>
    {error&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
    <article ref={invoiceRef} className="invoice-paper invoice-printable bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
-     <header className="border-b-2 border-slate-800 pb-4 text-center">
-       {shop?.logoUrl&&<img crossOrigin="anonymous" src={shop.logoUrl} className="mx-auto mb-2 max-h-16 max-w-36 object-contain" alt="Shop logo"/>}
-       {shop?.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
-       {shop?.englishName&&<p className="text-xl font-bold">{shop.englishName}</p>}
-       {!shop?.arabicName&&!shop?.englishName&&<p className="text-xl font-bold">{shop?.name ?? "Tailor Shop"}</p>}
-       {shop?.address&&<p className="mt-1 text-xs whitespace-pre-line">{shop.address}</p>}
-       <div className="mt-1 flex flex-wrap justify-center gap-x-4 text-xs">{shop?.phone&&<span>Tel: {shop.phone}</span>}{shop?.whatsapp&&<span>WhatsApp: {shop.whatsapp}</span>}{shop?.email&&<span>{shop.email}</span>}</div>
+     <header className="border-b-2 border-slate-800 pb-3">
+       <div className="grid grid-cols-[110px_1fr] items-start gap-4">
+         <div className="flex justify-start">{shop?.logoUrl&&<img crossOrigin="anonymous" src={shop.logoUrl} className="max-h-20 max-w-28 object-contain" alt="Shop logo"/>}</div>
+         <div className="text-center">
+           {shop?.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
+           {shop?.englishName&&<p className="text-xl font-bold">{shop.englishName}</p>}
+           {!shop?.arabicName&&!shop?.englishName&&<p className="text-xl font-bold">{shop?.name ?? "Tailor Shop"}</p>}
+           {shop?.address&&<p className="mt-1 text-xs leading-tight whitespace-pre-line">{shop.address}</p>}
+           {(shop?.phone||shop?.whatsapp)&&<p className="mt-1 text-xs font-medium">Tel/WhatsApp: {shop.phone||shop.whatsapp}</p>}
+           {shop?.email&&<p className="text-xs">{shop.email}</p>}
+         </div>
+       </div>
      </header>
      <div className="py-4 text-center"><h1 className="text-2xl font-bold underline">INVOICE</h1>{invoice.subject&&<p className="mt-1 text-sm">{invoice.subject}</p>}</div>
      <div className="grid gap-4 border-y border-slate-700 py-3 text-sm sm:grid-cols-2">
@@ -113,10 +117,9 @@ export function BillPage(){
           <td className="border border-slate-700 p-2 text-center">{(line.unitPriceFils/1000).toFixed(3)}</td>
           <td className="border border-slate-700 p-2 text-right">{(line.totalFils/1000).toFixed(3)}</td>
         </tr>)}</tbody>
-        <tfoot><tr><td colSpan={6} className="border border-slate-700 p-2 text-right font-bold">GRAND TOTAL</td><td className="border border-slate-700 p-2 text-right font-bold">{(invoice.totalFils/1000).toFixed(3)}</td></tr><tr><td colSpan={7} className="border border-slate-700 p-2 text-center font-bold uppercase">{words(invoice.totalFils)}</td></tr></tfoot>
+        <tfoot><tr><td colSpan={4} className="border border-slate-700 p-2 font-bold">TOTAL QTY: {totalQty}</td><td colSpan={2} className="border border-slate-700 p-2 text-right font-bold">GRAND TOTAL</td><td className="border border-slate-700 p-2 text-right font-bold">{(invoice.totalFils/1000).toFixed(3)}</td></tr><tr><td colSpan={7} className="border border-slate-700 p-2 text-center font-bold uppercase">{words(invoice.totalFils)}</td></tr></tfoot>
        </table>
      </div>
-     <div className="mt-5 border border-slate-700"><div className="grid sm:grid-cols-[1fr_1fr]"><div className="p-3 font-bold">QUANTITY</div><div className="p-3">{Object.entries(quantities).map(([name,qty])=><div key={name} className="flex justify-between border-b border-slate-200 py-1 last:border-0"><span>{name}</span><span>{qty}</span></div>)}<div className="mt-1 flex justify-between border-t border-slate-700 pt-2 font-bold"><span>TOTAL QUANTITY</span><span>{totalQty}</span></div></div></div></div>
      {invoice.notes&&<div className="mt-5 whitespace-pre-wrap border-t border-slate-700 pt-4 text-sm">{invoice.notes}</div>}
      <div className="mt-12 grid grid-cols-2 gap-10 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
    </article>
