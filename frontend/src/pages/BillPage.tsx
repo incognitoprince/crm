@@ -95,8 +95,10 @@ export function BillPage(){
            {shop?.englishName&&<p className="text-xl font-bold">{shop.englishName}</p>}
            {!shop?.arabicName&&!shop?.englishName&&<p className="text-xl font-bold">{shop?.name ?? "Tailor Shop"}</p>}
            {shop?.address&&<p className="mt-1 text-xs leading-tight whitespace-pre-line">{shop.address}</p>}
-           {(shop?.phone||shop?.whatsapp)&&<p className="mt-1 text-xs font-medium">Tel/WhatsApp: {shop.phone||shop.whatsapp}</p>}
-           {shop?.email&&<p className="text-xs">{shop.email}</p>}
+           {(shop?.phone||shop?.whatsapp||shop?.email)&&<div className="mt-1 flex flex-nowrap items-center justify-center gap-3 whitespace-nowrap text-xs font-medium">
+             {(shop?.phone||shop?.whatsapp)&&<span>Tel/WhatsApp: {shop.phone||shop.whatsapp}</span>}
+             {shop?.email&&<span>Email: {shop.email}</span>}
+           </div>}
          </div>
        </div>
      </header>
