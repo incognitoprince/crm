@@ -1,18 +1,18 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { createShop, getShops, updateShop } from "../services/api";
+import { createShop, getShops, updateShop, uploadShopLogo } from "../services/api";
 import type { Shop } from "../types";
 
 const empty={name:"",area:"",phone:"",whatsapp:"",email:"",arabicName:"",englishName:"",address:"",logoUrl:""};
 
 export function ShopsPage(){
- const [shops,setShops]=useState<Shop[]>([]);const [form,setForm]=useState(empty);const [showForm,setShowForm]=useState(false);const [selected,setSelected]=useState<Shop|null>(null);const [saving,setSaving]=useState(false);const [error,setError]=useState("");
+ const [shops,setShops]=useState<Shop[]>([]);const [form,setForm]=useState(empty);const [logoFile,setLogoFile]=useState<File|null>(null);const [showForm,setShowForm]=useState(false);const [selected,setSelected]=useState<Shop|null>(null);const [saving,setSaving]=useState(false);const [error,setError]=useState("");
  async function load(){try{setShops((await getShops()).data);}catch(e){setError(e instanceof Error?e.message:"Unable to load shops");}}
  useEffect(()=>{void load();},[]);
  function set(key:keyof typeof empty,value:string){setForm(v=>({...v,[key]:value}));}
- function open(shop:Shop){setSelected(shop);setForm({name:shop.name,area:shop.area,phone:shop.phone??"",whatsapp:shop.whatsapp??"",email:shop.email??"",arabicName:shop.arabicName??"",englishName:shop.englishName??"",address:shop.address??"",logoUrl:shop.logoUrl??""});}
- async function submit(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{if(selected)await updateShop(selected.id,{...form,phone:form.phone||null,whatsapp:form.whatsapp||null,email:form.email||null,arabicName:form.arabicName||null,englishName:form.englishName||null,address:form.address||null,logoUrl:form.logoUrl||null});else await createShop(form);setForm(empty);setSelected(null);setShowForm(false);await load();}catch(e){setError(e instanceof Error?e.message:"Unable to save shop");}finally{setSaving(false);}}
+ function open(shop:Shop){setSelected(shop);setLogoFile(null);setForm({name:shop.name,area:shop.area,phone:shop.phone??"",whatsapp:shop.whatsapp??"",email:shop.email??"",arabicName:shop.arabicName??"",englishName:shop.englishName??"",address:shop.address??"",logoUrl:shop.logoUrl??""});}
+ async function submit(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{if(selected){await updateShop(selected.id,{...form,phone:form.phone||null,whatsapp:form.whatsapp||null,email:form.email||null,arabicName:form.arabicName||null,englishName:form.englishName||null,address:form.address||null,logoUrl:form.logoUrl||null});if(logoFile)await uploadShopLogo(selected.id,logoFile);}else{const created=await createShop(form);if(logoFile)await uploadShopLogo(created.data.id,logoFile);}setForm(empty);setSelected(null);setShowForm(false);setLogoFile(null);await load();}catch(e){setError(e instanceof Error?e.message:"Unable to save shop");}finally{setSaving(false);}}
  return <div className="mx-auto max-w-6xl space-y-5">
   <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Administration</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">Shops</h3><p className="mt-1 text-sm text-slate-600">Maintain branch information used across orders and invoices.</p></div><button onClick={()=>{setSelected(null);setForm(empty);setShowForm(v=>!v)}} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">{showForm?"Close":"+ Add shop"}</button></section>
   {error&&<ErrorState message={error}/>}
