@@ -35,12 +35,12 @@ router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
   await prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 
   const token = createSessionToken();
-  const maxAgeSeconds = rememberMe ? 60 * 60 * 24 * 30 : undefined;
+  const maxAgeSeconds = 60 * 60 * 24 * 30;
   await prisma.session.create({
     data: {
       tokenHash: sessionTokenHash(token),
       userId: user.id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * (rememberMe ? 24 * 30 : 8)),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
     },
   });
 
@@ -58,6 +58,13 @@ router.post("/logout", authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.get("/me", authenticate, asyncHandler(async (req, res) => {
+  const token = readCookie(req, SESSION_COOKIE);
+  if (token) {
+    await prisma.session.updateMany({
+      where: { tokenHash: sessionTokenHash(token), userId: req.user?.id },
+      data: { expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) },
+    });
+  }
   res.setHeader("Cache-Control", "no-store");
   res.json({ data: req.user });
 }));
