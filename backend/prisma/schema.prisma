@@ -85,6 +85,7 @@ model User {
 enum UserRole {
   ADMIN
   STAFF
+  INVOICE_CREATOR
 }
 
 model Session {
@@ -316,6 +317,8 @@ model InvoiceLine {
   invoiceId String
   orderId String?
   orderDate DateTime?
+  orderNo String?
+  imagePath String?
   description String
   quantity Int
   unitPriceFils Int
