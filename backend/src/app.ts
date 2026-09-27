@@ -1,6 +1,5 @@
 import express from "express";
 import path from "node:path";
-import cors from "cors";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { pinoHttp } from "pino-http";
@@ -16,12 +15,8 @@ export function createApp() {
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
   app.use(helmet());
-  app.use(
-    cors({
-      origin: env.CORS_ORIGIN.split(",").map((value) => value.trim()),
-      credentials: true,
-    }),
-  );
+  // CORS is temporarily disabled during development/testing.
+  // Re-enable explicit origin restrictions before production deployment.
   app.use(express.json({ limit: "1mb" }));
   app.use(
     rateLimit({
