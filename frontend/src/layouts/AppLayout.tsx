@@ -20,7 +20,7 @@ const links = [
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
-  const visibleLinks = links.filter(link => user?.role === "ADMIN" || !["/dashboard","/payments","/bills","/users"].includes(link.to));
+  const visibleLinks = links.filter(link => user?.role === "ADMIN" || (user?.role === "INVOICE_CREATOR" ? link.to === "/bills" : !["/dashboard","/payments","/bills","/users"].includes(link.to)));
 
   return (
     <div className="min-h-screen bg-[#f5f9fd] lg:grid lg:grid-cols-[236px_1fr]">
