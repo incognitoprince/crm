@@ -71,7 +71,7 @@ export function BillsPage() {
     setSaving(true);setError("");
     try{
       if(!shopId||!customerId)throw new Error("Select a shop and customer.");
-      const valid=lines.filter(l=>l.description.trim()&&Number(l.quantity)>0&&Number(l.rate)>=0);
+      const valid=lines.filter(l=>Number(l.quantity)>0&&Number(l.rate)>=0);
       if(!valid.length)throw new Error("Add at least one bill item.");
       const result=await createBill({
         invoiceNo:invoiceNo||undefined,
@@ -142,10 +142,20 @@ export function BillsPage() {
           <div className="mb-3 flex items-center justify-between px-2"><div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Live preview</p><p className="text-sm font-semibold text-navy-900">Customer bill</p></div><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Draft</span></div>
           <div className="min-h-[720px] bg-white p-5 text-[11px] text-slate-800 shadow-sm">
             {(()=>{const shop=shops.find(s=>s.id===shopId);const customer=customers.find(c=>c.id===customerId);return <>
-              <div className="border-b border-slate-800 pb-3 text-center">{shop?.logoUrl&&<img src={shop.logoUrl} className="mx-auto mb-2 max-h-14 max-w-28 object-contain" />}{shop?.arabicName&&<p className="text-base font-semibold">{shop.arabicName}</p>}{shop?.englishName&&<p className="text-base font-bold">{shop.englishName}</p>}{!shop?.arabicName&&!shop?.englishName&&<p className="text-base font-bold">{shop?.name||"Shop name"}</p>}{shop?.address&&<p>{shop.address}</p>}{shop?.phone&&<p>Tel: {shop.phone}</p>}{shop?.whatsapp&&<p>WhatsApp: {shop.whatsapp}</p>}{shop?.email&&<p>{shop.email}</p>}</div>
+              <div className="border-b border-slate-800 pb-3 text-center"><div className="grid grid-cols-[72px_1fr] items-start gap-2 text-center">
+                <div className="flex justify-start">{shop?.logoUrl&&<img src={shop.logoUrl} className="max-h-14 max-w-16 object-contain" alt="Shop logo" />}</div>
+                <div>
+                  {shop?.arabicName&&<p className="text-base font-semibold">{shop.arabicName}</p>}
+                  {shop?.englishName&&<p className="text-base font-bold">{shop.englishName}</p>}
+                  {!shop?.arabicName&&!shop?.englishName&&<p className="text-base font-bold">{shop?.name||"Shop name"}</p>}
+                  {shop?.address&&<p className="mt-1 whitespace-pre-line text-[9px] leading-tight">{shop.address}</p>}
+                  {(shop?.phone||shop?.whatsapp)&&<p className="mt-1">Tel/WhatsApp: {shop.phone||shop.whatsapp}</p>}
+                  {shop?.email&&<p>{shop.email}</p>}
+                </div>
+              </div></div>
               <div className="py-4 text-center"><p className="text-lg font-bold underline">INVOICE</p><p className="mt-1">{subject||"Bill / Invoice"}</p></div>
               <div className="grid grid-cols-2 gap-3 border-y border-slate-300 py-3"><div><b>Bill To</b><p>{customer?.name||"Customer"}</p>{customer?.phone&&<p>{customer.phone}</p>}</div><div className="text-right"><p>Invoice Date: {invoiceDate ? new Date(invoiceDate+"T12:00:00").toLocaleDateString() : "—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p></div></div>
-              <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1">Image</th><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.filter(l=>l.description.trim()).map((l,i)=><tr key={i}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.description}</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>)}</tbody></table>
+              <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1">Image</th><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.filter(l=>Number(l.quantity)>0&&Number(l.rate)>=0).map((l,i)=><tr key={i}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.description}</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>)}</tbody></table>
               <div className="mt-4 text-right font-bold">GRAND TOTAL&nbsp;&nbsp; {total?money(total):"K.D. 0.000"}</div>
               {notes&&<div className="mt-3 whitespace-pre-wrap border-t border-slate-300 pt-3">{notes}</div>}
             </>})()}
