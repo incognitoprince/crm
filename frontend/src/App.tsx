@@ -36,8 +36,8 @@ function ProtectedRoutes() {
       <Route path="masters" element={<MastersPage />} />
       <Route path="designs" element={<DesignsPage />} />
       <Route path="production" element={<ProductionPage />} />
-      <Route path="bills" element={user.role === "ADMIN" ? <BillsPage /> : <Navigate to="/orders" replace />} />
-      <Route path="bills/:id" element={user.role === "ADMIN" ? <BillPage /> : <Navigate to="/orders" replace />} />
+      <Route path="bills" element={(user.role === "ADMIN" || user.role === "INVOICE_CREATOR") ? <BillsPage /> : <Navigate to="/orders" replace />} />
+      <Route path="bills/:id" element={(user.role === "ADMIN" || user.role === "INVOICE_CREATOR") ? <BillPage /> : <Navigate to="/orders" replace />} />
       <Route path="payments" element={user.role === "ADMIN" ? <PaymentsPage /> : <Navigate to="/orders" replace />} />
       <Route path="users" element={user.role === "ADMIN" ? <UsersPage /> : <Navigate to="/orders" replace />} />
       <Route path="home" element={<Navigate to="/orders" replace />} />
