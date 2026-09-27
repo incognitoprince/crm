@@ -80,8 +80,9 @@ export function BillsPage() {
         lines:valid.map(l=>({orderNo:l.orderNo.trim()||undefined,imagePath:designs.find(d=>d.id===l.designId)?.imagePath||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)})),
       });
       for(let i=0;i<valid.length;i++){
-        if(valid[i].imageFile && result.data.lines[i]){
-          await uploadInvoiceLineImage(result.data.id,result.data.lines[i].id,valid[i].imageFile);
+        const file = valid[i].imageFile;
+        if(file && result.data.lines[i]){
+          await uploadInvoiceLineImage(result.data.id,result.data.lines[i].id,file);
         }
       }
       navigate("/bills/"+result.data.id);
