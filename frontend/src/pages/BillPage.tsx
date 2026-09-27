@@ -89,7 +89,7 @@ export function BillPage(){
    {error&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
    <article ref={invoiceRef} className="invoice-paper invoice-printable bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
      <header className="border-b-2 border-slate-800 pb-4 text-center">
-       {shop?.logoUrl&&<img src={shop.logoUrl} className="mx-auto mb-2 max-h-16 max-w-36 object-contain" alt="Shop logo"/>}
+       {shop?.logoUrl&&<img crossOrigin="anonymous" src={shop.logoUrl} className="mx-auto mb-2 max-h-16 max-w-36 object-contain" alt="Shop logo"/>}
        {shop?.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
        {shop?.englishName&&<p className="text-xl font-bold">{shop.englishName}</p>}
        {!shop?.arabicName&&!shop?.englishName&&<p className="text-xl font-bold">{shop?.name ?? "Tailor Shop"}</p>}
@@ -105,7 +105,7 @@ export function BillPage(){
        <table className="w-full border-collapse text-sm">
         <thead><tr className="bg-slate-50"><th className="border border-slate-700 p-2">Image</th><th className="border border-slate-700 p-2">Order No</th><th className="border border-slate-700 p-2">Order Date & Time</th><th className="border border-slate-700 p-2">Order Details</th><th className="border border-slate-700 p-2">Quantity</th><th className="border border-slate-700 p-2">Rate Per Piece<br/>(K.D.)</th><th className="border border-slate-700 p-2">Total</th></tr></thead>
         <tbody>{invoice.lines.map(line=><tr key={line.id}>
-          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img src={line.imagePath} className="mx-auto h-16 w-16 object-contain" alt="Design"/>:"—"}</td>
+          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="anonymous" src={line.imagePath} className="mx-auto h-16 w-16 object-contain" alt="Design"/>:"—"}</td>
           <td className="border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
           <td className="border border-slate-700 p-2 text-center">{line.description}</td>
