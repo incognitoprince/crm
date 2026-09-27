@@ -37,6 +37,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   if (input.password) data.passwordHash = passwordHash(input.password);
   const user = await prisma.user.update({ where: { id: req.params.id }, data, select: publicSelect }).catch(() => null);
   if (!user) throw new AppError("User not found", 404, "USER_NOT_FOUND");
+  if (input.password && req.params.id !== req.user?.id) await prisma.session.deleteMany({ where: { userId: req.params.id } });
   res.json({ data: user });
 }));
 
