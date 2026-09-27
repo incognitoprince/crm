@@ -3,14 +3,16 @@ import { z } from "zod";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.js";
-import { adminOnly } from "../middleware/auth.js";
+import { invoiceAccess } from "../middleware/auth.js";
 import { imageUpload, saveValidatedImage, deleteStoredImage } from "../utils/imageUpload.js";
 
 const router = Router();
-router.use(adminOnly);
+router.use(invoiceAccess);
 
 const lineSchema = z.object({
   orderId: z.string().optional().nullable(),
+  orderNo: z.string().trim().max(80).optional().nullable(),
+  imagePath: z.string().trim().max(1000).optional().nullable(),
   description: z.string().trim().min(1).max(300),
   quantity: z.coerce.number().int().positive(),
   unitPriceFils: z.coerce.number().int().nonnegative(),
@@ -72,11 +74,22 @@ router.post("/", asyncHandler(async (req, res) => {
       modelNo: input.modelNo ?? null,
       notes: input.notes ?? null,
       totalFils,
-      lines: { create: input.lines.map(line => ({ orderId: line.orderId ?? null, description: line.description, quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: orders.find(order => order.id === line.orderId)?.orderDate ?? null })) },
+      lines: { create: input.lines.map(line => ({ orderId: line.orderId ?? null, orderNo: line.orderNo ?? null, imagePath: line.imagePath ?? null, description: line.description, quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: orders.find(order => order.id === line.orderId)?.orderDate ?? null })) },
     },
     include,
   });
   res.status(201).json({ data: invoice });
+}));
+
+
+router.post("/:id/lines/:lineId/image", imageUpload.single("image"), asyncHandler(async (req, res) => {
+  const line = await prisma.invoiceLine.findFirst({ where: { id: req.params.lineId, invoiceId: req.params.id } });
+  if (!line) throw new AppError("Invoice line not found", 404, "INVOICE_LINE_NOT_FOUND");
+  if (!req.file) throw new AppError("A JPG, PNG, or WEBP image is required", 400, "IMAGE_REQUIRED");
+  const stored = await saveValidatedImage(req.file, "invoice-line");
+  await deleteStoredImage(line.imagePath);
+  const updated = await prisma.invoiceLine.update({ where: { id: line.id }, data: { imagePath: stored.path }, include });
+  res.status(201).json({ data: updated });
 }));
 
 router.post("/:id/model-image", imageUpload.single("image"), asyncHandler(async (req, res) => {
