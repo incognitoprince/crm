@@ -14,12 +14,21 @@ import { paymentsRouter } from "./payments.js";
 import { billsRouter } from "./bills.js";
 import { usersRouter } from "./users.js";
 import { authenticate } from "../middleware/auth.js";
+import { AppError } from "../middleware/errorHandler.js";
 
 export const apiRouter = Router();
 
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
 apiRouter.use(authenticate);
+
+apiRouter.use((req, _res, next) => {
+  if (req.user?.role !== "INVOICE_CREATOR") return next();
+  const invoiceReadPaths = new Set(["/customers", "/shops", "/designs"]);
+  if (req.path.startsWith("/bills")) return next();
+  if (req.method === "GET" && invoiceReadPaths.has(req.path)) return next();
+  next(new AppError("This account can access invoices only", 403, "INVOICE_CREATOR_RESTRICTED"));
+});
 
 apiRouter.use("/customers", customersRouter);
 apiRouter.use("/shops", shopsRouter);
