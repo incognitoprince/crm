@@ -23,7 +23,7 @@ const loginSchema = z.object({
 });
 
 router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
-  const { username, password, rememberMe } = loginSchema.parse(req.body);
+  const { username, password } = loginSchema.parse(req.body);
   const normalizedUsername = username.toLowerCase().trim();
   const user = await prisma.user.findUnique({ where: { username: normalizedUsername } });
 
