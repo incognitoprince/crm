@@ -103,6 +103,13 @@ export function adminOnly(req: Request, _res: Response, next: NextFunction) {
   next();
 }
 
+export function invoiceAccess(req: Request, _res: Response, next: NextFunction) {
+  if (req.user?.role !== "ADMIN" && req.user?.role !== "INVOICE_CREATOR") {
+    return next(new AppError("Invoice access required", 403, "INVOICE_ACCESS_REQUIRED"));
+  }
+  next();
+}
+
 export function sessionTokenHash(token: string) {
   return hashToken(token);
 }
