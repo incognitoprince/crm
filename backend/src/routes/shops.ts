@@ -10,7 +10,7 @@ const router = Router();
 
 const shopSchema = z.object({
   name: z.string().trim().min(2).max(100),
-  area: z.string().trim().min(2).max(100),
+  area: z.string().trim().max(100),
   phone: z.string().trim().max(30).optional().nullable(),
   whatsapp: z.string().trim().max(30).optional().nullable(),
   email: z.string().trim().email().optional().nullable().or(z.literal("")),
