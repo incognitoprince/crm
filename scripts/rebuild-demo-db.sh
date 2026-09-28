@@ -41,8 +41,8 @@ docker compose exec -T "$DB_SERVICE" sh -c '
   psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres
   -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '''$POSTGRES_DB''' AND pid <> pg_backend_pid();"
 '
-docker compose exec -T "$DB_SERVICE" sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE IF EXISTS \"$POSTGRES_DB\";"'
-docker compose exec -T "$DB_SERVICE" sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE \"$POSTGRES_DB\" OWNER \"$POSTGRES_USER\";"'
+docker compose exec -T "$DB_SERVICE" sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE IF EXISTS \"${POSTGRES_DB}\";"'
+docker compose exec -T "$DB_SERVICE" sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE \"${POSTGRES_DB}\" OWNER \"${POSTGRES_USER}\";"'
 
 echo "[4/7] Applying all Prisma migrations..."
 docker compose run --rm --no-deps "$BACKEND_SERVICE" ./node_modules/.bin/prisma migrate deploy
