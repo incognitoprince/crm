@@ -41,20 +41,14 @@ docker exec "$DB_SERVICE" sh -c '
   psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres
   -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '''$POSTGRES_DB''' AND pid <> pg_backend_pid();"
 '
-docker exec "$DB_SERVICE" sh -c '
-  psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres
-  -c "DROP DATABASE IF EXISTS \"$POSTGRES_DB\";"
-'
-docker exec "$DB_SERVICE" sh -c '
-  psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres
-  -c "CREATE DATABASE \"$POSTGRES_DB\" OWNER \"$POSTGRES_USER\";"
-'
+docker exec "$DB_SERVICE" sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE IF EXISTS \"$POSTGRES_DB\";"'
+docker exec "$DB_SERVICE" sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE \"$POSTGRES_DB\" OWNER \"$POSTGRES_USER\";"'
 
 echo "[4/7] Applying all Prisma migrations..."
 docker compose run --rm --no-deps "$BACKEND_SERVICE" ./node_modules/.bin/prisma migrate deploy
 
 echo "[5/7] Loading clean demo data..."
-docker compose run --rm --no-deps "$BACKEND_SERVICE" node prisma/seed.mjs
+docker compose run --rm --no-deps -e SEED_DEMO_DATA=true "$BACKEND_SERVICE" node prisma/seed.mjs
 
 echo "[6/7] Verifying core data..."
 docker exec "$DB_SERVICE" sh -c '
