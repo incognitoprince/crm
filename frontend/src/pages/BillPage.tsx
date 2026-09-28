@@ -86,16 +86,16 @@ export function BillPage(){
     </div>
    </div>
    {error&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
-   <article ref={invoiceRef} className="invoice-paper invoice-printable bg-white p-7 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] print:p-0 print:shadow-none">
+   <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-3 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-5 md:p-7 print:p-0 print:shadow-none">
      <header className="border-b-2 border-slate-800 pb-3">
-       <div className="grid grid-cols-[110px_1fr] items-start gap-4">
+       <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[90px_minmax(0,1fr)] sm:gap-3 md:grid-cols-[110px_minmax(0,1fr)] md:gap-4">
          <div className="flex justify-start">{shop?.logoUrl&&<img crossOrigin="anonymous" src={shop.logoUrl} className="max-h-20 max-w-28 object-contain" alt="Shop logo"/>}</div>
-         <div className="text-center">
-           {shop?.arabicName&&<p className="text-xl font-semibold">{shop.arabicName}</p>}
-           {shop?.englishName&&<p className="text-xl font-bold">{shop.englishName}</p>}
-           {!shop?.arabicName&&!shop?.englishName&&<p className="text-xl font-bold">{shop?.name ?? "Tailor Shop"}</p>}
-           {shop?.address&&<p className="mt-1 text-xs leading-tight whitespace-pre-line">{shop.address}</p>}
-           {(shop?.phone||shop?.whatsapp||shop?.email)&&<div className="mt-1 flex flex-nowrap items-center justify-center gap-3 whitespace-nowrap text-xs font-medium">
+         <div className="min-w-0 text-center">
+           {shop?.arabicName&&<p className="break-words text-base font-semibold sm:text-lg md:text-xl">{shop.arabicName}</p>}
+           {shop?.englishName&&<p className="break-words text-base font-bold sm:text-lg md:text-xl">{shop.englishName}</p>}
+           {!shop?.arabicName&&!shop?.englishName&&<p className="break-words text-base font-bold sm:text-lg md:text-xl">{shop?.name ?? "Tailor Shop"}</p>}
+           {shop?.address&&<p className="mt-1 break-words text-[9px] leading-tight whitespace-pre-line sm:text-[10px]">{shop.address}</p>}
+           {(shop?.phone||shop?.whatsapp||shop?.email)&&<div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[9px] font-medium sm:flex-nowrap sm:whitespace-nowrap sm:gap-3 sm:text-xs">
              {(shop?.phone||shop?.whatsapp)&&<span>Tel/WhatsApp: {shop.phone||shop.whatsapp}</span>}
              {shop?.email&&<span>Email: {shop.email}</span>}
            </div>}
@@ -107,8 +107,8 @@ export function BillPage(){
        <div><p className="font-bold">Bill To</p><p>{customer?.name ?? "Customer"}</p>{customer?.phone&&<p>{customer.phone}</p>}{customer?.address&&<p>{customer.address}</p>}</div>
        <div className="sm:text-right"><p>Invoice Date: {date(invoice.issuedAt)}</p><p>Invoice No: {invoice.invoiceNo}</p>{invoice.modelNo&&<p>Model No: {invoice.modelNo}</p>}</div>
      </div>
-     <div className="mt-4 overflow-hidden border border-slate-700">
-       <table className="w-full border-collapse text-sm">
+     <div className="mt-4 overflow-x-auto border border-slate-700">
+       <table className="w-full min-w-[620px] border-collapse text-xs sm:text-sm">
         <thead><tr className="bg-slate-50"><th className="border border-slate-700 p-2">Image</th><th className="border border-slate-700 p-2">Order No</th><th className="border border-slate-700 p-2">Order Date & Time</th><th className="border border-slate-700 p-2">Order Details</th><th className="border border-slate-700 p-2">Quantity</th><th className="border border-slate-700 p-2">Rate Per Piece<br/>(K.D.)</th><th className="border border-slate-700 p-2">Total</th></tr></thead>
         <tbody>{invoice.lines.map(line=><tr key={line.id}>
           <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="anonymous" src={line.imagePath} className="mx-auto h-16 w-16 object-contain" alt="Design"/>:"—"}</td>
