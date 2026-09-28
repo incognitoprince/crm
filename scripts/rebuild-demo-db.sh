@@ -43,13 +43,17 @@ docker compose exec -T "$DB_SERVICE" psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d po
   -c "DROP DATABASE IF EXISTS \"$DB_NAME\";"
 docker compose exec -T "$DB_SERVICE" psql -v ON_ERROR_STOP=1 -U "$DB_USER" -d postgres \
   -c "CREATE DATABASE \"$DB_NAME\" OWNER \"$DB_USER\";"
-echo "[4/7] Applying all Prisma migrations..."
-docker compose run --rm --no-deps "$BACKEND_SERVICE" ./node_modules/.bin/prisma migrate deploy
+echo "[4/7] Creating the schema from the current Prisma model..."
+docker compose run --rm --no-deps "$BACKEND_SERVICE" ./node_modules/.bin/prisma db push --skip-generate
 
-echo "[5/7] Loading clean demo data..."
+echo "[5/7] Recording repository migrations as applied..."
+docker compose run --rm --no-deps "$BACKEND_SERVICE" ./node_modules/.bin/prisma migrate resolve --applied 20260925_admin_username_transition
+docker compose run --rm --no-deps "$BACKEND_SERVICE" ./node_modules/.bin/prisma migrate resolve --applied 20260927160000_invoice_creator_and_line_images
+
+echo "[6/7] Loading clean demo data..."
 docker compose run --rm --no-deps -e SEED_DEMO_DATA=true "$BACKEND_SERVICE" node prisma/seed.mjs
 
-echo "[6/7] Verifying core data..."
+echo "[7/7] Verifying core data..."
 docker compose exec -T "$DB_SERVICE" sh -c '
   psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "
     SELECT
@@ -63,7 +67,7 @@ docker compose exec -T "$DB_SERVICE" sh -c '
   "
 '
 
-echo "[7/7] Starting application..."
+echo "[8/7] Starting application..."
 docker compose up -d
 
 echo
