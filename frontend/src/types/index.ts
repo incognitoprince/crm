@@ -68,4 +68,4 @@ export interface DashboardSummary {
   activity: Array<{ id: string; type: "ORDER_CREATED" | "ORDER_UPDATED"; orderId: string; orderNo: string; customerName: string; status: OrderStatus; amountFils: number; paidAmountFils: number; timestamp: string }>;
   topDesigns: Array<{ id: string; designNo: string; name: string; imagePath?: string | null; garment: string; orders: number }>;
 }
-export interface ProductionOrder extends Order {}
+export type ProductionOrder = Order;
