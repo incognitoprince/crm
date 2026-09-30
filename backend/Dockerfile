@@ -25,5 +25,5 @@ COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN mkdir -p /app/uploads && chown -R node:node /app && chmod 0555 /app/docker-entrypoint.sh
 USER node
 EXPOSE 4000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD wget -qO- http://127.0.0.1:4000/api/health/live || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD wget -qO- http://127.0.0.1:4000/api/health/ready || exit 1
 CMD ["sh", "./docker-entrypoint.sh"]
