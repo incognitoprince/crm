@@ -53,7 +53,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
     const garmentEnum = (garmentTypes as readonly string[]).includes(garment.name)
       ? garment.name as typeof garmentTypes[number]
       : "OTHER";
-    data = { ...rest, garment: garmentEnum, garmentId: garment.id };
+    data = { ...rest, garment: garmentEnum, garmentMaster: { connect: { id: garment.id } } };
   }
   const measurement = await prisma.measurement.update({
     where: { id: req.params.id },
