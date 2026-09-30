@@ -18,7 +18,7 @@ router.post("/", asyncHandler(async (req, res) => {
   const input = z.object({
     name: z.string().trim().min(2).max(100),
     username: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/),
-    password: z.string().min(8).max(100),
+    password: z.string().min(1).max(100),
     role: z.enum(["ADMIN", "STAFF", "INVOICE_CREATOR"]).default("STAFF"),
   }).parse(req.body);
   const user = await prisma.user.create({ data: { name: input.name, username: input.username.toLowerCase(), passwordHash: passwordHash(input.password), role: input.role }, select: publicSelect }).catch(error => {
@@ -29,7 +29,7 @@ router.post("/", asyncHandler(async (req, res) => {
 }));
 
 router.patch("/:id", asyncHandler(async (req, res) => {
-  const input = z.object({ name: z.string().trim().min(2).max(100).optional(), active: z.boolean().optional(), password: z.string().min(12).max(100).optional() }).parse(req.body);
+  const input = z.object({ name: z.string().trim().min(2).max(100).optional(), active: z.boolean().optional(), password: z.string().min(1).max(100).optional() }).parse(req.body);
   if (req.params.id === req.user?.id && input.active === false) throw new AppError("You cannot deactivate your own account", 400, "SELF_ACCESS_CHANGE");
   const data: { name?: string; active?: boolean; passwordHash?: string } = {};
   if (input.name !== undefined) data.name = input.name;
