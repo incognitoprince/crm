@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { getOrders, updateOrderStatus } from "../services/api";
-import type { Order, OrderStatus } from "../types";
+import { getOrders, getShops, updateOrderStatus } from "../services/api";
+import type { Order, OrderStatus, Shop } from "../types";
 
 const statuses: OrderStatus[] = ["PENDING","MEASUREMENT","CUTTING","STITCHING","QUALITY_CHECK","READY","DELIVERED","CANCELLED"];
 const label = (v: string) => v.replaceAll("_", " ");
@@ -11,13 +12,16 @@ const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 
 export function OrdersPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [shopFilter, setShopFilter] = useState("");
   const [view, setView] = useState<"in-progress" | "completed">("in-progress");
   const [error, setError] = useState("");
 
   const load = () => getOrders().then(r => setOrders(r.data)).catch(e => setError(e.message));
-  const visibleOrders = orders.filter(o => view === "completed" ? ["DELIVERED","CANCELLED"].includes(o.status) : !["DELIVERED","CANCELLED"].includes(o.status));
-  useEffect(() => { load(); }, []);
+  const visibleOrders = orders.filter(o => (shopFilter ? o.shop?.id === shopFilter : true) && (view === "completed" ? ["DELIVERED","CANCELLED"].includes(o.status) : !["DELIVERED","CANCELLED"].includes(o.status)));
+  useEffect(() => { load(); getShops().then(r => setShops(r.data)).catch(e => setError(e.message)); }, []);
 
   async function change(id: string, status: OrderStatus) {
     try { await updateOrderStatus(id, status); await load(); }
@@ -50,14 +54,15 @@ export function OrdersPage() {
     </div>
 
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 bg-slate-50/70 p-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/70 p-3">
+        <select value={shopFilter} onChange={e => setShopFilter(e.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700"><option value="">All shops</option>{shops.map(shop => <option key={shop.id} value={shop.id}>{shop.name}</option>)}</select>
         <button onClick={() => setView("in-progress")} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "in-progress" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>In progress <span className="ml-1 text-xs">{pending}</span></button>
         <button onClick={() => setView("completed")} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "completed" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>Completed <span className="ml-1 text-xs">{orders.length - pending}</span></button>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-[980px] w-full text-sm">
           <thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500">
-            <th className="px-4 py-3 font-semibold">Order</th><th className="px-4 py-3 font-semibold">Customer</th><th className="px-4 py-3 font-semibold">Shop</th><th className="px-4 py-3 font-semibold">Garment</th><th className="px-4 py-3 font-semibold">Qty</th><th className="px-4 py-3 font-semibold">Delivery</th><th className="px-4 py-3 font-semibold">Amount</th><th className="px-4 py-3 font-semibold">Status</th>
+            <th className="px-4 py-3 font-semibold">Order</th><th className="px-4 py-3 font-semibold">Customer</th><th className="px-4 py-3 font-semibold">Shop</th><th className="px-4 py-3 font-semibold">Garment</th><th className="px-4 py-3 font-semibold">Qty</th><th className="px-4 py-3 font-semibold">Delivery</th>{user?.role === "ADMIN" && <th className="px-4 py-3 font-semibold">Amount</th>}<th className="px-4 py-3 font-semibold">Status</th>
           </tr></thead>
           <tbody className="divide-y divide-slate-100">
             {visibleOrders.map(o => <tr key={o.id} onClick={() => navigate("/orders/" + o.id)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") navigate("/orders/" + o.id); }} role="button" tabIndex={0} className="cursor-pointer transition hover:bg-blue-50/40">
@@ -67,7 +72,7 @@ export function OrdersPage() {
               <td className="px-4 py-3.5 text-slate-600">{o.garmentMaster?.name ?? label(o.garment)}</td>
               <td className="px-4 py-3.5 font-medium">{o.quantity}</td>
               <td className="px-4 py-3.5 text-slate-600">{o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : "—"}</td>
-              <td className="px-4 py-3.5 font-semibold text-slate-800">{money(o.totalAmountFils)}</td>
+              {user?.role === "ADMIN" && <td className="px-4 py-3.5 font-semibold text-slate-800">{money(o.totalAmountFils)}</td>}
               <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}><select value={o.status} onChange={e => void change(o.id, e.target.value as OrderStatus)} className={"rounded-full border-0 px-2.5 py-1.5 text-xs font-semibold " + (o.status === "READY" ? "bg-emerald-50 text-emerald-700" : o.status === "CANCELLED" ? "bg-red-50 text-red-700" : o.status === "DELIVERED" ? "bg-slate-100 text-slate-600" : "bg-blue-50 text-blue-700")} aria-label={"Status for " + o.orderNo}>{statuses.map(s => <option key={s} value={s}>{label(s)}</option>)}</select></td>
             </tr>)}
           </tbody>

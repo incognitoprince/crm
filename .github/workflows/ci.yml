@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, feature/customer-invoice-workflow, prod]
+  pull_request:
+    branches: [main, dev, prod]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run prisma:generate
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run lint
+      - run: npm test
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: production
+      POSTGRES_DB: tailoring_crm
+      POSTGRES_USER: tailoring_app
+      POSTGRES_PASSWORD: ci-test-password-only
+      DATABASE_URL: postgresql://tailoring_app:ci-test-password-only@db:5432/tailoring_crm?schema=public
+      AUTH_SECRET: ci-test-auth-secret-012345678901234567890123
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: ci-test-admin-password
+      CORS_ORIGIN: http://localhost
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config
+      - run: docker build --tag tailoring-crm-backend:ci ./backend
+      - run: docker build --tag tailoring-crm-frontend:ci ./frontend
+      - run: docker build --tag tailoring-crm-nginx:ci ./nginx

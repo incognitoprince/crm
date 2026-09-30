@@ -1,12 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import multer from "multer";
-import path from "node:path";
-import crypto from "node:crypto";
-import { promises as fs } from "node:fs";
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { imageUpload, saveValidatedImage, deleteStoredImage } from "../utils/imageUpload.js";
 
 const router = Router();
 const id = z.string().trim().min(1).max(100);
@@ -17,12 +14,6 @@ const assignmentSchema = z.object({
   size,
   quantity: z.number().int().min(1).max(100000),
   notes: z.string().trim().max(500).nullable().optional(),
-});
-
-const upload = multer({
-  dest: path.resolve(process.cwd(), "uploads"),
-  limits: { fileSize: 8 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, ["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)),
 });
 
 const orderDesignInclude = {
@@ -108,7 +99,7 @@ router.post("/orders/:orderId/assignments", asyncHandler(async (req, res) => {
   res.status(201).json({ data: row });
 }));
 
-router.post("/orders/:orderId/designs", upload.single("image"), asyncHandler(async (req, res) => {
+router.post("/orders/:orderId/designs", imageUpload.single("image"), asyncHandler(async (req, res) => {
   const designId = typeof req.body.designId === "string" && req.body.designId.trim() ? req.body.designId.trim() : null;
   const notes = typeof req.body.notes === "string" && req.body.notes.trim() ? req.body.notes.trim() : null;
 
@@ -132,12 +123,9 @@ router.post("/orders/:orderId/designs", upload.single("image"), asyncHandler(asy
       throw new AppError("Design garment must match the order garment", 400, "GARMENT_MISMATCH");
     }
   } else if (req.file) {
-    const ext = path.extname(req.file.originalname).toLowerCase() || ".img";
-    const finalName = "order-design-" + crypto.randomUUID() + ext;
-    const finalPath = path.resolve(process.cwd(), "uploads", finalName);
-    await fs.rename(req.file.path, finalPath);
-    imagePath = "/uploads/" + finalName;
-    designName = req.file.originalname;
+    const stored = await saveValidatedImage(req.file, "order-design");
+    imagePath = stored.path;
+    designName = stored.fileName;
   }
 
   const row = await prisma.orderDesign.create({
@@ -160,7 +148,7 @@ router.post("/orders/:orderId/designs", upload.single("image"), asyncHandler(asy
 }));
 
 
-router.patch("/orders/:orderId/designs/:orderDesignId", upload.single("image"), asyncHandler(async (req, res) => {
+router.patch("/orders/:orderId/designs/:orderDesignId", imageUpload.single("image"), asyncHandler(async (req, res) => {
   const designId = typeof req.body.designId === "string" && req.body.designId.trim() ? req.body.designId.trim() : null;
   const notes = typeof req.body.notes === "string" && req.body.notes.trim() ? req.body.notes.trim() : null;
 
@@ -189,18 +177,12 @@ router.patch("/orders/:orderId/designs/:orderDesignId", upload.single("image"), 
       throw new AppError("Design garment must match the order garment", 400, "GARMENT_MISMATCH");
     }
   } else if (req.file) {
-    const ext = path.extname(req.file.originalname).toLowerCase() || ".img";
-    const finalName = "order-design-" + crypto.randomUUID() + ext;
-    const finalPath = path.resolve(process.cwd(), "uploads", finalName);
-    await fs.rename(req.file.path, finalPath);
-    imagePath = "/uploads/" + finalName;
-    designName = req.file.originalname;
+    const stored = await saveValidatedImage(req.file, "order-design");
+    imagePath = stored.path;
+    designName = stored.fileName;
   }
 
-  if (current.imagePath?.startsWith("/uploads/")) {
-    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^\/uploads\//, "uploads/"));
-    await fs.unlink(oldPath).catch(() => undefined);
-  }
+  await deleteStoredImage(current.imagePath);
 
   const row = await prisma.orderDesign.update({
     where: { id: current.id },
@@ -220,10 +202,7 @@ router.delete("/orders/:orderId/designs/:orderDesignId", asyncHandler(async (req
     throw new AppError("Design cannot be removed while master work is assigned. Remove the assignments first.", 400, "DESIGN_LOCKED");
   }
 
-  if (current.imagePath?.startsWith("/uploads/")) {
-    const oldPath = path.resolve(process.cwd(), current.imagePath.replace(/^\/uploads\//, "uploads/"));
-    await fs.unlink(oldPath).catch(() => undefined);
-  }
+  await deleteStoredImage(current.imagePath);
 
   await prisma.orderDesign.delete({ where: { id: current.id } });
   res.status(204).send();
@@ -349,7 +328,6 @@ router.patch("/assignments/:id/complete", asyncHandler(async (req, res) => {
   if (!current) throw new AppError("Assignment not found", 404, "ASSIGNMENT_NOT_FOUND");
   if (!current.startedAt) throw new AppError("Start the assignment before marking it completed", 400, "ASSIGNMENT_NOT_STARTED");
   if (current.completedAt) throw new AppError("Assignment is already completed", 400, "ASSIGNMENT_COMPLETED");
-  if (current.startedAt) throw new AppError("Assignment has already started", 400, "ASSIGNMENT_ALREADY_STARTED");
   const row = await prisma.masterAssignment.update({
     where: { id: current.id },
     data: { completedAt: new Date() },
