@@ -7,6 +7,8 @@ import { AppError } from "./errorHandler.js";
 export type AuthUser = { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF" | "INVOICE_CREATOR" };
 
 export const SESSION_COOKIE = isProduction ? "__Host-tailoring-session" : "tailoring-session";
+export const REMEMBER_ME_SESSION_SECONDS = 60 * 60 * 24 * 30;
+export const TEMPORARY_SESSION_SECONDS = 60 * 60 * 24;
 
 declare module "express-serve-static-core" {
   interface Request { user?: AuthUser }
@@ -25,6 +27,8 @@ export function readCookie(req: Request, name: string) {
   return "";
 }
 
+type CookieResponse = Pick<Response, "setHeader">;
+
 function cookieOptions(maxAgeSeconds?: number) {
   const parts = [
     `${SESSION_COOKIE}=VALUE`,
@@ -37,14 +41,28 @@ function cookieOptions(maxAgeSeconds?: number) {
   return parts;
 }
 
-export function setSessionCookie(res: Response, token: string, maxAgeSeconds?: number) {
+/**
+ * Keeps the browser cookie and the server-side session expiry in sync. A
+ * temporary login deliberately omits Max-Age so the browser drops it when the
+ * browser session ends.
+ */
+export function createSessionConfig(rememberMe: boolean, now = new Date()) {
+  const maxAgeSeconds = rememberMe ? REMEMBER_ME_SESSION_SECONDS : undefined;
+  const durationSeconds = rememberMe ? REMEMBER_ME_SESSION_SECONDS : TEMPORARY_SESSION_SECONDS;
+  return {
+    maxAgeSeconds,
+    expiresAt: new Date(now.getTime() + durationSeconds * 1000),
+  };
+}
+
+export function setSessionCookie(res: CookieResponse, token: string, maxAgeSeconds?: number) {
   const parts = cookieOptions(maxAgeSeconds);
   parts[0] = `${SESSION_COOKIE}=${token}`;
   res.setHeader("Set-Cookie", parts.join("; "));
   res.setHeader("Cache-Control", "no-store");
 }
 
-export function clearSessionCookie(res: Response) {
+export function clearSessionCookie(res: CookieResponse) {
   res.setHeader("Set-Cookie", cookieOptions(0).join("; ").replace("=VALUE", "="));
   res.setHeader("Clear-Site-Data", '"cache", "cookies", "storage"');
   res.setHeader("Cache-Control", "no-store");

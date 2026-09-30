@@ -4,7 +4,7 @@ import { rateLimit } from "express-rate-limit";
 import { prisma } from "../config/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../middleware/errorHandler.js";
-import { authenticate, clearSessionCookie, createSessionToken, passwordMatches, readCookie, sessionTokenHash, setSessionCookie, SESSION_COOKIE } from "../middleware/auth.js";
+import { authenticate, clearSessionCookie, createSessionConfig, createSessionToken, passwordMatches, readCookie, sessionTokenHash, setSessionCookie, SESSION_COOKIE } from "../middleware/auth.js";
 import { logger } from "../config/logger.js";
 
 const router = Router();
@@ -23,7 +23,7 @@ const loginSchema = z.object({
 });
 
 router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
-  const { username, password } = loginSchema.parse(req.body);
+  const { username, password, rememberMe } = loginSchema.parse(req.body);
   const normalizedUsername = username.toLowerCase().trim();
   const user = await prisma.user.findUnique({ where: { username: normalizedUsername } });
 
@@ -35,16 +35,16 @@ router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
   await prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 
   const token = createSessionToken();
-  const maxAgeSeconds = 60 * 60 * 24 * 30;
+  const sessionConfig = createSessionConfig(rememberMe);
   await prisma.session.create({
     data: {
       tokenHash: sessionTokenHash(token),
       userId: user.id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+      expiresAt: sessionConfig.expiresAt,
     },
   });
 
-  setSessionCookie(res, token, maxAgeSeconds);
+  setSessionCookie(res, token, sessionConfig.maxAgeSeconds);
   logger.info({ userId: user.id, username: user.username, role: user.role, ip: req.ip }, "Authentication succeeded");
   res.json({ data: { user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role } } });
 }));
@@ -58,13 +58,6 @@ router.post("/logout", authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.get("/me", authenticate, asyncHandler(async (req, res) => {
-  const token = readCookie(req, SESSION_COOKIE);
-  if (token) {
-    await prisma.session.updateMany({
-      where: { tokenHash: sessionTokenHash(token), userId: req.user?.id },
-      data: { expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) },
-    });
-  }
   res.setHeader("Cache-Control", "no-store");
   res.json({ data: req.user });
 }));
