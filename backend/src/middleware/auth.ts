@@ -8,8 +8,8 @@ export type AuthUser = { id: string; name: string; username: string; email?: str
 
 export const SESSION_COOKIE = isProduction ? "__Host-tailoring-session" : "tailoring-session";
 
-declare global {
-  namespace Express { interface Request { user?: AuthUser } }
+declare module "express-serve-static-core" {
+  interface Request { user?: AuthUser }
 }
 
 function hashToken(token: string) {
