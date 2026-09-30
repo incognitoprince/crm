@@ -17,11 +17,7 @@ export function UsersPage(){
  async function remove(u:ManagedUser){if(!window.confirm("Delete user '"+u.username+"'? This cannot be undone."))return;setError("");try{await deleteUser(u.id);await load();}catch(e){setError(e instanceof Error?e.message:"Unable to delete user");}}
  async function toggle(u:ManagedUser){setError("");try{await updateUser(u.id,{active:!u.active});await load();}catch(e){setError(e instanceof Error?e.message:"Unable to update user");}}
  async function resetPassword(u:ManagedUser){
-   const password=window.prompt("Enter a new password for "+u.username+" (minimum 12 characters):");
-   if(password===null)return;
-   if(password.length<12){setError("Password must contain at least 12 characters.");return;}
-   setResetting(u.id);setError("");
-   try{await updateUser(u.id,{password});await load();}catch(e){setError(e instanceof Error?e.message:"Unable to change password");}finally{setResetting("");}
+   setPasswordModal(u); setNewPassword(""); setShowPassword(false); setError("");
  }
  return <div className="mx-auto max-w-6xl space-y-5">
   <section><p className="text-xs uppercase tracking-[.18em] text-slate-500">Administration</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">User management</h3><p className="mt-1 text-sm text-slate-600">Create users, assign access once, activate/deactivate accounts, and let admins reset passwords.</p></section>
@@ -29,7 +25,7 @@ export function UsersPage(){
   <form onSubmit={submit} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-5">
    <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Name" className="h-11 rounded-md border px-3"/>
    <input required value={form.username} onChange={e=>setForm({...form,username:e.target.value})} placeholder="Username" className="h-11 rounded-md border px-3"/>
-   <input required minLength={12} type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="Password (12+)" className="h-11 rounded-md border px-3"/>
+   <input required type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="Password" className="h-11 rounded-md border px-3"/>
    <select value={form.role} onChange={e=>setForm({...form,role:e.target.value as ManagedUser["role"]})} className="h-11 rounded-md border px-3">
     <option value="STAFF">Staff</option><option value="INVOICE_CREATOR">Invoice Creator</option><option value="ADMIN">Admin</option>
    </select>
@@ -49,5 +45,18 @@ export function UsersPage(){
     </tr>)}</tbody>
    </table></div>
   </section>
+ </div>{passwordModal&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+   <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+    <div className="flex items-start justify-between gap-4"><div><h4 className="text-lg font-semibold text-slate-900">Change password</h4><p className="mt-1 text-sm text-slate-500">Set a new password for {passwordModal.username}.</p></div><button type="button" onClick={()=>setPasswordModal(null)} className="text-xl text-slate-400" aria-label="Close">×</button></div>
+    <div className="mt-5">
+     <label className="mb-1 block text-sm font-medium text-slate-700">New password</label>
+     <div className="relative"><input autoFocus required type={showPassword?"text":"password"} value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Enter new password" className="h-11 w-full rounded-md border px-3 pr-20"/>
+      <button type="button" onClick={()=>setShowPassword(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-medium text-blue-700">{showPassword?"Hide":"Show"}</button>
+     </div>
+     <p className="mt-2 text-xs text-slate-500">Any password is allowed; enter at least 1 character.</p>
+    </div>
+    <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={()=>setPasswordModal(null)} className="rounded-md border px-4 py-2 text-sm">Cancel</button><button type="button" disabled={!newPassword || resetting===passwordModal.id} onClick={async()=>{setResetting(passwordModal.id);setError("");try{await updateUser(passwordModal.id,{password:newPassword});setPasswordModal(null);setNewPassword("");await load();}catch(e){setError(e instanceof Error?e.message:"Unable to change password");}finally{setResetting("");}}} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{resetting===passwordModal.id?"Saving…":"Save password"}</button></div>
+   </div>
+  </div>}
  </div>;
 }
