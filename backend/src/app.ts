@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { pinoHttp } from "pino-http";
 import { env } from "./config/env.js";
+import { AppError } from "./middleware/errorHandler.js";
 import { logger } from "./config/logger.js";
 import { apiRouter } from "./routes/index.js";
 import { authenticate, verifySameOrigin } from "./middleware/auth.js";
