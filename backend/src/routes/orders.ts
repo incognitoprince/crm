@@ -44,7 +44,7 @@ const includes = {
   },
 };
 
-function redactOrderFinancials<T extends Record<string, any>>(order: T, owner: boolean) {
+function redactOrderFinancials<T extends Record<string, unknown>>(order: T, owner: boolean) {
   if (owner) return order;
   const { totalAmountFils: _total, paidAmountFils: _paid, paymentStatus: _status, payments: _payments, ...safe } = order;
   return safe;
