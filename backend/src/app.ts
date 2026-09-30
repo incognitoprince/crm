@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import path from "node:path";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
@@ -6,7 +7,7 @@ import { pinoHttp } from "pino-http";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { apiRouter } from "./routes/index.js";
-import { authenticate } from "./middleware/auth.js";
+import { authenticate, verifySameOrigin } from "./middleware/auth.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 export function createApp() {
@@ -15,8 +16,17 @@ export function createApp() {
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
   app.use(helmet());
-  // CORS is temporarily disabled during development/testing.
-  // Re-enable explicit origin restrictions before production deployment.
+  const allowedOrigins = env.CORS_ORIGIN.split(",").map(value => value.trim()).filter(Boolean);
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new AppError("Request origin is not allowed", 403, "ORIGIN_NOT_ALLOWED"));
+    },
+    credentials: true,
+    methods: ["GET", "HEAD", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Accept"],
+  }));
+  app.use(verifySameOrigin);
   app.use(express.json({ limit: "1mb" }));
   app.use(
     rateLimit({
@@ -34,9 +44,6 @@ export function createApp() {
       },
     }),
   );
-  // Same-origin/CORS enforcement is temporarily disabled during development/testing.
-  // Re-enable before production deployment.
-
   // Uploaded images are private application data and require an authenticated session.
   app.use(
     "/uploads",
