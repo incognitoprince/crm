@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -17,7 +18,7 @@ const designSchema = z.object({
 
 router.get("/", asyncHandler(async (req, res) => {
   const garment = typeof req.query.garment === "string" ? req.query.garment : undefined;
-  let where: any = { active: true };
+  let where: Prisma.DesignWhereInput = { active: true };
   if (garment) {
     const garmentRecord = await prisma.garment.findFirst({ where: { name: garment, active: true } });
     if (!garmentRecord) return res.json({ data: [] });
