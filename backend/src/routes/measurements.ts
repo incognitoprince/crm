@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -44,7 +45,7 @@ router.post("/", asyncHandler(async (req, res) => {
 
 router.patch("/:id", asyncHandler(async (req, res) => {
   const input = measurementSchema.omit({ customerId: true }).partial().parse(req.body);
-  let data: any = input;
+  let data: Prisma.MeasurementUpdateInput = input;
   if (input.garment) {
     const garment = await prisma.garment.findFirst({ where: { name: input.garment, active: true } });
     if (!garment) throw new AppError("Garment not found or inactive", 400, "GARMENT_NOT_FOUND");
