@@ -10,7 +10,7 @@ const roleLabels: Record<ManagedUser["role"], string> = {
 export function UsersPage(){
  const [users,setUsers]=useState<ManagedUser[]>([]);
  const [form,setForm]=useState({name:"",username:"",password:"",role:"STAFF" as ManagedUser["role"]});
- const [error,setError]=useState(""); const [saving,setSaving]=useState(false); const [resetting,setResetting]=useState("");
+ const [error,setError]=useState(""); const [saving,setSaving]=useState(false); const [resetting,setResetting]=useState(""); const [passwordModal,setPasswordModal]=useState<ManagedUser|null>(null); const [newPassword,setNewPassword]=useState(""); const [showPassword,setShowPassword]=useState(false); const [passwordModal,setPasswordModal]=useState<ManagedUser|null>(null); const [newPassword,setNewPassword]=useState(""); const [showPassword,setShowPassword]=useState(false);
  const load=()=>getUsers().then(r=>setUsers(r.data)).catch(e=>setError(e instanceof Error?e.message:"Unable to load users"));
  useEffect(()=>{void load();},[]);
  async function submit(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{await createUser(form);setForm({name:"",username:"",password:"",role:"STAFF"});await load();}catch(e){setError(e instanceof Error?e.message:"Unable to create user");}finally{setSaving(false);}}
