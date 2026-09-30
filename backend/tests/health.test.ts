@@ -12,10 +12,10 @@ describe("health and security baseline", () => {
     expect(response.body.service).toBe("tailoring-crm-api");
   });
 
-  it("returns 404 for unknown routes", async () => {
+  it("requires authentication before protected unknown API routes are resolved", async () => {
     const response = await request(app).get("/api/does-not-exist");
-    expect(response.status).toBe(404);
-    expect(response.body.code).toBe("NOT_FOUND");
+    expect(response.status).toBe(401);
+    expect(response.body.code).toBe("AUTH_REQUIRED");
   });
 
   it("requires authentication for protected APIs", async () => {
