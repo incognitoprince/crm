@@ -219,6 +219,9 @@ router.post("/order-designs/:orderDesignId/assignments", asyncHandler(async (req
   if (!od.order.shopId) {
     throw new AppError("Assign a stitching shop to the order before assigning a master", 400, "ORDER_SHOP_REQUIRED");
   }
+  if (["DELIVERED", "CANCELLED"].includes(od.order.status)) {
+    throw new AppError("Completed/closed orders cannot receive new master assignments", 400, "ORDER_CLOSED");
+  }
 
   const master = await prisma.master.findUnique({ where: { id: input.masterId } });
   if (!master || !master.active) throw new AppError("Master not found or inactive", 404, "MASTER_NOT_FOUND");
