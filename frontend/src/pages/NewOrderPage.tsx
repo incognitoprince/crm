@@ -207,7 +207,7 @@ export function NewOrderPage() {
           Customer
           <select required value={customerId} onChange={e => setCustomerId(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
             <option value="">Choose customer…</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.name} · {c.customerNo}</option>)}
+            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
 
