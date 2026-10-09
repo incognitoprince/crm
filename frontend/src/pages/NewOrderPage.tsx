@@ -48,12 +48,18 @@ export function NewOrderPage() {
       setCustomers(c.data);
       setShops(s.data);
       setGarments(g.data);
-      const selected = c.data.find(customer => customer.id === searchParams.get("customerId")) ?? c.data[0];
+      const requestedCustomerId = searchParams.get("customerId");
+      const selected = requestedCustomerId
+        ? c.data.find(customer => customer.id === requestedCustomerId)
+        : undefined;
       if (selected) {
         setCustomerId(selected.id);
         if (selected.shop?.id) setShopId(selected.shop.id);
+        else if (s.data[0]) setShopId(s.data[0].id);
+      } else if (!requestedCustomerId && c.data[0]) {
+        setCustomerId(current => current || c.data[0].id);
+        if (s.data[0]) setShopId(current => current || s.data[0].id);
       }
-      if (s.data[0] && !selected?.shop?.id) setShopId(s.data[0].id);
     }).catch(e => setError(e instanceof Error ? e.message : "Unable to load order form"));
   }, [searchParams]);
 
