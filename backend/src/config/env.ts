@@ -15,7 +15,8 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
   AUTH_SECRET: z.string().min(32),
   ADMIN_USERNAME: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9._-]+$/).optional(),
-  ADMIN_PASSWORD: z.string().min(1).max(200).optional(),
+  // Intentionally no minimum length beyond non-empty: existing production credentials remain compatible.
+  ADMIN_PASSWORD: z.string().min(1, "ADMIN_PASSWORD must not be empty").max(200).optional(),
   SEED_DEMO_DATA: z.enum(["true", "false"]).default("false"),
 });
 
