@@ -14,7 +14,6 @@ const links = [
   { to: "/payments", label: "Payments", icon: "₹" },
   { to: "/bills", label: "Bills / Invoices", icon: "▤" },
   { to: "/users", label: "Users", icon: "♙" },
-  { to: "/overview", label: "System status", icon: "⚙" },
 ];
 
 export function AppLayout() {
