@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./layouts/AppLayout";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { DashboardPage } from "./pages/DashboardPage";
-import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { CustomerDetailPage } from "./pages/CustomerDetailPage";
@@ -41,7 +40,7 @@ function ProtectedRoutes() {
       <Route path="payments" element={user.role === "ADMIN" ? <PaymentsPage /> : <Navigate to="/orders" replace />} />
       <Route path="users" element={user.role === "ADMIN" ? <UsersPage /> : <Navigate to="/orders" replace />} />
       <Route path="home" element={<Navigate to={user.role === "INVOICE_CREATOR" ? "/bills" : "/orders"} replace />} />
-      <Route path="overview" element={user.role === "INVOICE_CREATOR" ? <Navigate to="/bills" replace /> : <LandingPage />} />
+      <Route path="overview" element={<Navigate to={user.role === "ADMIN" ? "/dashboard" : user.role === "INVOICE_CREATOR" ? "/bills" : "/orders"} replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Route>
   </Routes>;
