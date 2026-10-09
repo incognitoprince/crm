@@ -96,7 +96,7 @@ export function CustomerDetailPage() {
     <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
       {!editing ? <div className="flex flex-col justify-between gap-4 sm:flex-row">
         <div><p className="text-xs font-medium text-slate-500">{customer.customerNo}</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">{customer.name}</h3><p className="mt-1 text-sm text-slate-600">{customer.phone} · {customer.shop?.name ?? "No shop"}</p><p className="mt-1 text-sm text-slate-500">{customer.email || "No email"} · {customer.address || "No address"}</p></div>
-        <div className="flex gap-2"><Link to="/orders/new" className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white">+ New order</Link><button onClick={() => setEditing(true)} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Edit customer</button></div>
+        <div className="flex gap-2"><Link to={`/orders/new?customerId=${encodeURIComponent(customer.id)}`} className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white">+ New order</Link><button onClick={() => setEditing(true)} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Edit customer</button></div>
       </div> : <form onSubmit={e => { e.preventDefault(); void saveCustomer(e.currentTarget); }} className="grid gap-3 sm:grid-cols-2">
         <input name="name" required defaultValue={customer.name} placeholder="Name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <input name="phone" required defaultValue={customer.phone} placeholder="Phone" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
