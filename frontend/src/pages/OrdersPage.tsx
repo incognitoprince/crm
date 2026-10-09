@@ -67,7 +67,7 @@ export function OrdersPage() {
           <tbody className="divide-y divide-slate-100">
             {visibleOrders.map(o => <tr key={o.id} onClick={() => navigate("/orders/" + o.id)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") navigate("/orders/" + o.id); }} role="button" tabIndex={0} className="cursor-pointer transition hover:bg-blue-50/40">
               <td className="px-4 py-3.5"><span className="font-semibold text-blue-700">{o.orderNo}</span><p className="mt-0.5 text-xs text-slate-400">{new Date(o.orderDate).toLocaleDateString()}</p></td>
-              <td className="px-4 py-3.5"><span className="font-medium text-slate-800">{o.customer.name}</span><p className="mt-0.5 text-xs text-slate-500">{o.customer.phone}</p></td>
+              <td className="px-4 py-3.5"><span className="font-medium text-slate-800">{o.customer.name}</span>{o.customer.phone?.trim() && o.customer.phone.trim().toLowerCase() !== "not provided" && <p className="mt-0.5 text-xs text-slate-500">{o.customer.phone}</p>}</td>
               <td className="px-4 py-3.5 text-slate-600">{o.shop?.name ?? "—"}</td>
               <td className="px-4 py-3.5 text-slate-600">{o.garmentMaster?.name ?? label(o.garment)}</td>
               <td className="px-4 py-3.5 font-medium">{o.quantity}</td>
