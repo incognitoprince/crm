@@ -183,7 +183,7 @@ export function BillPage(){
      <div className="py-4 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1>{invoice.subject&&<p className="mt-1 text-sm break-words">{invoice.subject}</p>}</div>
 
      <div className="grid gap-4 border-y border-slate-700 py-3 text-sm sm:grid-cols-2">
-       <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{customer?.phone&&<p data-invoice-nowrap>{customer.phone}</p>}{customer?.address&&<p className="break-words">{customer.address}</p>}</div>
+       <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p data-invoice-nowrap>{customer.phone}</p>}{customer?.address?.trim() && customer.address.trim().toLowerCase() !== "not provided" && <p className="break-words">{customer.address}</p>}</div>
        <div className="sm:text-right"><p data-invoice-nowrap>Invoice Date: {date(invoice.issuedAt)}</p><p data-invoice-nowrap>Invoice No: {invoice.invoiceNo}</p>{invoice.modelNo&&<p data-invoice-nowrap>Model No: {invoice.modelNo}</p>}</div>
      </div>
 
