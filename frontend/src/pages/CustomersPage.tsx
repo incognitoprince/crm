@@ -53,7 +53,7 @@ export function CustomersPage() {
           <div className="overflow-x-auto"><table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Phone</th><th className="px-4 py-3">Shop</th><th className="px-4 py-3">Orders</th></tr></thead>
             <tbody className="divide-y divide-slate-100">{customers.map(c => <tr key={c.id} onClick={() => navigate("/customers/" + c.id)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") navigate("/customers/" + c.id); }} role="button" tabIndex={0} className="cursor-pointer hover:bg-slate-50">
-              <td className="px-4 py-3"><p className="font-medium text-navy-900">{c.name}</p><p className="text-xs text-slate-500">{c.customerNo}</p></td>
+              <td className="px-4 py-3"><p className="font-medium text-navy-900">{c.name}</p></td>
               <td className="px-4 py-3 text-slate-600">{c.phone}</td><td className="px-4 py-3 text-slate-600">{c.shop?.name ?? "—"}</td><td className="px-4 py-3 text-slate-600">{c._count?.orders ?? 0}</td>
             </tr>)}</tbody>
           </table></div>
