@@ -17,6 +17,7 @@ export function DesignsPage() {
   const [designNo, setDesignNo] = useState("");
   const [name, setName] = useState("");
   const [garment, setGarment] = useState("");
+  const [garmentDropdownOpen, setGarmentDropdownOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -36,6 +37,7 @@ export function DesignsPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!garment) { setError("Choose a garment before saving the design."); return; }
     setSaving(true);
     setError("");
     try {
@@ -64,8 +66,8 @@ export function DesignsPage() {
     }
   }
 
-  async function deleteGarment() {
-    const selectedGarment = garments.find(item => item.name === garment);
+  async function deleteGarment(garmentId: string) {
+    const selectedGarment = garments.find(item => item.id === garmentId);
     if (!selectedGarment || selectedGarment.name.trim().toUpperCase() === "OTHER") return;
     const confirmed = window.confirm('Remove "' + selectedGarment.name + '" from the garment list? Existing orders and designs will be preserved.');
     if (!confirmed) return;
@@ -73,7 +75,7 @@ export function DesignsPage() {
     try {
       await updateGarment(selectedGarment.id, { active: false });
       setGarments(current => current.filter(item => item.id !== selectedGarment.id));
-      setGarment("");
+      if (garment === selectedGarment.name) setGarment("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to remove garment");
     }
@@ -145,7 +147,7 @@ export function DesignsPage() {
         <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <div className="text-sm">
-          <div className="space-y-2"><div className="flex min-w-0 gap-2"><select required value={garment} onChange={e => setGarment(e.target.value)} className="h-10 min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select><button type="button" disabled={!garment || garment.trim().toUpperCase() === "OTHER"} onClick={() => void deleteGarment()} className="shrink-0 rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">Delete</button></div>{garment.trim().toUpperCase() === "OTHER" && <p className="text-xs text-slate-500">OTHER must remain available and cannot be deleted.</p>}</div>
+          <div className="relative min-w-0"><button type="button" aria-haspopup="listbox" aria-expanded={garmentDropdownOpen} onClick={() => setGarmentDropdownOpen(open => !open)} className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm"><span className={garment ? "truncate text-slate-800" : "truncate text-slate-400"}>{garment || "Choose garment…"}</span><span className="text-slate-500">▾</span></button>{garmentDropdownOpen && <div role="listbox" aria-label="Garments" className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg">{garments.map(g => <div key={g.id} role="option" aria-selected={garment === g.name} className="group flex items-center gap-2 rounded px-2 py-1 hover:bg-slate-50 focus-within:bg-slate-50"><button type="button" onClick={() => { setGarment(g.name); setGarmentDropdownOpen(false); }} className="min-w-0 flex-1 truncate py-1 text-left text-sm text-slate-700">{g.name}</button><button type="button" aria-label={"Delete " + g.name} title={g.name.trim().toUpperCase() === "OTHER" ? "OTHER must remain available" : "Delete " + g.name} disabled={g.name.trim().toUpperCase() === "OTHER"} onClick={() => void deleteGarment(g.id)} className="rounded px-1.5 py-1 text-sm text-red-600 opacity-0 transition-opacity hover:bg-red-100 group-hover:opacity-100 focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-0">×</button></div>)}{!garments.length && <p className="px-2 py-2 text-xs text-slate-500">No garments available.</p>}</div>}{garmentDropdownOpen && <button type="button" aria-label="Close garment dropdown" className="fixed inset-0 z-10 cursor-default" onClick={() => setGarmentDropdownOpen(false)} />}</div>
           <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
           {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
         </div>
