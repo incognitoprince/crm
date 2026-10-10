@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -44,14 +45,15 @@ router.post("/", asyncHandler(async (req, res) => {
 
 router.patch("/:id", asyncHandler(async (req, res) => {
   const input = measurementSchema.omit({ customerId: true }).partial().parse(req.body);
-  let data: any = input;
-  if (input.garment) {
-    const garment = await prisma.garment.findFirst({ where: { name: input.garment, active: true } });
+  const { garment: garmentName, ...rest } = input;
+  let data: Prisma.MeasurementUpdateInput = rest;
+  if (garmentName) {
+    const garment = await prisma.garment.findFirst({ where: { name: garmentName, active: true } });
     if (!garment) throw new AppError("Garment not found or inactive", 400, "GARMENT_NOT_FOUND");
     const garmentEnum = (garmentTypes as readonly string[]).includes(garment.name)
       ? garment.name as typeof garmentTypes[number]
       : "OTHER";
-    data = { ...input, garment: garmentEnum, garmentId: garment.id };
+    data = { ...rest, garment: garmentEnum, garmentMaster: { connect: { id: garment.id } } };
   }
   const measurement = await prisma.measurement.update({
     where: { id: req.params.id },

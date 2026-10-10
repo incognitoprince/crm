@@ -1,6 +1,12 @@
 import { PrismaClient } from "@prisma/client";
+import crypto from "node:crypto";
 
 const prisma = new PrismaClient();
+
+function passwordHash(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  return salt + ":" + crypto.scryptSync(password, salt, 64).toString("hex");
+}
 
 const garments = [
   ["THOBE", "Thobe", 1],
@@ -83,6 +89,32 @@ function dateFromOffset(days) {
 }
 
 async function main() {
+  const adminUsername = (process.env.ADMIN_USERNAME || "").toLowerCase().trim();
+  const adminPassword = process.env.ADMIN_PASSWORD || "";
+  const staffUsername = (process.env.STAFF_USERNAME || "").toLowerCase().trim();
+  const staffPassword = process.env.STAFF_PASSWORD || "";
+
+  const legacyAdmin = await prisma.user.findFirst({ where: { OR: [{ username: adminUsername || "__missing__" }, { email: "owner@tailoring.local" }] } });
+  if (legacyAdmin) {
+    if (!legacyAdmin.username) {
+      await prisma.user.update({ where: { id: legacyAdmin.id }, data: { username: adminUsername || "admin", role: "ADMIN", active: true } });
+    }
+  } else {
+    if (!adminUsername || !adminPassword) throw new Error("No admin account exists. Set ADMIN_USERNAME and ADMIN_PASSWORD before first startup.");
+    await prisma.user.create({ data: { name: "Admin", username: adminUsername, passwordHash: passwordHash(adminPassword), role: "ADMIN" } });
+  }
+
+  if (staffUsername && staffPassword) {
+    const legacyStaff = await prisma.user.findFirst({ where: { OR: [{ username: staffUsername }, { email: "staff@tailoring.local" }] } });
+    if (legacyStaff) {
+      if (!legacyStaff.username) {
+        await prisma.user.update({ where: { id: legacyStaff.id }, data: { username: staffUsername, role: "STAFF", active: true } });
+      }
+    } else {
+      await prisma.user.create({ data: { name: "Staff", username: staffUsername, passwordHash: passwordHash(staffPassword), role: "STAFF" } });
+    }
+  }
+
   if (process.env.SEED_DEMO_DATA !== "true") return;
 
   for (const [id, name, sortOrder] of garments) {

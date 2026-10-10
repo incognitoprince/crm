@@ -79,7 +79,7 @@ export function PaymentsPage() {
 
   if (loading) return <LoadingState label="Loading payments…" />;
 
-  return <div className="mx-auto max-w-7xl space-y-5">
+  return <div className="mx-auto min-w-0 w-full max-w-7xl space-y-5">
     <section>
       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Finance</p>
       <h3 className="mt-1 text-2xl font-semibold text-navy-900">Payments</h3>
@@ -99,10 +99,10 @@ export function PaymentsPage() {
       </article>)}
     </div>
 
-    <div className="grid gap-5 lg:grid-cols-3">
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
+      <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <h4 className="font-semibold text-navy-900">Record payment</h4>
-        <form onSubmit={submit} className="mt-4 space-y-4">
+        <form onSubmit={submit} className="mt-4 min-w-0 space-y-4">
           <label className="block text-sm"><span className="mb-1 block text-xs text-slate-500">Order</span>
             <select required value={orderId} onChange={e => setOrderId(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2">
               <option value="">Choose order…</option>
@@ -122,10 +122,10 @@ export function PaymentsPage() {
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h4 className="font-semibold text-navy-900">Payment history</h4><p className="mt-0.5 text-xs text-slate-500">{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</p></div><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search order or customer…" className="rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-64" /></div>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[680px] text-sm">
+      <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:col-span-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h4 className="font-semibold text-navy-900">Payment history</h4><p className="mt-0.5 text-xs text-slate-500">{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</p></div><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search order or customer…" className="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-64" /></div>
+        <div className="mt-4 min-w-0 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-3 font-medium">Date</th><th className="pb-3 font-medium">Order</th><th className="pb-3 font-medium">Customer</th><th className="pb-3 font-medium">Method</th><th className="pb-3 font-medium">Reference</th><th className="pb-3 text-right font-medium">Amount</th></tr></thead>
             <tbody>{visiblePayments.map(payment => <tr key={payment.id} className="border-b border-slate-50 last:border-0">
               <td className="py-3">{new Date(payment.receivedAt).toLocaleDateString()}</td>
