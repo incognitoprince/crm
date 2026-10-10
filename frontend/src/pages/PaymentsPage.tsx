@@ -42,8 +42,10 @@ export function PaymentsPage() {
 
   useEffect(() => { void load(); }, []);
 
+  // Keep every non-cancelled order selectable, including delivered and fully paid orders.
+  // The submit handler still prevents recording more than the outstanding balance.
   const payableOrders = useMemo(
-    () => orders.filter(order => order.status !== "CANCELLED" && order.totalAmountFils > order.paidAmountFils),
+    () => orders.filter(order => order.status !== "CANCELLED"),
     [orders],
   );
 
@@ -58,9 +60,11 @@ export function PaymentsPage() {
     const selected = payableOrders.find(order => order.id === orderId);
     const amountFils = Math.round(Number(amount) * 1000);
 
-    if (!selected) { setError("Select an order with an outstanding balance."); return; }
+    if (!selected) { setError("Select an order."); return; }
     if (!Number.isFinite(amountFils) || amountFils <= 0) { setError("Enter a valid payment amount."); return; }
-    if (amountFils > selected.totalAmountFils - selected.paidAmountFils) { setError("Payment cannot exceed the outstanding balance."); return; }
+    const outstandingBalance = selected.totalAmountFils - selected.paidAmountFils;
+    if (outstandingBalance <= 0) { setError("This order has no outstanding balance."); return; }
+    if (amountFils > outstandingBalance) { setError("Payment cannot exceed the outstanding balance."); return; }
 
     setSaving(true);
     try {
