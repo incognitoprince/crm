@@ -27,6 +27,7 @@ export function updateShop(id: string, data: { name?: string; area?: string; pho
 
 export function getGarments() { return request<{ data: Garment[] }>("/api/garments"); }
 export function createGarment(data: { name: string }) { return request<{ data: Garment }>("/api/garments", { method: "POST", body: JSON.stringify(data) }); }
+export function updateGarment(id: string, data: { name?: string; active?: boolean }) { return request<{ data: Garment }>("/api/garments/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
 export function getOrders() { return request<{ data: Order[] }>("/api/orders"); }
 export function getOrder(id: string) { return request<{ data: Order }>("/api/orders/" + id); }
