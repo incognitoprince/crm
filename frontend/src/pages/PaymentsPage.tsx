@@ -122,7 +122,7 @@ export function PaymentsPage() {
           <label className="block text-sm"><span className="mb-1 block text-xs text-slate-500">Reference <span className="text-slate-400">(optional)</span></span><input value={reference} onChange={e => setReference(e.target.value)} placeholder="Receipt / transaction reference" className="w-full rounded-md border border-slate-300 px-3 py-2" /></label>
           <label className="block text-sm"><span className="mb-1 block text-xs text-slate-500">Notes <span className="text-slate-400">(optional)</span></span><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full rounded-md border border-slate-300 px-3 py-2" /></label>
           <button disabled={saving || !payableOrders.length} className="w-full rounded-md bg-navy-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">{saving ? "Saving…" : "Record payment"}</button>
-          {!payableOrders.length && <p className="text-xs text-slate-500">There are no orders with an outstanding balance.</p>}
+          {!payableOrders.length && <p className="text-xs text-slate-500">There are no available orders to record a payment.</p>}
         </form>
       </section>
 
