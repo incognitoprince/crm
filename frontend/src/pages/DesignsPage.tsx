@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { createDesign, createGarment, getDesigns, getGarments, updateDesign, uploadDesignImage } from "../services/api";
+import { createDesign, createGarment, getDesigns, getGarments, updateDesign, updateGarment, uploadDesignImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import type { Design, Garment } from "../types";
@@ -61,6 +61,21 @@ export function DesignsPage() {
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to upload image");
+    }
+  }
+
+  async function deleteGarment() {
+    const selectedGarment = garments.find(item => item.name === garment);
+    if (!selectedGarment) return;
+    const confirmed = window.confirm('Remove "' + selectedGarment.name + '" from the garment list? Existing orders and designs will be preserved.');
+    if (!confirmed) return;
+    setError("");
+    try {
+      await updateGarment(selectedGarment.id, { active: false });
+      setGarments(current => current.filter(item => item.id !== selectedGarment.id));
+      setGarment("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to remove garment");
     }
   }
 
@@ -130,7 +145,7 @@ export function DesignsPage() {
         <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <div className="text-sm">
-          <select required value={garment} onChange={e => setGarment(e.target.value)} className="h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
+          <div className="flex min-w-0 gap-2"><select required value={garment} onChange={e => setGarment(e.target.value)} className="h-10 min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select><button type="button" disabled={!garment} onClick={() => void deleteGarment()} className="shrink-0 rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">Delete</button></div>
           <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
           {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
         </div>
