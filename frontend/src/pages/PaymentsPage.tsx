@@ -62,10 +62,6 @@ export function PaymentsPage() {
 
     if (!selected) { setError("Select an order."); return; }
     if (!Number.isFinite(amountFils) || amountFils <= 0) { setError("Enter a valid payment amount."); return; }
-    const outstandingBalance = selected.totalAmountFils - selected.paidAmountFils;
-    if (outstandingBalance <= 0) { setError("This order has no outstanding balance."); return; }
-    if (amountFils > outstandingBalance) { setError("Payment cannot exceed the outstanding balance."); return; }
-
     setSaving(true);
     try {
       await createPayment({ orderId, amountFils, method, reference: reference || undefined, notes: notes || undefined });
