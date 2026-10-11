@@ -46,10 +46,8 @@ router.post("/", asyncHandler(async (req, res) => {
     if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
     if (order.status === "CANCELLED") throw new AppError("Cannot record payment for a cancelled order", 400, "ORDER_CANCELLED");
 
+    // Manual payments may exceed the order total; record the actual amount received.
     const nextPaid = order.paidAmountFils + input.amountFils;
-    if (nextPaid > order.totalAmountFils) {
-      throw new AppError("Payment would exceed the order balance", 400, "PAYMENT_EXCEEDS_BALANCE");
-    }
 
     const created = await tx.payment.create({
       data: {
@@ -67,7 +65,7 @@ router.post("/", asyncHandler(async (req, res) => {
       where: { id: order.id },
       data: {
         paidAmountFils: nextPaid,
-        paymentStatus: nextPaid === order.totalAmountFils ? "PAID" : "PARTIAL",
+        paymentStatus: nextPaid >= order.totalAmountFils ? "PAID" : "PARTIAL",
       },
     });
 
