@@ -1,0 +1,23 @@
+[Unit]
+Description=Tailoring CRM authenticated deployment webhook
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+EnvironmentFile=/etc/tailorshopcrm-deploy.env
+Environment=DEPLOY_COMMAND=/usr/local/bin/tailorshopcrm-deploy
+Environment=DEPLOY_WEBHOOK_PORT=8765
+ExecStart=/usr/bin/python3 /opt/tailorshopcrm/deploy/webhook.py
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tailorshopcrm /run/lock /var/lib/docker
+RestrictAddressFamilies=AF_INET AF_UNIX
