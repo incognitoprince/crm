@@ -23,6 +23,21 @@ router.get("/", asyncHandler(async (_req, res) => {
 router.post("/", adminOnly, asyncHandler(async (req, res) => {
   const input = garmentSchema.parse(req.body);
   const name = input.name.replace(/\s+/g, " ");
+
+  // A deleted garment is soft-deactivated to preserve historical references.
+  // Re-adding the same name should reactivate that record instead of failing
+  // the unique name constraint or creating a duplicate.
+  const existing = await prisma.garment.findUnique({ where: { name } });
+  if (existing) {
+    if (existing.active) throw new AppError("Garment already exists", 409, "GARMENT_EXISTS");
+    const garment = await prisma.garment.update({
+      where: { id: existing.id },
+      data: { active: input.active ?? true },
+    });
+    res.status(200).json({ data: garment });
+    return;
+  }
+
   const garment = await prisma.garment.create({
     data: { name, active: input.active ?? true },
   }).catch(error => {
