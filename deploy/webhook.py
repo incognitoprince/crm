@@ -8,7 +8,7 @@ import threading
 
 TOKEN = os.environ.get("DEPLOY_WEBHOOK_TOKEN", "")
 DEPLOY_COMMAND = os.environ.get("DEPLOY_COMMAND", "/usr/local/bin/tailorshopcrm-deploy")
-HOST = "127.0.0.1"
+HOST = "0.0.0.0"  # Docker Nginx reaches this via host.docker.internal; firewall port 8765 from the internet
 PORT = int(os.environ.get("DEPLOY_WEBHOOK_PORT", "8765"))
 ALLOWED = {"/frontend": "frontend", "/backend": "backend", "/all": "all"}
 lock = threading.Lock()
