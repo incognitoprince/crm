@@ -1,6 +1,12 @@
+@import "@fontsource-variable/plus-jakarta-sans";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
 
 html,
 body,
@@ -8,12 +14,53 @@ body,
   min-height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  @apply text-slate-800 antialiased;
+  font-family: "Plus Jakarta Sans Variable", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(1100px 520px at 105% -10%, rgba(89, 164, 255, 0.16), transparent 60%),
+    radial-gradient(900px 480px at -10% 110%, rgba(26, 105, 224, 0.09), transparent 60%),
+    #f4f8fd;
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(47, 134, 246, 0.22);
+}
+
+/* Slim, modern scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c4d4e8 transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c4d4e8;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9db6d6;
 }
 
 @layer components {
+  /* ---------- Page entrance: every page's top-level blocks stagger in ---------- */
+  main > div > * {
+    animation: fade-up 0.55s var(--ease-out) backwards;
+  }
+  main > div > *:nth-child(1) { animation-delay: 0ms; }
+  main > div > *:nth-child(2) { animation-delay: 70ms; }
+  main > div > *:nth-child(3) { animation-delay: 140ms; }
+  main > div > *:nth-child(4) { animation-delay: 210ms; }
+  main > div > *:nth-child(5) { animation-delay: 280ms; }
+  main > div > *:nth-child(n + 6) { animation-delay: 340ms; }
+
   main > div {
     @apply text-slate-800;
   }
@@ -22,46 +69,77 @@ body {
     @apply tracking-tight;
   }
 
-  main input:not([type="file"]),
+  /* ---------- Form controls ---------- */
+  main input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
   main select,
   main textarea {
-    @apply rounded-lg border border-slate-200 bg-white text-slate-700 shadow-none transition;
+    @apply rounded-xl border border-slate-200 bg-white/90 text-slate-700 shadow-none transition duration-200;
+  }
+
+  main input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):hover,
+  main select:hover,
+  main textarea:hover {
+    @apply border-slate-300;
   }
 
   main input:not([type="file"]):focus,
   main select:focus,
   main textarea:focus {
-    @apply border-blue-400 ring-2 ring-blue-100 outline-none;
+    @apply border-brand-400 bg-white ring-4 ring-brand-100/80 outline-none;
   }
 
-  main button.bg-navy-900 {
-    @apply bg-blue-600;
+  /* ---------- Buttons ---------- */
+  main button {
+    transition: transform 0.18s var(--ease-out), box-shadow 0.25s var(--ease-out), background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+  main button:not(:disabled):active {
+    transform: scale(0.97);
   }
 
-  main button.bg-navy-900:hover {
-    @apply bg-blue-700;
+  main button.bg-navy-900,
+  main button.bg-blue-600 {
+    background-image: linear-gradient(135deg, #2f86f6 0%, #1a69e0 55%, #1554b8 100%);
+    @apply text-white shadow-[0_6px_18px_-6px_rgba(26,105,224,0.6)];
+  }
+  main button.bg-navy-900:not(:disabled):hover,
+  main button.bg-blue-600:not(:disabled):hover {
+    background-image: linear-gradient(135deg, #59a4ff 0%, #2f86f6 55%, #1a69e0 100%);
+    transform: translateY(-1px);
+    @apply shadow-[0_12px_26px_-8px_rgba(26,105,224,0.65)];
   }
 
+  /* ---------- Cards ---------- */
   main .rounded-xl.border.bg-white,
   main section.rounded-xl,
   main article.rounded-xl {
-    @apply border-slate-200/80 shadow-[0_2px_12px_rgba(15,31,53,0.055)];
+    @apply rounded-2xl border-slate-200/70 bg-white/90 shadow-soft backdrop-blur-sm;
+    transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.3s;
+  }
+  main article.rounded-xl:hover,
+  main .grid > .rounded-xl.border.bg-white:hover {
+    transform: translateY(-3px);
+    @apply border-brand-200 shadow-lift;
   }
 
+  /* ---------- Tables ---------- */
   main table thead {
-    @apply bg-slate-50;
+    @apply bg-brand-50/60;
   }
-
   main table th {
-    @apply font-semibold text-slate-600;
+    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-500;
   }
-
   main table td {
     @apply border-slate-100;
   }
+  main table tbody tr {
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  main table tbody tr:hover {
+    @apply bg-brand-50/60;
+  }
 
   main .bg-slate-50 {
-    background-color: #f7f9fc;
+    background-color: #f6f9fd;
   }
 
   main .border-sand-100 {
@@ -69,7 +147,43 @@ body {
   }
 
   main .text-navy-900 {
-    color: #102a54;
+    color: #0f2f66;
+  }
+
+  /* Links & clickable rows feel alive */
+  main a {
+    transition: color 0.15s, background-color 0.2s, transform 0.2s var(--ease-out), box-shadow 0.25s;
+  }
+
+  /* Modal-style overlays pop in */
+  main .fixed.inset-0 {
+    animation: fade-in 0.25s ease both;
+  }
+  main .fixed.inset-0 > div {
+    animation: scale-in 0.3s var(--ease-out) both;
+  }
+
+  /* Images in grids zoom softly on hover */
+  main img {
+    transition: transform 0.6s var(--ease-out);
+  }
+  main a:hover > div > img,
+  main article:hover img {
+    transform: scale(1.06);
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply border border-white/60 bg-white/70 shadow-soft backdrop-blur-xl;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-500 to-brand-800 bg-clip-text text-transparent;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, #e8f0fa 0%, #f6faff 50%, #e8f0fa 100%);
+    background-size: 800px 100%;
+    @apply animate-shimmer rounded-xl;
   }
 }
 
@@ -79,6 +193,16 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 @media print {
   @page {
