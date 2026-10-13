@@ -105,27 +105,13 @@ export function AppLayout() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const footer = (
-    <div className="m-3 rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur">
-      <div className="flex items-center gap-3">
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-300 to-brand-600 text-xs font-bold text-white">
-          {(user?.name ?? "U").slice(0, 2).toUpperCase()}
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-[#0a2c55]" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-white">{user?.name ?? "User"}</p>
-          <p className="text-[11px] text-brand-200/70">{roleLabel}</p>
-        </div>
-      </div>
-    </div>
-  );
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
       <aside className={cn("sticky top-0 hidden h-screen text-white lg:flex lg:flex-col", sidebarBg)}>
         <div className="border-b border-white/10 px-5 py-5"><Brand /></div>
         <NavList items={visibleLinks} />
-        {footer}
       </aside>
 
       {mobileMenuOpen && (
@@ -149,7 +135,6 @@ export function AppLayout() {
               </button>
             </div>
             <NavList items={visibleLinks} dense onNavigate={() => setMobileMenuOpen(false)} />
-            {footer}
           </aside>
         </div>
       )}
@@ -168,30 +153,50 @@ export function AppLayout() {
           >
             <Icon name="menu" />
           </button>
-          <div className="group relative max-w-[520px] flex-1">
-            <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-brand-500" />
-            <input
-              aria-label="Global search"
-              placeholder="Search customers, orders, designs..."
-              className="h-11 w-full rounded-2xl border border-slate-200/80 bg-white/80 pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-brand-400 focus:bg-white focus:shadow-lift focus:ring-4 focus:ring-brand-100"
-            />
-          </div>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <button type="button" aria-label="Notifications" className="relative hidden h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-brand-50 hover:text-brand-600 sm:flex">
-              <Icon name="bell" />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 animate-pulse-ring rounded-full bg-brand-500" />
-            </button>
-            <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-xs font-bold text-white shadow-glow">{(user?.name ?? "U").slice(0, 2).toUpperCase()}</div>
-              <div className="hidden leading-tight sm:block">
-                <p className="text-sm font-semibold text-slate-800">{user?.name ?? "User"}</p>
-                <p className="text-[11px] text-slate-500">{roleLabel}</p>
-              </div>
-              <button type="button" onClick={logout} title="Sign out" aria-label="Sign out" className="ml-1 flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold text-slate-500 transition hover:bg-rose-50 hover:text-rose-600">
-                <Icon name="logout" className="h-4 w-4" />
-                <span className="hidden md:inline">Sign out</span>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Open account menu"
+                aria-haspopup="menu"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen(open => !open)}
+                className="flex items-center gap-2.5 rounded-xl p-1.5 text-left transition hover:bg-brand-50"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-xs font-bold text-white shadow-glow">
+                  {(user?.name ?? "U").slice(0, 2).toUpperCase()}
+                </span>
+                <span className="hidden leading-tight sm:block">
+                  <span className="block text-sm font-semibold text-slate-800">{user?.name ?? "User"}</span>
+                  <span className="block text-[11px] text-slate-500">{roleLabel}</span>
+                </span>
+                <Icon name="chevronDown" className="hidden h-4 w-4 text-slate-500 sm:block" />
               </button>
+              {profileMenuOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Close account menu"
+                    className="fixed inset-0 z-40 cursor-default"
+                    onClick={() => setProfileMenuOpen(false)}
+                  />
+                  <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                    <div className="border-b border-slate-100 px-3 py-2">
+                      <p className="truncate text-sm font-semibold text-slate-800">{user?.name ?? "User"}</p>
+                      <p className="text-xs text-slate-500">{roleLabel}</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { setProfileMenuOpen(false); logout(); }}
+                      className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                    >
+                      <Icon name="logout" className="h-4 w-4" />
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
