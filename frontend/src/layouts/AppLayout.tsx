@@ -170,7 +170,7 @@ export function AppLayout() {
                   <span className="block text-sm font-semibold text-slate-800">{user?.name ?? "User"}</span>
                   <span className="block text-[11px] text-slate-500">{roleLabel}</span>
                 </span>
-                <Icon name="chevronDown" className="hidden h-4 w-4 text-slate-500 sm:block" />
+                <span aria-hidden="true" className="hidden text-sm text-slate-500 sm:block">⌄</span>
               </button>
               {profileMenuOpen && (
                 <>
