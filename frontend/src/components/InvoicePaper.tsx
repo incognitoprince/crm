@@ -75,7 +75,7 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
               {shop?.englishName && <p className="text-[19px] font-extrabold leading-snug tracking-tight" style={{ color: NAVY }}>{shop.englishName}</p>}
               {shopName && <p className="text-[20px] font-extrabold leading-snug" style={{ color: NAVY }}>{shopName}</p>}
               {addressLines.length > 0 && (
-                <div className="mt-1.5 space-y-0.5 text-[10px] leading-snug text-slate-600">
+                <div className="mt-1.5 space-y-0.5 text-[9px] leading-snug text-slate-600">
                   {addressLines.map((line, i) => <p key={i} dir="auto">{line}</p>)}
                 </div>
               )}
