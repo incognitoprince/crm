@@ -4,7 +4,7 @@ export type IconName =
   | "dashboard" | "customers" | "orders" | "shops" | "masters" | "designs"
   | "production" | "payments" | "bills" | "users" | "search" | "menu"
   | "logout" | "scissors" | "mail" | "user" | "lock" | "eye" | "eyeOff"
-  | "trendUp" | "clock" | "check" | "alert" | "wallet" | "bell";
+  | "download" | "share" | "printer" | "image" | "arrowLeft" | "trendUp" | "clock" | "check" | "alert" | "wallet" | "bell";
 
 const paths: Record<IconName, string> = {
   dashboard: "M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z",
@@ -26,6 +26,11 @@ const paths: Record<IconName, string> = {
   lock: "M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3M12 15v2",
   eye: "M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12zM12 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
   eyeOff: "M3 3l18 18M10.6 6a9.7 9.7 0 0 1 1.4-.1c6.4 0 10 6.1 10 6.1a17 17 0 0 1-3.2 3.9M6.6 7.6A16.6 16.6 0 0 0 2 12s3.6 6.1 10 6.1c1.5 0 2.8-.3 4-.8M9.9 9.9a2.5 2.5 0 0 0 3.2 3.2",
+  download: "M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 20h14",
+  share: "M12 15V4M8 8l4-4 4 4M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6",
+  printer: "M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2M7 14h10v6H7z",
+  image: "M4 5h16v14H4zM4 16l4.5-4.5 3.5 3.5 3-3L20 17M9 9.5h.01",
+  arrowLeft: "M19 12H5M11 6l-6 6 6 6",
   trendUp: "M3 17l6-6 4 4 8-8M15 7h6v6",
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
   check: "M5 12.5l4.5 4.5L19 7.5",

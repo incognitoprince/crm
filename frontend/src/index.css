@@ -1,4 +1,5 @@
 @import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/noto-naskh-arabic";
 
 @tailwind base;
 @tailwind components;
@@ -241,7 +242,31 @@ body {
   }
 
   .invoice-printable table {
-    page-break-inside: avoid;
+    page-break-inside: auto;
+  }
+
+  .invoice-printable thead {
+    display: table-header-group;
+  }
+
+  .invoice-printable [data-pdf-break] {
+    break-inside: avoid;
+  }
+
+  .invoice-printable,
+  .invoice-printable * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* The on-screen fit-to-width scaling must not apply when printing */
+  .invoice-fit,
+  .invoice-fit-inner {
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   .invoice-printable tr,
