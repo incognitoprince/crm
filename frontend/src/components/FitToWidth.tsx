@@ -10,7 +10,7 @@ export function FitToWidth({ width, children, className = "" }: { width: number;
 
   useEffect(() => {
     const measure = () => {
-      if (!outer.current || !inner.current) return;
+      if (!outer.current || !inner.current || outer.current.clientWidth === 0) return;
       const s = Math.min(1, outer.current.clientWidth / width);
       setScale(s);
       setHeight(inner.current.offsetHeight * s);

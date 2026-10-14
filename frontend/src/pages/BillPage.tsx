@@ -4,6 +4,7 @@ import { getBill } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { FitToWidth } from "../components/FitToWidth";
+import { InvoiceMobileView } from "../components/InvoiceMobileView";
 import { Icon, type IconName } from "../components/Icons";
 import { InvoicePaper, type InvoicePaperData } from "../components/InvoicePaper";
 import { INVOICE_PAPER_WIDTH } from "../utils/invoiceLayout";
@@ -38,7 +39,7 @@ function toPaperData(invoice: Invoice): InvoicePaperData {
 function ActionButton({ icon, label, busyLabel, busy, disabled, onClick, variant = "secondary" }: {
   icon: IconName; label: string; busyLabel: string; busy: boolean; disabled: boolean; onClick: () => void; variant?: "primary" | "secondary";
 }) {
-  const base = "inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
+  const base = "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 sm:h-10 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50";
   const style = variant === "primary"
     ? "bg-blue-600 text-white"
     : "border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-brand-300 hover:text-brand-700";
@@ -120,6 +121,7 @@ export function BillPage() {
   });
 
   const anyBusy = busy !== "";
+  const paperData = toPaperData(invoice);
 
   return (
     <div className="mx-auto max-w-[900px] space-y-5">
@@ -130,20 +132,23 @@ export function BillPage() {
           </Link>
           <h2 className="mt-1.5 text-2xl font-extrabold tracking-tight text-navy-900">Invoice {invoice.invoiceNo}</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           <ActionButton variant="primary" icon="download" label="Download PDF" busyLabel="Preparing…" busy={busy === "pdf"} disabled={anyBusy} onClick={() => void downloadPdf()} />
           <ActionButton icon="image" label="Download Image" busyLabel="Preparing…" busy={busy === "image"} disabled={anyBusy} onClick={() => void downloadImage()} />
           <ActionButton icon="share" label="Share PDF" busyLabel="Preparing…" busy={busy === "share-pdf"} disabled={anyBusy} onClick={() => void sharePdf()} />
           <ActionButton icon="share" label="Share Image" busyLabel="Preparing…" busy={busy === "share-image"} disabled={anyBusy} onClick={() => void shareImage()} />
-          <ActionButton icon="printer" label="Print" busyLabel="Print" busy={false} disabled={anyBusy} onClick={() => window.print()} />
+          <span className="hidden md:contents"><ActionButton icon="printer" label="Print" busyLabel="Print" busy={false} disabled={anyBusy} onClick={() => window.print()} /></span>
         </div>
       </div>
 
       {error && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
 
-      <div className="invoice-stage rounded-3xl bg-gradient-to-b from-slate-200/70 to-slate-200/40 p-3 sm:p-6 print:bg-transparent print:p-0">
+      {/* Phones: reflowing layout. The A4 paper below stays mounted (hidden) so PDF/image export still uses it. */}
+      <div className="md:hidden print:hidden"><InvoiceMobileView data={paperData} /></div>
+
+      <div className="invoice-stage hidden rounded-3xl bg-gradient-to-b from-slate-200/70 to-slate-200/40 p-3 sm:p-6 md:block print:block print:bg-transparent print:p-0">
         <FitToWidth width={INVOICE_PAPER_WIDTH} className="overflow-hidden rounded-md shadow-[0_20px_60px_-15px_rgba(15,47,102,0.35)] print:overflow-visible print:shadow-none">
-          <InvoicePaper ref={paperRef} data={toPaperData(invoice)} />
+          <InvoicePaper ref={paperRef} data={paperData} />
         </FitToWidth>
       </div>
     </div>

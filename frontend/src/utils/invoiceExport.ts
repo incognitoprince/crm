@@ -14,6 +14,12 @@ export interface InvoiceRender {
 export async function renderInvoice(source: HTMLElement, scale: number): Promise<InvoiceRender> {
   await document.fonts?.ready;
 
+  // html2canvas measures font baselines with a hidden 1px <img>. Tailwind's base styles make every
+  // <img> display:block, which breaks that measurement and pushes all text too low in the export.
+  const fix = document.createElement("style");
+  fix.textContent = 'img[width="1"][height="1"]{display:inline-block !important;vertical-align:baseline !important}';
+  document.head.appendChild(fix);
+
   const clone = source.cloneNode(true) as HTMLElement;
   Object.assign(clone.style, {
     position: "absolute",
@@ -59,6 +65,7 @@ export async function renderInvoice(source: HTMLElement, scale: number): Promise
     return { canvas, breaks, height };
   } finally {
     clone.remove();
+    fix.remove();
   }
 }
 

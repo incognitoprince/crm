@@ -2,6 +2,17 @@
  *  screen, PDF, image and print all look identical. */
 export const INVOICE_PAPER_WIDTH = 794;
 
+export const kwd = (fils: number) =>
+  (fils / 1000).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+
+export const fmtDate = (v: string) =>
+  new Date(v).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+export const clean = (v?: string | null) => {
+  const t = v?.trim() ?? "";
+  return t && t.toLowerCase() !== "not provided" ? t : "";
+};
+
 const ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
 const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
 const under100 = (x: number) => (x < 20 ? ONES[x] : TENS[Math.floor(x / 10)] + (x % 10 ? " " + ONES[x % 10] : ""));

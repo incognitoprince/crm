@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import type { Customer, Shop } from "../types";
-import { INVOICE_PAPER_WIDTH, amountInWords } from "../utils/invoiceLayout";
+import { INVOICE_PAPER_WIDTH, amountInWords, clean, fmtDate, kwd } from "../utils/invoiceLayout";
 
 export interface InvoicePaperLine {
   id: string | number;
@@ -24,17 +24,6 @@ export interface InvoicePaperData {
   lines: InvoicePaperLine[];
   totalFils: number;
 }
-
-const kwd = (fils: number) =>
-  (fils / 1000).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-
-const fmtDate = (v: string) =>
-  new Date(v).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-
-const clean = (v?: string | null) => {
-  const t = v?.trim() ?? "";
-  return t && t.toLowerCase() !== "not provided" ? t : "";
-};
 
 const NAVY = "#0f2f66";
 
@@ -203,9 +192,8 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
         )}
 
         {/* ---------- Signatures ---------- */}
-        <section data-pdf-break className="mt-16 grid grid-cols-2 gap-16 text-[12px]">
-          <div className="border-t border-slate-500 pt-2 font-semibold text-slate-600">Receiver&apos;s Sign.</div>
-          <div className="border-t border-slate-500 pt-2 text-right font-semibold text-slate-600">Salesman Sign.</div>
+        <section data-pdf-break className="mt-16 text-[12px]">
+          <div className="w-[300px] border-t border-slate-500 pt-2 font-semibold text-slate-600">Receiver&apos;s Sign.</div>
         </section>
       </div>
     </div>
