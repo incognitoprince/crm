@@ -1,5 +1,6 @@
 import express from "express";
 import path from "node:path";
+import cors from "cors";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { pinoHttp } from "pino-http";
@@ -9,11 +10,26 @@ import { apiRouter } from "./routes/index.js";
 import { authenticate } from "./middleware/auth.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
+const configuredCorsOrigins = env.CORS_ORIGIN.split(",").map((value) => value.trim()).filter(Boolean);
+// Capacitor Android uses https://localhost as its WebView origin with androidScheme=https.
+// Keep the normal website origins configured through CORS_ORIGIN; only add this exact native origin.
+const allowedCorsOrigins = new Set([...configuredCorsOrigins, "https://localhost"]);
+
 export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
+  app.use(
+    cors({
+      origin(origin, callback) {
+        // Requests without Origin (e.g. health checks/server-to-server) are not browser CORS requests.
+        if (!origin || allowedCorsOrigins.has(origin)) return callback(null, true);
+        return callback(new Error("Origin not allowed by CORS"));
+      },
+      credentials: true,
+    }),
+  );
   app.use(helmet());
   app.use(express.json({ limit: "1mb" }));
   app.use(
