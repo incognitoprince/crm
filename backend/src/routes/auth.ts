@@ -44,7 +44,9 @@ router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
     },
   });
 
-  setSessionCookie(res, token, maxAgeSeconds);
+  // Only the bundled Capacitor origin needs cross-site cookies. Keep website sessions Strict.
+  const sameSite = req.header("origin") === "https://localhost" ? "None" : "Strict";
+  setSessionCookie(res, token, maxAgeSeconds, sameSite);
   logger.info({ userId: user.id, username: user.username, role: user.role, ip: req.ip }, "Authentication succeeded");
   res.json({ data: { user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role } } });
 }));
@@ -52,7 +54,8 @@ router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
 router.post("/logout", authenticate, asyncHandler(async (req, res) => {
   const token = readCookie(req, SESSION_COOKIE);
   if (token) await prisma.session.deleteMany({ where: { tokenHash: sessionTokenHash(token) } });
-  clearSessionCookie(res);
+  const sameSite = req.header("origin") === "https://localhost" ? "None" : "Strict";
+  clearSessionCookie(res, sameSite);
   logger.info({ userId: req.user?.id, username: req.user?.username, ip: req.ip }, "Session ended");
   res.status(204).send();
 }));
