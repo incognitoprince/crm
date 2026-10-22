@@ -8,14 +8,6 @@ body,
   min-height: 100%;
 }
 
-/* Android may draw the WebView edge-to-edge even when the StatusBar plugin
-   requests non-overlay mode. Keep the whole app below the system status bar. */
-html {
-  min-height: 100%;
-  padding-top: env(safe-area-inset-top, 0px);
-  box-sizing: border-box;
-}
-
 body {
   margin: 0;
 }
