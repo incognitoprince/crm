@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { createDesign, createGarment, getDesigns, getGarments, updateDesign, updateGarment, uploadDesignImage } from "../services/api";
+import { createDesign, createGarment, getDesigns, getGarments, resolveMediaUrl, updateDesign, updateGarment, uploadDesignImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import type { Design, Garment } from "../types";
-import { resolveMediaUrl } from "../services/api";
 
 const label = (v: string) => v.replaceAll("_", " ");
 
