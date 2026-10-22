@@ -46,6 +46,9 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Apply native Android fixes
+        run: node scripts/patch-android-native.mjs
+
       - name: Sync web assets to Android
         run: npx cap sync android
 
