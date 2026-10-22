@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { createShop, getShops, updateShop, uploadShopLogo } from "../services/api";
+import { createShop, getShops, resolveMediaUrl, updateShop, uploadShopLogo } from "../services/api";
 import type { Shop } from "../types";
 
 const empty={name:"",area:"",phone:"",whatsapp:"",email:"",arabicName:"",englishName:"",address:"",logoUrl:""};
@@ -25,7 +25,7 @@ export function ShopsPage(){
    <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={()=>{setSelected(null);setShowForm(false);setForm(empty);setLogoFile(null)}} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm">Cancel</button><button disabled={saving} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white">{saving?"Saving…":"Save shop"}</button></div>
   </form>}
   {!shops.length?<LoadingState label="No active shops found."/>:<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{shops.map(shop=><article key={shop.id} onClick={()=>open(shop)} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")open(shop)}} className="cursor-pointer rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-    {shop.logoUrl&&<img src={shop.logoUrl} className="mb-3 h-10 max-w-28 object-contain" />}<p className="text-xs uppercase tracking-wide text-slate-500">Branch</p><h4 className="mt-1 text-lg font-semibold text-navy-900">{shop.name}</h4><p className="mt-1 text-sm text-slate-600">{shop.area}</p>{shop.englishName&&<p className="mt-3 text-sm text-slate-700">{shop.englishName}</p>}{shop.phone&&<p className="mt-1 text-sm text-slate-500">{shop.phone}</p>}
+    {shop.logoUrl&&<img src={resolveMediaUrl(shop.logoUrl)} className="mb-3 h-10 max-w-28 object-contain" />}<p className="text-xs uppercase tracking-wide text-slate-500">Branch</p><h4 className="mt-1 text-lg font-semibold text-navy-900">{shop.name}</h4><p className="mt-1 text-sm text-slate-600">{shop.area}</p>{shop.englishName&&<p className="mt-3 text-sm text-slate-700">{shop.englishName}</p>}{shop.phone&&<p className="mt-1 text-sm text-slate-500">{shop.phone}</p>}
   </article>)}</div>}
  </div>;
 }
