@@ -1,0 +1,18 @@
+{
+  "appId": "com.tailorshop.crm",
+  "appName": "Tailoring CRM",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "backgroundColor": "#FFFFFF",
+      "style": "DARK"
+    }
+  }
+}
