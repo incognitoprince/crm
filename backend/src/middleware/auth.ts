@@ -25,27 +25,27 @@ export function readCookie(req: Request, name: string) {
   return "";
 }
 
-function cookieOptions(maxAgeSeconds?: number) {
+function cookieOptions(maxAgeSeconds?: number, sameSite: "Strict" | "None" = "Strict") {
   const parts = [
     `${SESSION_COOKIE}=VALUE`,
     "Path=/",
     "HttpOnly",
-    "SameSite=Strict",
+    `SameSite=${sameSite}`,
     ...(isProduction ? ["Secure"] : []),
   ];
   if (maxAgeSeconds !== undefined) parts.push(`Max-Age=${maxAgeSeconds}`);
   return parts;
 }
 
-export function setSessionCookie(res: Response, token: string, maxAgeSeconds?: number) {
-  const parts = cookieOptions(maxAgeSeconds);
+export function setSessionCookie(res: Response, token: string, maxAgeSeconds?: number, sameSite: "Strict" | "None" = "Strict") {
+  const parts = cookieOptions(maxAgeSeconds, sameSite);
   parts[0] = `${SESSION_COOKIE}=${token}`;
   res.setHeader("Set-Cookie", parts.join("; "));
   res.setHeader("Cache-Control", "no-store");
 }
 
-export function clearSessionCookie(res: Response) {
-  res.setHeader("Set-Cookie", cookieOptions(0).join("; ").replace("=VALUE", "="));
+export function clearSessionCookie(res: Response, sameSite: "Strict" | "None" = "Strict") {
+  res.setHeader("Set-Cookie", cookieOptions(0, sameSite).join("; ").replace("=VALUE", "="));
   res.setHeader("Clear-Site-Data", '"cache", "cookies", "storage"');
   res.setHeader("Cache-Control", "no-store");
 }
