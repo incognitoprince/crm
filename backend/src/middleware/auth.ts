@@ -7,6 +7,7 @@ import { AppError } from "./errorHandler.js";
 export type AuthUser = { id: string; name: string; username: string; email?: string | null; role: "ADMIN" | "STAFF" | "INVOICE_CREATOR" };
 
 export const SESSION_COOKIE = isProduction ? "__Host-tailoring-session" : "tailoring-session";
+const CAPACITOR_ORIGIN = "https://localhost";
 
 declare module "express-serve-static-core" {
   interface Request { user?: AuthUser }
@@ -25,27 +26,30 @@ export function readCookie(req: Request, name: string) {
   return "";
 }
 
-function cookieOptions(maxAgeSeconds?: number) {
+function cookieOptions(maxAgeSeconds?: number, origin?: string) {
+  // Capacitor runs at https://localhost, which is cross-site from the API host.
+  // SameSite=None is needed only for this explicitly allowed native-app origin; Secure remains mandatory.
+  const sameSite = origin === CAPACITOR_ORIGIN ? "SameSite=None" : "SameSite=Strict";
   const parts = [
     `${SESSION_COOKIE}=VALUE`,
     "Path=/",
     "HttpOnly",
-    "SameSite=Strict",
+    sameSite,
     ...(isProduction ? ["Secure"] : []),
   ];
   if (maxAgeSeconds !== undefined) parts.push(`Max-Age=${maxAgeSeconds}`);
   return parts;
 }
 
-export function setSessionCookie(res: Response, token: string, maxAgeSeconds?: number) {
-  const parts = cookieOptions(maxAgeSeconds);
+export function setSessionCookie(res: Response, token: string, maxAgeSeconds?: number, origin?: string) {
+  const parts = cookieOptions(maxAgeSeconds, origin);
   parts[0] = `${SESSION_COOKIE}=${token}`;
   res.setHeader("Set-Cookie", parts.join("; "));
   res.setHeader("Cache-Control", "no-store");
 }
 
-export function clearSessionCookie(res: Response) {
-  res.setHeader("Set-Cookie", cookieOptions(0).join("; ").replace("=VALUE", "="));
+export function clearSessionCookie(res: Response, origin?: string) {
+  res.setHeader("Set-Cookie", cookieOptions(0, origin).join("; ").replace("=VALUE", "="));
   res.setHeader("Clear-Site-Data", '"cache", "cookies", "storage"');
   res.setHeader("Cache-Control", "no-store");
 }
