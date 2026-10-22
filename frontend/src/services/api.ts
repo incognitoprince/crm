@@ -7,9 +7,20 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 // the configured API host rather than the local WebView origin. Keep absolute and blob URLs intact.
 export function resolveMediaUrl(path?: string | null): string {
   if (!path) return "";
-  if (/^(?:https?:|data:|blob:)/i.test(path)) return path;
-  const base = API_BASE || window.location.origin;
-  return new URL(path, base.endsWith("/") ? base : base + "/").toString();
+  // Older records may contain URLs saved from local development or a previous host.
+  // Rebase only known local-host URLs; preserve normal external/data/blob URLs.
+  const apiBase = API_BASE || "https://tailorshopcrm.com";
+  try {
+    const parsed = new URL(path, apiBase);
+    if (["localhost", "127.0.0.1", "backend", "frontend"].includes(parsed.hostname)) {
+      const production = new URL(apiBase);
+      parsed.protocol = production.protocol;
+      parsed.host = production.host;
+    }
+    return parsed.toString();
+  } catch {
+    return path;
+  }
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
