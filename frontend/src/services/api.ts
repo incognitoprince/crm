@@ -2,6 +2,16 @@ import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measur
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+// Uploaded media paths are stored as server-relative paths (for example /uploads/...).
+// In Capacitor, the web app origin is https://localhost, so resolve these paths against
+// the configured API host rather than the local WebView origin. Keep absolute and blob URLs intact.
+export function resolveMediaUrl(path?: string | null): string {
+  if (!path) return "";
+  if (/^(?:https?:|data:|blob:)/i.test(path)) return path;
+  const base = API_BASE || window.location.origin;
+  return new URL(path, base.endsWith("/") ? base : base + "/").toString();
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
@@ -83,13 +93,11 @@ export function deleteMasterAssignment(id: string) { return request<void>("/api/
 export function getPayments(orderId = "") { return request<{ data: Payment[] }>("/api/payments" + (orderId ? "?orderId=" + encodeURIComponent(orderId) : "")); }
 export function createPayment(data: { orderId: string; amountFils: number; method: PaymentMethod; reference?: string; notes?: string; receivedAt?: string }) { return request<{ data: Payment }>("/api/payments", { method: "POST", body: JSON.stringify(data) }); }
 
-
 export function getBills() { return request<{ data: Invoice[] }>("/api/bills"); }
 export function getBill(id: string) { return request<{ data: Invoice }>("/api/bills/" + id); }
 export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId: string; customerId: string; subject?: string; modelNo?: string; notes?: string; lines: Array<{ orderId?: string; orderNo?: string; imagePath?: string; description: string; quantity: number; unitPriceFils: number }> }) { return request<{ data: Invoice }>("/api/bills", { method: "POST", body: JSON.stringify(data) }); }
 export function uploadInvoiceLineImage(invoiceId: string, lineId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: InvoiceLine }>(`/api/bills/${invoiceId}/lines/${lineId}/image`, { method: "POST", body }); }
 export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
-
 
 export function login(username: string, password: string, rememberMe = true) { return request<{ data: { user: AuthUser } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password, rememberMe }) }); }
 export function getMe() { return request<{ data: AuthUser }>("/api/auth/me"); }
@@ -100,4 +108,4 @@ export function getUsers() { return request<{data: ManagedUser[]}>("/api/users")
 export function createUser(data:{name:string;username:string;password:string;role:"ADMIN"|"STAFF"|"INVOICE_CREATOR"}) { return request<{data:ManagedUser}>("/api/users",{method:"POST",body:JSON.stringify(data)}); }
 export function updateUser(id:string,data:{name?:string;active?:boolean;password?:string}) { return request<{data:ManagedUser}>("/api/users/"+id,{method:"PATCH",body:JSON.stringify(data)}); }
 
-export function deleteUser(id:string) { return request<void>("/api/users/"+id, { method: "DELETE" }); }
+export function deleteUser(id:string) { return request<void>("/api/users/" + id, { method: "DELETE" }); }
