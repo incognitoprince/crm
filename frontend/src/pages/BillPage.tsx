@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Link, useParams } from "react-router-dom";
-import { getBill } from "../services/api";
+import { getBill, resolveMediaUrl } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import type { Invoice } from "../types";
@@ -166,7 +166,7 @@ export function BillPage(){
    <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-3 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-5 md:p-7 print:p-0 print:shadow-none">
      <header className="border-b-2 border-slate-800 pb-3">
        <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[90px_minmax(0,1fr)] sm:gap-3 md:grid-cols-[110px_minmax(0,1fr)] md:gap-4">
-         <div className="flex justify-start">{shop?.logoUrl&&<img crossOrigin="anonymous" src={shop.logoUrl} className="max-h-20 max-w-28 object-contain" alt="Shop logo"/>}</div>
+         <div className="flex justify-start">{shop?.logoUrl&&<img crossOrigin="anonymous" src={resolveMediaUrl(shop.logoUrl)} className="max-h-20 max-w-28 object-contain" alt="Shop logo"/>}</div>
          <div className="min-w-0 text-center">
            {shop?.arabicName&&<p className="break-words text-base font-semibold sm:text-lg md:text-xl">{shop.arabicName}</p>}
            {shop?.englishName&&<p className="break-words text-base font-bold sm:text-lg md:text-xl">{shop.englishName}</p>}
@@ -201,7 +201,7 @@ export function BillPage(){
           </tr>
         </thead>
         <tbody>{invoice.lines.map(line=><tr key={line.id}>
-          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="anonymous" src={line.imagePath} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
+          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="anonymous" src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.description}</td>
