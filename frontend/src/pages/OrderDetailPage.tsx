@@ -10,6 +10,7 @@ import {
   getOrder,
   updateOrderDesign,
   updateOrderStatus,
+  resolveMediaUrl,
 } from "../services/api";
 import type { Design, Order, OrderStatus } from "../types";
 
@@ -174,7 +175,7 @@ export function OrderDetailPage() {
         </div>}
 
         {order.designs.length ? <div className="mt-4 grid gap-4 sm:grid-cols-2">{order.designs.map(design => <figure key={design.id} className="overflow-hidden rounded-lg border border-slate-200">
-          {design.imagePath || design.design?.imagePath ? <img src={design.imagePath || design.design?.imagePath || ""} alt={design.design?.name ?? design.designName ?? "Customer design"} className="max-h-96 w-full object-contain bg-slate-50" /> : <div className="flex h-64 items-center justify-center bg-slate-50 text-sm text-slate-400">No image uploaded</div>}
+          {design.imagePath || design.design?.imagePath ? <img src={resolveMediaUrl(design.imagePath || design.design?.imagePath)} alt={design.design?.name ?? design.designName ?? "Customer design"} className="max-h-96 w-full object-contain bg-slate-50" /> : <div className="flex h-64 items-center justify-center bg-slate-50 text-sm text-slate-400">No image uploaded</div>}
           <figcaption className="p-3"><div className="flex items-start justify-between gap-3"><div><p className="font-medium text-slate-800">{design.design?.name ?? design.designName ?? "Customer design"}</p><p className="text-xs text-slate-500">{design.design?.designNo ?? "Order-specific design"}</p></div><button onClick={() => openDesignEditor(design.id, design.designId)} className="text-xs font-medium text-navy-900 hover:underline">Edit</button></div></figcaption>
         </figure>)}</div> : !editingDesignId && <p className="mt-4 rounded-md bg-slate-50 p-3 text-sm text-slate-500">No design attached. You can add one now or later.</p>}
       </section>
