@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createBill, getBills, getCustomers, getDesigns, getShops, uploadInvoiceLineImage } from "../services/api";
+import { createBill, getBills, getCustomers, getDesigns, getShops, resolveMediaUrl, uploadInvoiceLineImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import type { Customer, Design, Invoice, Shop } from "../types";
@@ -50,7 +50,7 @@ export function BillsPage() {
   }
   function selectDesign(index:number,designId:string){
     const design=designs.find(d=>d.id===designId);
-    setLines(current=>current.map((line,i)=>i===index?{...line,designId,imageFile:null,imagePreview:design?.imagePath??""}:line));
+    setLines(current=>current.map((line,i)=>i===index?{...line,designId,imageFile:null,imagePreview:design?.imagePath ? resolveMediaUrl(design.imagePath) : ""}:line));
   }
   function chooseFile(index:number,event:ChangeEvent<HTMLInputElement>){
     const file=event.target.files?.[0]??null;
@@ -143,7 +143,7 @@ export function BillsPage() {
           <div className="min-h-[720px] bg-white p-5 text-[11px] text-slate-800 shadow-sm">
             {(()=>{const shop=shops.find(s=>s.id===shopId);const customer=customers.find(c=>c.id===customerId);return <>
               <div className="border-b border-slate-800 pb-3 text-center"><div className="grid grid-cols-[72px_1fr] items-start gap-2 text-center">
-                <div className="flex justify-start">{shop?.logoUrl&&<img src={shop.logoUrl} className="max-h-14 max-w-16 object-contain" alt="Shop logo" />}</div>
+                <div className="flex justify-start">{shop?.logoUrl&&<img src={resolveMediaUrl(shop.logoUrl)} className="max-h-14 max-w-16 object-contain" alt="Shop logo" />}</div>
                 <div>
                   {shop?.arabicName&&<p className="text-base font-semibold">{shop.arabicName}</p>}
                   {shop?.englishName&&<p className="text-base font-bold">{shop.englishName}</p>}
