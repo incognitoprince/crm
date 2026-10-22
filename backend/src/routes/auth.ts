@@ -44,7 +44,7 @@ router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
     },
   });
 
-  setSessionCookie(res, token, maxAgeSeconds);
+  setSessionCookie(res, token, maxAgeSeconds, req.header("origin"));
   logger.info({ userId: user.id, username: user.username, role: user.role, ip: req.ip }, "Authentication succeeded");
   res.json({ data: { user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role } } });
 }));
@@ -52,7 +52,7 @@ router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
 router.post("/logout", authenticate, asyncHandler(async (req, res) => {
   const token = readCookie(req, SESSION_COOKIE);
   if (token) await prisma.session.deleteMany({ where: { tokenHash: sessionTokenHash(token) } });
-  clearSessionCookie(res);
+  clearSessionCookie(res, req.header("origin"));
   logger.info({ userId: req.user?.id, username: req.user?.username, ip: req.ip }, "Session ended");
   res.status(204).send();
 }));
