@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { getDashboardSummary } from "../services/api";
+import { getDashboardSummary, resolveMediaUrl } from "../services/api";
 import type { DashboardSummary, OrderStatus } from "../types";
 
 const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
@@ -229,7 +229,7 @@ export function DashboardPage() {
       <div className="flex items-center justify-between"><div><h4 className="font-semibold text-navy-900">Top designs</h4><p className="mt-0.5 text-xs text-slate-500">Most frequently attached reusable designs</p></div><Link to="/designs" className="text-xs font-medium text-blue-700 hover:underline">View library</Link></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {data.topDesigns.map(design => <Link key={design.id} to="/designs" className="overflow-hidden rounded-lg border border-slate-100 bg-slate-50 transition hover:-translate-y-0.5 hover:shadow-sm">
-          <div className="aspect-[4/3] bg-slate-100">{design.imagePath ? <img src={design.imagePath} alt={design.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-2xl font-semibold text-slate-300">SP</div>}</div>
+          <div className="aspect-[4/3] bg-slate-100">{design.imagePath ? <img src={resolveMediaUrl(design.imagePath)} alt={design.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-2xl font-semibold text-slate-300">SP</div>}</div>
           <div className="p-3"><p className="truncate text-xs text-slate-500">{design.designNo}</p><p className="mt-1 truncate text-sm font-semibold text-navy-900">{design.name}</p><p className="mt-1 text-xs text-slate-500">{design.orders} order{design.orders === 1 ? "" : "s"} · {design.garment}</p></div>
         </Link>)}
       </div>
