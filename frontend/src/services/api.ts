@@ -2,6 +2,24 @@ import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measur
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+// Resolve private uploaded media against the API host. In Capacitor the app origin is
+// https://localhost, so relative /uploads paths must not resolve against the WebView origin.
+export function resolveMediaUrl(path?: string | null): string {
+  if (!path) return "";
+  const apiBase = API_BASE || "https://tailorshopcrm.com";
+  try {
+    const parsed = new URL(path, apiBase);
+    if (["localhost", "127.0.0.1", "backend", "frontend"].includes(parsed.hostname)) {
+      const production = new URL(apiBase);
+      parsed.protocol = production.protocol;
+      parsed.host = production.host;
+    }
+    return parsed.toString();
+  } catch {
+    return path;
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
