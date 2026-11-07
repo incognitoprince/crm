@@ -8,10 +8,13 @@ import {
   deleteOrderDesign,
   getDesigns,
   getOrder,
+  getShops,
+  getGarments,
   updateOrderDesign,
   updateOrderStatus,
+  updateOrder,
 } from "../services/api";
-import type { Design, Order, OrderStatus } from "../types";
+import type { Design, Order, OrderStatus, Shop, Garment } from "../types";
 
 const statuses: OrderStatus[] = ["PENDING","MEASUREMENT","CUTTING","STITCHING","QUALITY_CHECK","READY","DELIVERED","CANCELLED"];
 const label = (v: string) => v.replaceAll("_", " ");
@@ -29,6 +32,17 @@ export function OrderDetailPage() {
   const [designSaving, setDesignSaving] = useState(false);
   const [designError, setDesignError] = useState("");
   const [error, setError] = useState("");
+  const [editingOrder, setEditingOrder] = useState(false);
+  const [orderDateDraft, setOrderDateDraft] = useState("");
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [deliveryDateDraft, setDeliveryDateDraft] = useState("");
+  const [notesDraft, setNotesDraft] = useState("");
+  const [orderSaving, setOrderSaving] = useState(false);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [garments, setGarments] = useState<Garment[]>([]);
+  const [shopIdDraft, setShopIdDraft] = useState("");
+  const [garmentDraft, setGarmentDraft] = useState("");
+  const [sizeRowsDraft, setSizeRowsDraft] = useState<Array<{ id: string; size: string; quantity: string }>>([]);
 
   async function loadOrder() {
     if (!id) return;
@@ -38,7 +52,39 @@ export function OrderDetailPage() {
 
   useEffect(() => {
     if (id) loadOrder().catch(e => setError(e instanceof Error ? e.message : "Unable to load order"));
+    Promise.all([getShops(), getGarments()]).then(([shopResult, garmentResult]) => {
+      setShops(shopResult.data);
+      setGarments(garmentResult.data);
+    }).catch(e => setError(e instanceof Error ? e.message : "Unable to load order edit options"));
   }, [id]);
+
+  function beginOrderEdit() {
+    if (!order) return;
+    setOrderDateDraft(new Date(order.orderDate).toISOString().slice(0,16));
+    setDescriptionDraft(order.description || "");
+    setDeliveryDateDraft(order.deliveryDate ? new Date(order.deliveryDate).toISOString().slice(0,10) : "");
+    setNotesDraft(order.notes || "");
+    setShopIdDraft(order.shop?.id ?? "");
+    setGarmentDraft(order.garmentMaster?.name ?? order.garment);
+    setSizeRowsDraft(order.sizeBreakdowns.map(row => ({ id: row.id, size: row.size, quantity: String(row.quantity) })));
+    setEditingOrder(true);
+  }
+
+  async function saveOrderEdit() {
+    if (!order) return;
+    setOrderSaving(true); setError("");
+    try {
+      const sizeBreakdowns = sizeRowsDraft.filter(row => row.size && Number(row.quantity) > 0).map(row => ({ size: row.size, quantity: Number(row.quantity) }));
+      const quantity = sizeBreakdowns.reduce((sum, row) => sum + row.quantity, 0);
+      if (!quantity) throw new Error("Add at least one size with a quantity.");
+      if (hasSizeAssignments && (quantity !== order.quantity || sizeBreakdowns.length !== order.sizeBreakdowns.length || sizeBreakdowns.some(row => order.sizeBreakdowns.find(old => old.size === row.size)?.quantity !== row.quantity))) {
+        throw new Error("Size quantities are locked while master assignments exist. Remove assignments before changing them.");
+      }
+      const result = await updateOrder(order.id, { shopId: shopIdDraft || null, garment: garmentDraft as Order["garment"], quantity, sizeBreakdowns, orderDate: new Date(orderDateDraft).toISOString(), description: descriptionDraft, deliveryDate: deliveryDateDraft ? new Date(deliveryDateDraft + "T00:00:00").toISOString() : null, notes: notesDraft });
+      setOrder(result.data); setEditingOrder(false);
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to edit order"); }
+    finally { setOrderSaving(false); }
+  }
 
   async function change(status: OrderStatus) {
     if (!order) return;
@@ -119,12 +165,14 @@ export function OrderDetailPage() {
    const balance = order.totalAmountFils - order.paidAmountFils;
   const editingDesign = typeof editingDesignId === "string" && editingDesignId !== "new" ? order.designs.find(d => d.id === editingDesignId) : undefined;
   const editingLocked = !!editingDesign?.assignments?.length;
+  const hasSizeAssignments = (order.masterAssignments?.length ?? 0) > 0 || order.designs.some(item => item.assignments?.length);
 
   return <div className="mx-auto max-w-5xl space-y-5">
     <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div><p className="text-xs text-slate-500">{order.orderNo}</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">{order.customer.name}</h3><p className="mt-1 text-sm text-slate-600">{order.description || "No order description"}</p></div>
         <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={beginOrderEdit} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium">Edit order</button>
           <button type="button" onClick={() => openDesignEditor(null)} className="rounded-md bg-navy-900 px-3 py-2 text-sm font-medium text-white">+ Add</button>
           <Link to={"/production?orderId=" + order.id} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium">Manage masters</Link>
           <select value={order.status} onChange={e => change(e.target.value as OrderStatus)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">{statuses.map(s => <option key={s} value={s}>{label(s)}</option>)}</select>
@@ -132,6 +180,29 @@ export function OrderDetailPage() {
         </div>
       </div>
     </section>
+
+    {editingOrder && <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h4 className="font-semibold text-navy-900">Edit order details</h4>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="text-sm">Stitching shop<select value={shopIdDraft} onChange={e => setShopIdDraft(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option value="">Unassigned</option>{shops.map(shop => <option key={shop.id} value={shop.id}>{shop.name}</option>)}</select></label>
+        <label className="text-sm">Garment<select value={garmentDraft} onChange={e => setGarmentDraft(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">{garments.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label>
+        <label className="text-sm">Order date & time<input type="datetime-local" value={orderDateDraft} onChange={e => setOrderDateDraft(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label>
+        <label className="text-sm">Delivery date<input type="date" value={deliveryDateDraft} onChange={e => setDeliveryDateDraft(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label>
+        <label className="text-sm sm:col-span-2">Description<input value={descriptionDraft} onChange={e => setDescriptionDraft(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label>
+        <label className="text-sm sm:col-span-2">Notes<textarea value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label>
+      </div>
+      <div className="mt-4 border-t border-slate-100 pt-4">
+        <div className="flex items-center justify-between gap-2"><div><h5 className="text-sm font-semibold">Size quantities</h5><p className="text-xs text-slate-500">Total is recalculated from these rows.</p></div><button type="button" disabled={hasSizeAssignments} onClick={() => setSizeRowsDraft(rows => [...rows, { id: String(Date.now()), size: "", quantity: "1" }])} className="rounded-md border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">+ Add size</button></div>
+        {hasSizeAssignments && <p className="mt-2 text-xs text-amber-700">Size quantities are locked while master assignments exist. Other order details can still be edited.</p>}
+        <div className="mt-3 space-y-2">{sizeRowsDraft.map(row => <div key={row.id} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+          <input aria-label="Size" value={row.size} disabled={hasSizeAssignments} onChange={e => setSizeRowsDraft(rows => rows.map(item => item.id === row.id ? { ...item, size: e.target.value.toUpperCase() } : item))} placeholder="Size (e.g. M)" className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"/>
+          <input aria-label="Quantity" type="number" min="1" value={row.quantity} disabled={hasSizeAssignments} onChange={e => setSizeRowsDraft(rows => rows.map(item => item.id === row.id ? { ...item, quantity: e.target.value } : item))} className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"/>
+          <button type="button" disabled={hasSizeAssignments || sizeRowsDraft.length === 1} onClick={() => setSizeRowsDraft(rows => rows.filter(item => item.id !== row.id))} className="rounded-md border border-red-200 px-2 py-2 text-xs text-red-700 disabled:opacity-40">Remove</button>
+        </div>)}</div>
+        <p className="mt-2 text-sm font-medium text-emerald-700">Total quantity: {sizeRowsDraft.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)}</p>
+      </div>
+      <div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setEditingOrder(false)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">Cancel</button><button type="button" disabled={orderSaving || !orderDateDraft} onClick={() => void saveOrderEdit()} className="rounded-md bg-navy-900 px-4 py-2 text-sm text-white">{orderSaving ? "Saving…" : "Save changes"}</button></div>
+    </section>}
 
     <div className="grid gap-5 lg:grid-cols-3">
       <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm lg:col-span-2">

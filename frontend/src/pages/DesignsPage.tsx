@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { createDesign, createGarment, getDesigns, getGarments, updateDesign, updateGarment, uploadDesignImage } from "../services/api";
+import { createDesign, createGarment, getCustomers, getDesigns, getGarments, updateDesign, updateGarment, uploadDesignImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import type { Design, Garment } from "../types";
+import type { Customer, Design, Garment } from "../types";
 
 const label = (v: string) => v.replaceAll("_", " ");
 
 export function DesignsPage() {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [garments, setGarments] = useState<Garment[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerId, setCustomerId] = useState("");
   const [show, setShow] = useState(false);
   const [selected, setSelected] = useState<Design | null>(null);
   const [newGarmentName, setNewGarmentName] = useState("");
@@ -25,9 +27,10 @@ export function DesignsPage() {
 
   async function load() {
     try {
-      const [d, g] = await Promise.all([getDesigns(), getGarments()]);
+      const [d, g, c] = await Promise.all([getDesigns(), getGarments(), getCustomers()]);
       setDesigns(d.data);
       setGarments(g.data);
+      setCustomers(c.data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load designs");
     }
@@ -41,7 +44,7 @@ export function DesignsPage() {
     setSaving(true);
     setError("");
     try {
-      await createDesign({ designNo, name, garment, description: description || undefined });
+      await createDesign({ designNo, name, garment, customerId: customerId || null, description: description || undefined });
       setDesignNo("");
       setName("");
       setDescription("");
@@ -104,6 +107,7 @@ export function DesignsPage() {
     setName(design.name);
     setGarment(design.garmentMaster?.name ?? design.garment);
     setDescription(design.description ?? "");
+    setCustomerId(design.customerId ?? "");
   }
 
   async function saveEdit() {
@@ -115,6 +119,7 @@ export function DesignsPage() {
         designNo,
         name,
         garment,
+        customerId: customerId || null,
         description: description || null,
       });
       setSelected(null);
@@ -130,7 +135,7 @@ export function DesignsPage() {
     }
   }
 
-  const visible = filter ? designs.filter(d => d.garment === filter) : designs;
+  const visible = designs.filter(d => (!filter || d.garment === filter) && (!customerId || !d.customerId || d.customerId === customerId));
 
   return <div className="mx-auto max-w-6xl space-y-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -146,6 +151,8 @@ export function DesignsPage() {
       <form onSubmit={submit} className="mt-4 grid items-start gap-3 md:grid-cols-4">
         <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
         <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        <select value={customerId} onChange={e => setCustomerId(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Shared design</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+        <select value={customerId} onChange={e => setCustomerId(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Shared design</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
         <div className="text-sm">
           <div className="relative min-w-0"><button type="button" aria-haspopup="listbox" aria-expanded={garmentDropdownOpen} onClick={() => setGarmentDropdownOpen(open => !open)} className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm"><span className={garment ? "truncate text-slate-800" : "truncate text-slate-400"}>{garment || "Choose garment…"}</span><span className="text-slate-500">▾</span></button>{garmentDropdownOpen && <div role="listbox" aria-label="Garments" className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg">{garments.map(g => <div key={g.id} role="option" aria-selected={garment === g.name} className="group flex items-center gap-2 rounded px-2 py-1 hover:bg-slate-50 focus-within:bg-slate-50"><button type="button" onClick={() => { setGarment(g.name); setGarmentDropdownOpen(false); }} className="min-w-0 flex-1 truncate py-1 text-left text-sm text-slate-700">{g.name}</button><button type="button" aria-label={"Delete " + g.name} title={g.name.trim().toUpperCase() === "OTHER" ? undefined : "Delete " + g.name} disabled={g.name.trim().toUpperCase() === "OTHER"} onClick={() => void deleteGarment(g.id)} className="rounded px-1.5 py-1 text-sm text-red-600 opacity-0 transition-opacity hover:bg-red-100 group-hover:opacity-100 focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-0">×</button></div>)}{!garments.length && <p className="px-2 py-2 text-xs text-slate-500">No garments available.</p>}</div>}{garmentDropdownOpen && <button type="button" aria-label="Close garment dropdown" className="fixed inset-0 z-10 cursor-default" onClick={() => setGarmentDropdownOpen(false)} />}</div>
           <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
@@ -171,7 +178,7 @@ export function DesignsPage() {
       </div>
       <div className="mt-3 flex gap-2"><button disabled={saving || !garment} onClick={() => void saveEdit()} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Save changes</button><button type="button" onClick={() => setSelected(null)} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button></div>
     </section>}
-    <div className="flex flex-col gap-3 sm:flex-row"><select value={filter} onChange={e => setFilter(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">All garments</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select><span className="self-center text-sm text-slate-500">{visible.length} design(s)</span></div>
+    <div className="flex flex-col gap-3 sm:flex-row"><select value={customerId} onChange={e => setCustomerId(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">All customers / shared</option>{customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><select value={filter} onChange={e => setFilter(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">All garments</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select><span className="self-center text-sm text-slate-500">{visible.length} design(s)</span></div>
     {!visible.length ? <LoadingState label="No designs found." /> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {visible.map(d => <article key={d.id} onClick={() => openDesign(d)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") openDesign(d); }} role="button" tabIndex={0} className="cursor-pointer overflow-hidden rounded-xl border border-sand-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
         <div className="aspect-[4/3] bg-slate-100">{d.imagePath ? <img src={d.imagePath} alt={d.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-3xl font-semibold text-slate-300">SP</div>}</div>

@@ -51,6 +51,7 @@ model Shop {
   orders Order[]
   masters Master[]
   invoices Invoice[]
+  designs Design[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([active])
@@ -207,12 +208,15 @@ model Design {
   garmentMaster Garment? @relation("DesignGarment", fields: [garmentId], references: [id], onDelete: SetNull)
   description String?
   imagePath String?
+  customerId String?
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   active Boolean @default(true)
   orderDesigns OrderDesign[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([garment, active])
   @@index([garmentId])
+  @@index([customerId])
   @@index([name])
 }
 

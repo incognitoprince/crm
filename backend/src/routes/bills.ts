@@ -74,7 +74,7 @@ router.post("/", asyncHandler(async (req, res) => {
       modelNo: input.modelNo ?? null,
       notes: input.notes ?? null,
       totalFils,
-      lines: { create: input.lines.map(line => ({ orderId: line.orderId ?? null, orderNo: line.orderNo ?? null, imagePath: line.imagePath ?? null, description: line.description, quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: orders.find(order => order.id === line.orderId)?.orderDate ?? null })) },
+      lines: { create: input.lines.map(line => { const linkedOrder = orders.find(order => order.id === line.orderId); return { orderId: line.orderId ?? null, orderNo: linkedOrder?.orderNo ?? line.orderNo ?? null, imagePath: line.imagePath ?? null, description: line.description, quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: linkedOrder?.orderDate ?? null }; }) },
     },
     include,
   });

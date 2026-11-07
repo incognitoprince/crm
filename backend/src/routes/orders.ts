@@ -19,9 +19,17 @@ const orderSchema = z.object({
   totalAmountFils: z.number().int().min(0).max(100000000).default(0),
   paidAmountFils: z.number().int().min(0).max(100000000).default(0),
   paymentMethod: z.enum(["CASH", "CARD", "BANK_TRANSFER", "OTHER"]).default("CASH"),
+  orderDate: z.string().datetime().optional(),
   deliveryDate: z.string().datetime().nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
   sizeBreakdowns: z.array(z.object({ size: z.string().trim().min(1).max(20), quantity: z.number().int().min(1).max(100000) })).max(20).default([]),
+}).superRefine((value, ctx) => {
+  const seen = new Set<string>();
+  value.sizeBreakdowns.forEach((row, index) => {
+    const normalized = row.size.trim().toUpperCase();
+    if (seen.has(normalized)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["sizeBreakdowns", index, "size"], message: "Each size can appear only once." });
+    seen.add(normalized);
+  });
 });
 
 const includes = {
@@ -108,6 +116,7 @@ router.post("/", asyncHandler(async (req, res) => {
         deliveryDate: input.deliveryDate ? new Date(input.deliveryDate) : null,
         notes: input.notes ?? null,
         orderNo: "ORD-" + new Date().getFullYear() + "-" + String(count + 1).padStart(3, "0"),
+        orderDate: input.orderDate ? new Date(input.orderDate) : new Date(),
         sizeBreakdowns: { create: input.sizeBreakdowns },
         payments: input.paidAmountFils > 0 ? {
           create: {
@@ -121,6 +130,57 @@ router.post("/", asyncHandler(async (req, res) => {
     return created;
   });
   res.status(201).json({ data: order });
+}));
+
+const orderUpdateSchema = z.object({
+  shopId: idSchema.nullable().optional(), garment: z.string().trim().min(2).max(80).optional(),
+  description: z.string().trim().max(250).optional(), quantity: z.number().int().min(1).max(100000).optional(),
+  orderDate: z.string().datetime().optional(), deliveryDate: z.string().datetime().nullable().optional(),
+  notes: z.string().trim().max(1000).nullable().optional(),
+  sizeBreakdowns: z.array(z.object({ size: z.string().trim().min(1).max(20), quantity: z.number().int().min(1).max(100000) })).max(20).optional(),
+}).superRefine((value, ctx) => {
+  if (!value.sizeBreakdowns) return;
+  const seen = new Set<string>();
+  value.sizeBreakdowns.forEach((row, index) => {
+    const normalized = row.size.trim().toUpperCase();
+    if (seen.has(normalized)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["sizeBreakdowns", index, "size"], message: "Each size can appear only once." });
+    seen.add(normalized);
+  });
+});
+router.patch("/:id", asyncHandler(async (req, res) => {
+  const input = orderUpdateSchema.parse(req.body);
+  const existing = await prisma.order.findUnique({ where: { id: req.params.id }, include: { masterAssignments: true, designs: { include: { assignments: true } }, sizeBreakdowns: true } });
+  if (!existing) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
+  const hasAssignments = existing.masterAssignments.length > 0 || existing.designs.some(item => item.assignments.length > 0);
+  if (input.sizeBreakdowns && hasAssignments) {
+    const before = new Map(existing.sizeBreakdowns.map(row => [row.size, row.quantity]));
+    const after = new Map(input.sizeBreakdowns.map(row => [row.size, row.quantity]));
+    if (before.size !== after.size || [...before].some(([size, qty]) => after.get(size) !== qty))
+      throw new AppError("Size quantities cannot change while master assignments exist.", 409, "ACTIVE_ASSIGNMENTS");
+  }
+  const garment = input.garment ? await prisma.garment.findFirst({ where: { name: input.garment, active: true } }) : null;
+  if (input.garment && !garment) throw new AppError("Garment not found or inactive", 400, "GARMENT_NOT_FOUND");
+  if (input.shopId) { const shop = await prisma.shop.findUnique({ where: { id: input.shopId } }); if (!shop) throw new AppError("Shop not found", 404, "SHOP_NOT_FOUND"); }
+  if (input.quantity !== undefined && existing.sizeBreakdowns.length && !input.sizeBreakdowns && input.quantity !== existing.quantity)
+    throw new AppError("Include the size breakdown when changing total quantity.", 400, "SIZE_BREAKDOWN_REQUIRED");
+  if (input.sizeBreakdowns && input.sizeBreakdowns.reduce((n, row) => n + row.quantity, 0) !== (input.quantity ?? existing.quantity))
+    throw new AppError("Size quantities must equal total quantity", 400, "INVALID_SIZE_BREAKDOWN");
+  const updated = await prisma.$transaction(async tx => {
+    if (input.sizeBreakdowns) {
+      await tx.orderSizeBreakdown.deleteMany({ where: { orderId: existing.id } });
+      await tx.orderSizeBreakdown.createMany({ data: input.sizeBreakdowns.map(row => ({ orderId: existing.id, ...row })) });
+    }
+    return tx.order.update({ where: { id: existing.id }, data: {
+      ...(input.shopId !== undefined ? { shopId: input.shopId } : {}),
+      ...(input.garment && garment ? { garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER", garmentId: garment.id } : {}),
+      ...(input.description !== undefined ? { description: input.description } : {}),
+      ...(input.quantity !== undefined ? { quantity: input.quantity } : {}),
+      ...(input.orderDate ? { orderDate: new Date(input.orderDate) } : {}),
+      ...(input.deliveryDate !== undefined ? { deliveryDate: input.deliveryDate ? new Date(input.deliveryDate) : null } : {}),
+      ...(input.notes !== undefined ? { notes: input.notes } : {}),
+    }, include: includes });
+  });
+  res.json({ data: updated });
 }));
 
 router.post("/:id/reference-images", imageUpload.single("image"), asyncHandler(async (req, res) => {

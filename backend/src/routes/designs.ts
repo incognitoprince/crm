@@ -13,18 +13,21 @@ const designSchema = z.object({
   name: z.string().trim().min(2).max(120),
   garment: z.string().trim().min(2).max(80),
   description: z.string().trim().max(1000).nullable().optional(),
+  customerId: z.string().trim().min(1).nullable().optional(),
   active: z.boolean().optional(),
 });
 
 router.get("/", asyncHandler(async (req, res) => {
   const garment = typeof req.query.garment === "string" ? req.query.garment : undefined;
-  let where: Prisma.DesignWhereInput = { active: true };
+  const customerId = typeof req.query.customerId === "string" ? req.query.customerId : undefined;
+  let where: Prisma.DesignWhereInput = { active: true, ...(customerId ? { OR: [{ customerId }, { customerId: null }] } : {}) };
   if (garment) {
     const garmentRecord = await prisma.garment.findFirst({ where: { name: garment, active: true } });
     if (!garmentRecord) return res.json({ data: [] });
     const standard = (garmentTypes as readonly string[]).includes(garment);
     where = {
       active: true,
+      ...(customerId ? { AND: [{ OR: [{ customerId }, { customerId: null }] }] } : {}),
       OR: [
         { garmentId: garmentRecord.id },
         ...(standard ? [{ garment: garment as typeof garmentTypes[number] }] : []),
@@ -47,6 +50,7 @@ router.post("/", asyncHandler(async (req, res) => {
       garment: (garmentTypes as readonly string[]).includes(garment.name) ? garment.name as typeof garmentTypes[number] : "OTHER",
       garmentId: garment.id,
       description: input.description ?? null,
+      customerId: input.customerId ?? null,
       active: input.active ?? true,
     },
   }).catch(error => {

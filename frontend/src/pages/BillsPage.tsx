@@ -1,14 +1,15 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createBill, getBills, getCustomers, getDesigns, getShops, uploadInvoiceLineImage } from "../services/api";
+import { createBill, getBills, getCustomers, getDesigns, getOrders, getShops, uploadInvoiceLineImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import type { Customer, Design, Invoice, Shop } from "../types";
+import type { Customer, Design, Invoice, Order, Shop } from "../types";
 
 const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 const fils = (value: string) => Math.round(Number(value || 0) * 1000);
 
 type DraftLine = {
+  orderId: string;
   orderNo: string;
   description: string;
   quantity: string;
@@ -24,6 +25,7 @@ export function BillsPage() {
   const [customers,setCustomers]=useState<Customer[]>([]);
   const [shops,setShops]=useState<Shop[]>([]);
   const [designs,setDesigns]=useState<Design[]>([]);
+  const [orders,setOrders]=useState<Order[]>([]);
   const [shopId,setShopId]=useState("");
   const [customerId,setCustomerId]=useState("");
   const [invoiceNo,setInvoiceNo]=useState("");
@@ -31,14 +33,14 @@ export function BillsPage() {
   const [subject,setSubject]=useState("");
   const [modelNo,setModelNo]=useState("");
   const [notes,setNotes]=useState("");
-  const [lines,setLines]=useState<DraftLine[]>([{orderNo:"",description:"",quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);
+  const [lines,setLines]=useState<DraftLine[]>([{orderId:"",orderNo:"",description:"",quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);
   const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState("");
 
   async function load(){
     setError("");
     try{
-      const [b,c,s,d]=await Promise.all([getBills(),getCustomers(),getShops(),getDesigns()]);
-      setInvoices(b.data);setCustomers(c.data);setShops(s.data);setDesigns(d.data);
+      const [b,c,s,d,o]=await Promise.all([getBills(),getCustomers(),getShops(),getDesigns(),getOrders()]);
+      setInvoices(b.data);setCustomers(c.data);setShops(s.data);setDesigns(d.data);setOrders(o.data);
       if(!shopId&&s.data[0])setShopId(s.data[0].id);
     }catch(e){setError(e instanceof Error?e.message:"Unable to load billing data");}finally{setLoading(false);}
   }
@@ -62,7 +64,7 @@ export function BillsPage() {
       return {...line,designId:"",imageFile:file,imagePreview:preview};
     }));
   }
-  function addLine(){setLines(current=>[...current,{orderNo:"",description:"",quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);}
+  function addLine(){setLines(current=>[...current,{orderId:"",orderNo:"",description:"",quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);}
   function removeLine(index:number){
     setLines(current=>{const line=current[index];if(line?.imagePreview.startsWith("blob:"))URL.revokeObjectURL(line.imagePreview);return current.filter((_,i)=>i!==index);});
   }
@@ -72,12 +74,13 @@ export function BillsPage() {
     try{
       if(!shopId||!customerId)throw new Error("Select a shop and customer.");
       const valid=lines.filter(l=>Number(l.quantity)>0&&Number(l.rate)>=0);
+      if(lines.some(l=>l.orderId && !orders.some(o=>o.id===l.orderId && o.customer.id===customerId))) throw new Error("Selected orders must belong to the chosen customer.");
       if(!valid.length)throw new Error("Add at least one bill item.");
       const result=await createBill({
         invoiceNo:invoiceNo||undefined,
         issuedAt:invoiceDate?new Date(invoiceDate+"T12:00:00").toISOString():undefined,
         shopId,customerId,subject:subject||undefined,modelNo:modelNo||undefined,notes:notes||undefined,
-        lines:valid.map(l=>({orderNo:l.orderNo.trim()||undefined,imagePath:designs.find(d=>d.id===l.designId)?.imagePath||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)})),
+        lines:valid.map(l=>({orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,imagePath:designs.find(d=>d.id===l.designId)?.imagePath||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)})),
       });
       for(let i=0;i<valid.length;i++){
         const file = valid[i].imageFile;
@@ -105,19 +108,19 @@ export function BillsPage() {
             <label className="text-sm font-medium text-slate-700">Invoice No.<input value={invoiceNo} onChange={e=>setInvoiceNo(e.target.value)} placeholder="Auto if blank" className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Invoice Date<input type="date" value={invoiceDate} onChange={e=>setInvoiceDate(e.target.value)} className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Shop<select value={shopId} onChange={e=>setShopId(e.target.value)} className="mt-1.5 h-11 w-full px-3"><option value="">Select shop…</option>{shops.map(s=><option key={s.id} value={s.id}>{s.name} · {s.area}</option>)}</select></label>
-            <label className="text-sm font-medium text-slate-700">Customer<select value={customerId} onChange={e=>setCustomerId(e.target.value)} className="mt-1.5 h-11 w-full px-3"><option value="">Select customer…</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.phone?.trim() && c.phone.trim().toLowerCase() !== "not provided" ? ` · ${c.phone}` : ""}</option>)}</select></label>
+            <label className="text-sm font-medium text-slate-700">Customer<select value={customerId} onChange={e=>{setCustomerId(e.target.value);setLines(current=>current.map(line=>({...line,orderId:"",orderNo:""})));}} className="mt-1.5 h-11 w-full px-3"><option value="">Select customer…</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.phone?.trim() && c.phone.trim().toLowerCase() !== "not provided" ? ` · ${c.phone}` : ""}</option>)}</select></label>
             <label className="text-sm font-medium text-slate-700">Subject<input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="e.g. Bill of Model No: 20" className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Model No.<input value={modelNo} onChange={e=>setModelNo(e.target.value)} placeholder="Optional model number" className="mt-1.5 h-11 w-full px-3"/></label>
           </div>
         </article>
 
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-end justify-between gap-3 border-b border-slate-100 pb-4"><div><h4 className="font-semibold text-navy-900">Bill Items</h4><p className="mt-1 text-xs text-slate-500">Order number is entered manually. Choose an image from Design Library or upload one for each row.</p></div><button type="button" onClick={addLine} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">+ Add row</button></div>
+          <div className="flex items-end justify-between gap-3 border-b border-slate-100 pb-4"><div><h4 className="font-semibold text-navy-900">Bill Items</h4><p className="mt-1 text-xs text-slate-500">Select an existing customer order or enter a legacy order number. Choose an image from Design Library or upload one for each row.</p></div><button type="button" onClick={addLine} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">+ Add row</button></div>
           <div className="mt-4 space-y-3">
             {lines.map((line,i)=><div key={i} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
               <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(64px,.55fr)_minmax(90px,.7fr)_auto] md:items-end">
                 <label className="col-span-2 min-w-0 text-xs font-medium text-slate-600 sm:col-span-2 md:col-span-1">Image<select value={line.designId} onChange={e=>selectDesign(i,e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Design library…</option>{designs.filter(d=>d.active).map(d=><option key={d.id} value={d.id}>{d.designNo} · {d.name}</option>)}</select></label>
-                <label className="text-xs font-medium text-slate-600">Order No.<input value={line.orderNo} onChange={e=>updateLine(i,"orderNo",e.target.value)} placeholder="Enter manually" className="mt-1 h-10 w-full px-2 text-sm"/></label>
+                <label className="text-xs font-medium text-slate-600">Existing order<select value={line.orderId} onChange={e=>{const order=orders.find(o=>o.id===e.target.value);updateLine(i,"orderId",e.target.value);updateLine(i,"orderNo",order?.orderNo??"");}} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Choose order…</option>{orders.filter(o=>o.customer.id===customerId && o.status!=="CANCELLED").map(o=><option key={o.id} value={o.id}>{o.orderNo} · {o.garment} · {new Date(o.orderDate).toLocaleDateString()}</option>)}</select><input value={line.orderNo} onChange={e=>{updateLine(i,"orderNo",e.target.value);updateLine(i,"orderId","");}} placeholder="Or enter legacy order no." className="mt-1 h-9 w-full px-2 text-sm"/></label>
                 <label className="text-xs font-medium text-slate-600">Qty<input type="number" min="1" value={line.quantity} onChange={e=>updateLine(i,"quantity",e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"/></label>
                 <label className="text-xs font-medium text-slate-600">Rate (K.D.)<input type="number" min="0" step="0.001" value={line.rate} onChange={e=>updateLine(i,"rate",e.target.value)} placeholder="0.000" className="mt-1 h-10 w-full px-2 text-sm"/></label>
                 <button type="button" onClick={()=>removeLine(i)} className="text-xs font-medium text-red-600">Remove</button>

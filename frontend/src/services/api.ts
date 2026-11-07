@@ -49,7 +49,8 @@ export function updateGarment(id: string, data: { name?: string; active?: boolea
 
 export function getOrders() { return request<{ data: Order[] }>("/api/orders"); }
 export function getOrder(id: string) { return request<{ data: Order }>("/api/orders/" + id); }
-export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils?: number; paidAmountFils?: number; paymentMethod?: PaymentMethod; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
+export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils?: number; paidAmountFils?: number; paymentMethod?: PaymentMethod; orderDate?: string; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
+export function updateOrder(id: string, data: { shopId?: string | null; garment?: GarmentType; description?: string; quantity?: number; orderDate?: string; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns?: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function updateOrderStatus(id: string, status: Order["status"]) { return request<{ data: Order }>("/api/orders/" + id + "/status", { method: "PATCH", body: JSON.stringify({ status }) }); }
 
 export function uploadOrderReferenceImage(orderId: string, file: File) {
@@ -65,9 +66,9 @@ export function getMasters(shopId = "") { return request<{ data: Master[] }>("/a
 export function createMaster(data: { name: string; phone?: string; shopId: string }) { return request<{ data: Master }>("/api/masters", { method: "POST", body: JSON.stringify(data) }); }
 export function updateMaster(id: string, data: { name?: string; phone?: string | null; shopId?: string; active?: boolean }) { return request<{ data: Master }>("/api/masters/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
-export function getDesigns(garment = "") { return request<{ data: Design[] }>("/api/designs" + (garment ? "?garment=" + encodeURIComponent(garment) : "")); }
-export function createDesign(data: { designNo: string; name: string; garment: GarmentType; description?: string }) { return request<{ data: Design }>("/api/designs", { method: "POST", body: JSON.stringify(data) }); }
-export function updateDesign(id: string, data: { designNo?: string; name?: string; garment?: GarmentType; description?: string | null; active?: boolean }) { return request<{ data: Design }>("/api/designs/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
+export function getDesigns(garment = "", customerId = "") { const params = new URLSearchParams(); if (garment) params.set("garment", garment); if (customerId) params.set("customerId", customerId); const query = params.toString(); return request<{ data: Design[] }>("/api/designs" + (query ? "?" + query : "")); }
+export function createDesign(data: { designNo: string; name: string; garment: GarmentType; customerId?: string | null; description?: string }) { return request<{ data: Design }>("/api/designs", { method: "POST", body: JSON.stringify(data) }); }
+export function updateDesign(id: string, data: { designNo?: string; name?: string; garment?: GarmentType; customerId?: string | null; description?: string | null; active?: boolean }) { return request<{ data: Design }>("/api/designs/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function uploadDesignImage(id: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Design }>("/api/designs/" + id + "/image", { method: "POST", body }); }
 
 export function getProductionOrder(orderId: string) { return request<{ data: ProductionOrder }>("/api/production/orders/" + orderId); }
