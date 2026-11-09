@@ -51,7 +51,6 @@ model Shop {
   orders Order[]
   masters Master[]
   invoices Invoice[]
-  designs Design[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([active])
@@ -114,6 +113,7 @@ model Customer {
   measurements Measurement[]
   orders Order[]
   invoices Invoice[]
+  designs Design[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([name])
