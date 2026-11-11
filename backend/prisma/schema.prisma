@@ -218,6 +218,7 @@ model Design {
   @@index([garment, active])
   @@index([garmentId])
   @@index([customerId])
+  @@unique([customerId, designNo])
   @@index([name])
 }
 
