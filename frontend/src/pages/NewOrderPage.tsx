@@ -83,12 +83,10 @@ export function NewOrderPage() {
     .filter(row => row.size && Number(row.quantity) > 0)
     .map(row => ({ size: row.size, quantity: Number(row.quantity) })), [sizeRows]);
   const breakdownTotal = breakdown.reduce((sum, item) => sum + item.quantity, 0);
-  const sizeOptions = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "FREE SIZE"];
+  const sizeOptions = Array.from({ length: 15 }, (_, index) => `${index + 1}yr`);
 
   function addSizeRow() {
-    const used = new Set(sizeRows.map(row => row.size));
-    const next = sizeOptions.find(size => !used.has(size)) ?? "";
-    setSizeRows(rows => [...rows, { id: Date.now(), size: next, quantity: "1" }]);
+    setSizeRows(rows => [...rows, { id: Date.now(), size: "", quantity: "" }]);
   }
 
   function updateSizeRow(id: number, patch: Partial<{ size: string; quantity: string }>) {
