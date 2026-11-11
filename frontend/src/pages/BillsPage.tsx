@@ -13,6 +13,7 @@ type DraftLine = {
   orderId: string;
   orderNo: string;
   description: string;
+  orderDate: string;
   sizeBreakdowns: Array<{ size: string; quantity: string; rate: string }>;
   quantity: string;
   rate: string;
@@ -22,7 +23,7 @@ type DraftLine = {
   imagePath: string;
 };
 
-const createDraftLine = (): DraftLine => ({ orderId:"", orderNo:"", description:"", sizeBreakdowns:[], quantity:"1", rate:"", designId:"", imageFile:null, imagePreview:"", imagePath:"" });
+const createDraftLine = (): DraftLine => ({ orderId:"", orderNo:"", description:"", orderDate:"", sizeBreakdowns:[], quantity:"1", rate:"", designId:"", imageFile:null, imagePreview:"", imagePath:"" });
 
 export function BillsPage() {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ export function BillsPage() {
         const invoice=existing.data;
         setShopId(invoice.shopId);setCustomerId(invoice.customerId);setInvoiceNo(invoice.invoiceNo);setInvoiceDate(new Date(invoice.issuedAt).toISOString().slice(0,10));setSubject(invoice.subject??"");setModelNo(invoice.modelNo??"");setNotes(invoice.notes??"");
         setLines(invoice.lines.map(line=>({
-          orderId:line.orderId??"",orderNo:line.orderNo??"",description:line.description.replace(/\s*·\s*/g," ").trim(),
+          orderId:line.orderId??"",orderNo:line.orderNo??"",description:line.description.replace(/\s*·\s*/g," ").trim(),orderDate:line.orderDate??line.order?.orderDate??"",
           sizeBreakdowns:line.sizeBreakdowns?.map(item=>({size:item.size,quantity:String(item.quantity),rate:(line.unitPriceFils/1000).toFixed(3)}))??[],
           quantity:String(line.quantity),rate:(line.unitPriceFils/1000).toFixed(3),designId:"",imageFile:null,
           imagePreview:line.imagePath?resolveMediaUrl(line.imagePath):"",imagePath:line.imagePath??"",
@@ -75,7 +76,7 @@ export function BillsPage() {
     const order=orders.find(item=>item.id===orderId);
     setLines(current=>current.map((line,i)=>i===index?{
       ...line,orderId,orderNo:order?.orderNo??"",description:order?.description??line.description,
-      quantity:order?String(order.quantity):line.quantity,
+      quantity:order?String(order.quantity):line.quantity,orderDate:order?.orderDate??"",
       sizeBreakdowns:order?.sizeBreakdowns.map(item=>({size:item.size,quantity:String(item.quantity),rate:""}))??[]
     }:line));
   }
@@ -159,7 +160,7 @@ export function BillsPage() {
             <label className="text-sm font-medium text-slate-700">Invoice No.<input value={invoiceNo} onChange={e=>setInvoiceNo(e.target.value)} placeholder="Auto if blank" className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Invoice Date<input type="date" value={invoiceDate} onChange={e=>setInvoiceDate(e.target.value)} className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Shop<select value={shopId} onChange={e=>setShopId(e.target.value)} className="mt-1.5 h-11 w-full px-3"><option value="">Select shop…</option>{shops.map(s=><option key={s.id} value={s.id}>{s.name} · {s.area}</option>)}</select></label>
-            <label className="text-sm font-medium text-slate-700">Customer<select value={customerId} onChange={e=>{setCustomerId(e.target.value);setLines(current=>current.map(line=>({...line,orderId:"",orderNo:""})));}} className="mt-1.5 h-11 w-full px-3"><option value="">Select customer…</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.phone?.trim() && c.phone.trim().toLowerCase() !== "not provided" ? ` · ${c.phone}` : ""}</option>)}</select></label>
+            <label className="text-sm font-medium text-slate-700">Customer<select value={customerId} onChange={e=>{setCustomerId(e.target.value);setLines(current=>current.map(line=>({...line,orderId:"",orderNo:"",orderDate:""})));}} className="mt-1.5 h-11 w-full px-3"><option value="">Select customer…</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.phone?.trim() && c.phone.trim().toLowerCase() !== "not provided" ? ` · ${c.phone}` : ""}</option>)}</select></label>
             <label className="text-sm font-medium text-slate-700">Subject<input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="e.g. Bill of Model No: 20" className="mt-1.5 h-11 w-full px-3"/></label>
             <label className="text-sm font-medium text-slate-700">Model No.<input value={modelNo} onChange={e=>setModelNo(e.target.value)} placeholder="Optional model number" className="mt-1.5 h-11 w-full px-3"/></label>
           </div>
@@ -230,7 +231,7 @@ export function BillsPage() {
               <InvoiceHeader shop={shop} compact />
               <div className="py-4 text-center"><p className="text-base font-bold underline">INVOICE</p><p className="mt-1">{subject||"Bill / Invoice"}</p></div>
               <div className="grid grid-cols-2 gap-3 border-y border-slate-300 py-3"><div><b>Bill To</b><p>{customer?.name||"Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p>{customer.phone}</p>}</div><div className="text-right"><p>Invoice Date: {invoiceDate ? new Date(invoiceDate+"T12:00:00").toLocaleDateString() : "—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p></div></div>
-              <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1">Image</th><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.flatMap((l,i)=>l.orderId&&l.sizeBreakdowns.length?l.sizeBreakdowns.filter(row=>row.size&&Number(row.quantity)>0).map((row,j)=><tr key={`${i}-${j}`}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{[l.description,row.size].filter(Boolean).join(" ")}</td><td className="border border-slate-400 p-1 text-center">{row.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(row.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(row.quantity||0)*Number(row.rate||0)).toFixed(3)}</td></tr>):Number(l.quantity)>0?[<tr key={i}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.description}</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>]:[])}</tbody></table>
+              <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1">Image</th><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Order Date &amp; Time</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Size</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.flatMap((l,i)=>l.orderId&&l.sizeBreakdowns.length?l.sizeBreakdowns.filter(row=>row.size&&Number(row.quantity)>0).map((row,j)=><tr key={`${i}-${j}`}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.orderDate?new Date(l.orderDate).toLocaleString("en-GB"):"—"}</td><td className="border border-slate-400 p-1">{l.description||"—"}</td><td className="border border-slate-400 p-1 text-center">{row.size}</td><td className="border border-slate-400 p-1 text-center">{row.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(row.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(row.quantity||0)*Number(row.rate||0)).toFixed(3)}</td></tr>):Number(l.quantity)>0?[<tr key={i}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.orderDate?new Date(l.orderDate).toLocaleString("en-GB"):"—"}</td><td className="border border-slate-400 p-1">{l.description||"—"}</td><td className="border border-slate-400 p-1 text-center">—</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>]:[])}</tbody></table>
               <div className="mt-4 text-right font-bold">GRAND TOTAL&nbsp;&nbsp; {total?money(total):"K.D. 0.000"}</div>
               {notes&&<div className="mt-3 whitespace-pre-wrap border-t border-slate-300 pt-3">{notes}</div>}
             </>})()}

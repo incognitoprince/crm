@@ -62,7 +62,7 @@ export function BillPage(){
      table.style.tableLayout="fixed";
      table.style.borderCollapse="collapse";
 
-     const widths=["12%","13%","19%","24%","9%","11%","12%"];
+     const widths=["11%","12%","17%","20%","9%","8%","11%","12%"];
      table.querySelectorAll("tr").forEach(row=>{
        row.querySelectorAll<HTMLElement>("th,td").forEach((cell,index)=>{
          if(index<widths.length)cell.style.width=widths[index];
@@ -176,14 +176,15 @@ export function BillPage(){
      </div>
 
      <div data-invoice-table-wrap className="mt-4 overflow-x-auto border border-slate-700">
-       <table data-invoice-table className="w-full min-w-[620px] table-fixed border-collapse text-[10px] sm:text-sm">
+       <table data-invoice-table className="w-full min-w-[720px] table-fixed border-collapse text-[10px] sm:text-sm">
         <thead>
           <tr className="bg-slate-50">
-            <th className="w-[12%] break-words border border-slate-700 p-2">Image</th>
-            <th className="w-[13%] break-words border border-slate-700 p-2">Order No</th>
-            <th className="w-[19%] break-words border border-slate-700 p-2">Order Date &amp; Time</th>
-            <th className="w-[24%] break-words border border-slate-700 p-2">Order Details</th>
-            <th className="w-[9%] break-words border border-slate-700 p-2">Quantity</th>
+            <th className="w-[11%] break-words border border-slate-700 p-2">Image</th>
+            <th className="w-[12%] break-words border border-slate-700 p-2">Order No</th>
+            <th className="w-[17%] break-words border border-slate-700 p-2">Order Date &amp; Time</th>
+            <th className="w-[20%] break-words border border-slate-700 p-2">Order Details</th>
+            <th className="w-[9%] break-words border border-slate-700 p-2">Size</th>
+            <th className="w-[8%] break-words border border-slate-700 p-2">Quantity</th>
             <th className="w-[11%] break-words border border-slate-700 p-2">Rate Per Piece<br/>(K.D.)</th>
             <th className="w-[12%] break-words border border-slate-700 p-2">Total</th>
           </tr>
@@ -192,18 +193,19 @@ export function BillPage(){
           <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="use-credentials" src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.description.replace(/\s*·\s*/g," ")}{line.sizeBreakdowns?.length ? <div className="mt-1 text-[9px] sm:text-xs">{line.sizeBreakdowns.map(item => `${item.size} – ${item.quantity} pcs`).join(", ")}</div> : null}</td>
+          <td className="break-words border border-slate-700 p-2 text-center">{line.description.replace(/\s*·\s*/g," ").trim() || "—"}</td>
+          <td className="break-words border border-slate-700 p-2 text-center">{line.sizeBreakdowns?.map(item => item.size).join(", ") || "—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.quantity}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{(line.unitPriceFils/1000).toFixed(3)}</td>
           <td className="break-words border border-slate-700 p-2 text-right">{(line.totalFils/1000).toFixed(3)}</td>
         </tr>)}</tbody>
         <tfoot>
           <tr>
-            <td colSpan={4} className="border border-slate-700 p-2 font-bold">TOTAL QTY: {totalQty}</td>
+            <td colSpan={5} className="border border-slate-700 p-2 font-bold">TOTAL QTY: {totalQty}</td>
             <td colSpan={2} className="border border-slate-700 p-2 text-right font-bold">GRAND TOTAL</td>
             <td className="border border-slate-700 p-2 text-right font-bold">{(invoice.totalFils/1000).toFixed(3)}</td>
           </tr>
-          <tr><td colSpan={7} className="break-words border border-slate-700 p-2 text-center font-bold uppercase">{words(invoice.totalFils)}</td></tr>
+          <tr><td colSpan={8} className="break-words border border-slate-700 p-2 text-center font-bold uppercase">{words(invoice.totalFils)}</td></tr>
         </tfoot>
        </table>
      </div>
