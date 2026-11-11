@@ -324,6 +324,7 @@ model InvoiceLine {
   orderNo String?
   imagePath String?
   description String
+  sizeBreakdowns Json?
   quantity Int
   unitPriceFils Int
   totalFils Int
