@@ -105,7 +105,7 @@ export function createPayment(data: { orderId: string; amountFils: number; metho
 
 export function getBills() { return request<{ data: Invoice[] }>("/api/bills"); }
 export function getBill(id: string) { return request<{ data: Invoice }>("/api/bills/" + id); }
-export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId: string; customerId: string; subject?: string; modelNo?: string; notes?: string; lines: Array<{ orderId?: string; orderNo?: string; imagePath?: string; description: string; quantity: number; unitPriceFils: number }> }) { return request<{ data: Invoice }>("/api/bills", { method: "POST", body: JSON.stringify(data) }); }
+export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId: string; customerId: string; subject?: string; modelNo?: string; notes?: string; lines: Array<{ orderId?: string; orderNo?: string; imagePath?: string; description: string; sizeBreakdowns?: Array<{ size: string; quantity: number }>; quantity: number; unitPriceFils: number }> }) { return request<{ data: Invoice }>("/api/bills", { method: "POST", body: JSON.stringify(data) }); }
 export function uploadInvoiceLineImage(invoiceId: string, lineId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: InvoiceLine }>(`/api/bills/${invoiceId}/lines/${lineId}/image`, { method: "POST", body }); }
 export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
 
