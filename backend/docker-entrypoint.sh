@@ -11,7 +11,7 @@ if [ "${RUN_DB_MIGRATIONS:-true}" = "true" ]; then
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 try {
-  const rows = await prisma.$queryRawUnsafe('SELECT to_regclass(\'public."User"\') AS table_name');
+  const rows = await prisma.$queryRawUnsafe('SELECT to_regclass(\'public."User"\')::text AS table_name');
   process.stdout.write(rows?.[0]?.table_name ? "true" : "false");
 } catch {
   process.stdout.write("false");
