@@ -10,7 +10,7 @@ const router = Router();
 const garmentTypes = ["THOBE", "SHIRT", "TROUSER", "SUIT", "OTHER"] as const;
 const designSchema = z.object({
   designNo: z.string().trim().min(2).max(40),
-  name: z.string().trim().min(2).max(120),
+  name: z.string().trim().max(120),
   garment: z.string().trim().min(2).max(80),
   description: z.string().trim().max(1000).nullable().optional(),
   customerId: z.string().trim().min(1).nullable().optional(),
