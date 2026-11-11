@@ -77,8 +77,15 @@ export function OrderDetailPage() {
       const sizeBreakdowns = sizeRowsDraft.filter(row => row.size && Number(row.quantity) > 0).map(row => ({ size: row.size, quantity: Number(row.quantity) }));
       const quantity = sizeBreakdowns.reduce((sum, row) => sum + row.quantity, 0);
       if (!quantity) throw new Error("Add at least one size with a quantity.");
-      if (hasSizeAssignments && (quantity !== order.quantity || sizeBreakdowns.length !== order.sizeBreakdowns.length || sizeBreakdowns.some(row => order.sizeBreakdowns.find(old => old.size === row.size)?.quantity !== row.quantity))) {
-        throw new Error("Size quantities are locked while master assignments exist. Remove assignments before changing them.");
+      if (hasSizeAssignments) {
+        const assigned: Record<string, number> = {};
+        for (const assignment of [...(order.masterAssignments ?? []), ...order.designs.flatMap(item => item.assignments ?? [])]) {
+          assigned[assignment.size] = (assigned[assignment.size] ?? 0) + assignment.quantity;
+        }
+        for (const [size, assignedQty] of Object.entries(assigned)) {
+          const requestedQty = sizeBreakdowns.find(row => row.size === size)?.quantity ?? 0;
+          if (requestedQty < assignedQty) throw new Error(`Size ${size} must remain at least ${assignedQty} because that quantity is already assigned to masters.`);
+        }
       }
       const result = await updateOrder(order.id, { shopId: shopIdDraft || null, garment: garmentDraft as Order["garment"], quantity, sizeBreakdowns, orderDate: new Date(orderDateDraft).toISOString(), description: descriptionDraft, deliveryDate: deliveryDateDraft ? new Date(deliveryDateDraft + "T00:00:00").toISOString() : null, notes: notesDraft });
       setOrder(result.data); setEditingOrder(false);
@@ -192,12 +199,12 @@ export function OrderDetailPage() {
         <label className="text-sm sm:col-span-2">Notes<textarea value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label>
       </div>
       <div className="mt-4 border-t border-slate-100 pt-4">
-        <div className="flex items-center justify-between gap-2"><div><h5 className="text-sm font-semibold">Size quantities</h5><p className="text-xs text-slate-500">Total is recalculated from these rows.</p></div><button type="button" disabled={hasSizeAssignments} onClick={() => setSizeRowsDraft(rows => [...rows, { id: String(Date.now()), size: "", quantity: "1" }])} className="rounded-md border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">+ Add size</button></div>
-        {hasSizeAssignments && <p className="mt-2 text-xs text-amber-700">Size quantities are locked while master assignments exist. Other order details can still be edited.</p>}
+        <div className="flex items-center justify-between gap-2"><div><h5 className="text-sm font-semibold">Size quantities</h5><p className="text-xs text-slate-500">Total is recalculated from these rows.</p></div><button type="button" onClick={() => setSizeRowsDraft(rows => [...rows, { id: String(Date.now()), size: "", quantity: "" }])} className="rounded-md border border-slate-300 px-3 py-2 text-xs disabled:opacity-40">+ Add size</button></div>
+        {hasSizeAssignments && <p className="mt-2 text-xs text-amber-700">You can edit sizes. Quantities already assigned to masters must remain covered.</p>}
         <div className="mt-3 space-y-2">{sizeRowsDraft.map(row => <div key={row.id} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-          <input aria-label="Size" value={row.size} disabled={hasSizeAssignments} onChange={e => setSizeRowsDraft(rows => rows.map(item => item.id === row.id ? { ...item, size: e.target.value.toUpperCase() } : item))} placeholder="Size (e.g. M)" className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"/>
-          <input aria-label="Quantity" type="number" min="1" value={row.quantity} disabled={hasSizeAssignments} onChange={e => setSizeRowsDraft(rows => rows.map(item => item.id === row.id ? { ...item, quantity: e.target.value } : item))} className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"/>
-          <button type="button" disabled={hasSizeAssignments || sizeRowsDraft.length === 1} onClick={() => setSizeRowsDraft(rows => rows.filter(item => item.id !== row.id))} className="rounded-md border border-red-200 px-2 py-2 text-xs text-red-700 disabled:opacity-40">Remove</button>
+          <input aria-label="Size" value={row.size} onChange={e => setSizeRowsDraft(rows => rows.map(item => item.id === row.id ? { ...item, size: e.target.value } : item))} placeholder="Size (e.g. 1yr)" className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"/>
+          <input aria-label="Quantity" type="number" min="1" value={row.quantity} onChange={e => setSizeRowsDraft(rows => rows.map(item => item.id === row.id ? { ...item, quantity: e.target.value } : item))} className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"/>
+          <button type="button" disabled={sizeRowsDraft.length === 1} onClick={() => setSizeRowsDraft(rows => rows.filter(item => item.id !== row.id))} className="rounded-md border border-red-200 px-2 py-2 text-xs text-red-700 disabled:opacity-40">Remove</button>
         </div>)}</div>
         <p className="mt-2 text-sm font-medium text-emerald-700">Total quantity: {sizeRowsDraft.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0)}</p>
       </div>
