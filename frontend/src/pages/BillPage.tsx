@@ -204,7 +204,7 @@ export function BillPage(){
           <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="use-credentials" src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.description}</td>
+          <td className="break-words border border-slate-700 p-2 text-center">{line.description}{line.sizeBreakdowns?.length ? <div className="mt-1 text-[9px] sm:text-xs">{line.sizeBreakdowns.map(item => `${item.size} – ${item.quantity} pcs`).join(", ")}</div> : null}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.quantity}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{(line.unitPriceFils/1000).toFixed(3)}</td>
           <td className="break-words border border-slate-700 p-2 text-right">{(line.totalFils/1000).toFixed(3)}</td>
