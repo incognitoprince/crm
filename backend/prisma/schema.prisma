@@ -197,7 +197,6 @@ model Master {
   updatedAt DateTime @updatedAt
   @@index([shopId, active])
   @@index([name])
-  @@unique([designNo, customerId])
 }
 
 model Design {
