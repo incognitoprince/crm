@@ -14,6 +14,7 @@ const lineSchema = z.object({
   orderNo: z.string().trim().max(80).optional().nullable(),
   imagePath: z.string().trim().max(1000).optional().nullable(),
   description: z.string().trim().max(300).default(""),
+  sizeBreakdowns: z.array(z.object({ size: z.string().trim().min(1).max(30), quantity: z.coerce.number().int().positive() })).optional(),
   quantity: z.coerce.number().int().positive(),
   unitPriceFils: z.coerce.number().int().nonnegative(),
 });
@@ -74,7 +75,7 @@ router.post("/", asyncHandler(async (req, res) => {
       modelNo: input.modelNo ?? null,
       notes: input.notes ?? null,
       totalFils,
-      lines: { create: input.lines.map(line => { const linkedOrder = orders.find(order => order.id === line.orderId); return { orderId: line.orderId ?? null, orderNo: linkedOrder?.orderNo ?? line.orderNo ?? null, imagePath: line.imagePath ?? null, description: line.description, quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: linkedOrder?.orderDate ?? null }; }) },
+      lines: { create: input.lines.map(line => { const linkedOrder = orders.find(order => order.id === line.orderId); return { orderId: line.orderId ?? null, orderNo: linkedOrder?.orderNo ?? line.orderNo ?? null, imagePath: line.imagePath ?? null, description: line.description, sizeBreakdowns: line.sizeBreakdowns ?? linkedOrder?.sizeBreakdowns.map(item => ({ size: item.size, quantity: item.quantity })) ?? null, quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: linkedOrder?.orderDate ?? null }; }) },
     },
     include,
   });
