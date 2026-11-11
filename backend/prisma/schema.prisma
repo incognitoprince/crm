@@ -197,11 +197,12 @@ model Master {
   updatedAt DateTime @updatedAt
   @@index([shopId, active])
   @@index([name])
+  @@unique([designNo, customerId])
 }
 
 model Design {
   id String @id @default(cuid())
-  designNo String @unique
+  designNo String
   name String
   garment GarmentType
   garmentId String?
