@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { createBill, getBills, getCustomers, getDesigns, getOrders, getShops, uploadInvoiceLineImage } from "../services/api";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { createBill, getBill, getBills, getCustomers, getDesigns, getOrders, getShops, resolveMediaUrl, updateBill, uploadInvoiceLineImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { InvoiceHeader } from "../components/InvoiceHeader";
 import { LoadingState } from "../components/LoadingState";
@@ -19,10 +19,15 @@ type DraftLine = {
   designId: string;
   imageFile: File | null;
   imagePreview: string;
+  imagePath: string;
 };
+
+const createDraftLine = (): DraftLine => ({ orderId:"", orderNo:"", description:"", sizeBreakdowns:[], quantity:"1", rate:"", designId:"", imageFile:null, imagePreview:"", imagePath:"" });
 
 export function BillsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editingInvoiceId = searchParams.get("edit");
   const [invoices,setInvoices]=useState<Invoice[]>([]);
   const [customers,setCustomers]=useState<Customer[]>([]);
   const [shops,setShops]=useState<Shop[]>([]);
@@ -35,18 +40,32 @@ export function BillsPage() {
   const [subject,setSubject]=useState("");
   const [modelNo,setModelNo]=useState("");
   const [notes,setNotes]=useState("");
-  const [lines,setLines]=useState<DraftLine[]>([{orderId:"",orderNo:"",description:"",sizeBreakdowns:[],quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);
+  const [lines,setLines]=useState<DraftLine[]>([createDraftLine()]);
   const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState("");
 
   async function load(){
-    setError("");
+    setLoading(true);setError("");
     try{
-      const [b,c,s,d,o]=await Promise.all([getBills(),getCustomers(),getShops(),getDesigns(),getOrders()]);
+      const [b,c,s,d,o,existing]=await Promise.all([
+        getBills(),getCustomers(),getShops(),getDesigns(),getOrders(),
+        editingInvoiceId ? getBill(editingInvoiceId) : Promise.resolve(null),
+      ]);
       setInvoices(b.data);setCustomers(c.data);setShops(s.data);setDesigns(d.data);setOrders(o.data);
-      if(!shopId&&s.data[0])setShopId(s.data[0].id);
+      if(existing){
+        const invoice=existing.data;
+        setShopId(invoice.shopId);setCustomerId(invoice.customerId);setInvoiceNo(invoice.invoiceNo);setInvoiceDate(new Date(invoice.issuedAt).toISOString().slice(0,10));setSubject(invoice.subject??"");setModelNo(invoice.modelNo??"");setNotes(invoice.notes??"");
+        setLines(invoice.lines.map(line=>({
+          orderId:line.orderId??"",orderNo:line.orderNo??"",description:line.description.replace(/\s*·\s*/g," ").trim(),
+          sizeBreakdowns:line.sizeBreakdowns?.map(item=>({size:item.size,quantity:String(item.quantity),rate:(line.unitPriceFils/1000).toFixed(3)}))??[],
+          quantity:String(line.quantity),rate:(line.unitPriceFils/1000).toFixed(3),designId:"",imageFile:null,
+          imagePreview:line.imagePath?resolveMediaUrl(line.imagePath):"",imagePath:line.imagePath??"",
+        })));
+      }else if(s.data[0]){
+        setShopId(current=>current||s.data[0].id);
+      }
     }catch(e){setError(e instanceof Error?e.message:"Unable to load billing data");}finally{setLoading(false);}
   }
-  useEffect(()=>{void load();},[]);
+  useEffect(()=>{void load();},[editingInvoiceId]);
   const total=lines.reduce((sum,l)=>sum+(l.orderId&&l.sizeBreakdowns.length?l.sizeBreakdowns.reduce((part,row)=>part+(Number(row.quantity||0)*fils(row.rate)),0):Number(l.quantity||0)*fils(l.rate)),0);
 
   function updateLine(index:number,key: keyof DraftLine,value:DraftLine[keyof DraftLine]){
@@ -74,10 +93,10 @@ export function BillsPage() {
     setLines(current=>current.map((line,i)=>{
       if(i!==index)return line;
       if(line.imagePreview.startsWith("blob:"))URL.revokeObjectURL(line.imagePreview);
-      return {...line,designId:"",imageFile:file,imagePreview:preview};
+      return {...line,designId:"",imageFile:file,imagePreview:preview,imagePath:""};
     }));
   }
-  function addLine(){setLines(current=>[...current,{orderId:"",orderNo:"",description:"",sizeBreakdowns:[],quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);}
+  function addLine(){setLines(current=>[...current,createDraftLine()]);}
   function removeLine(index:number){
     setLines(current=>{const line=current[index];if(line?.imagePreview.startsWith("blob:"))URL.revokeObjectURL(line.imagePreview);return current.filter((_,i)=>i!==index);});
   }
@@ -99,12 +118,18 @@ export function BillsPage() {
       }
       const valid=lines.filter(l=>l.orderId && l.sizeBreakdowns.length ? l.sizeBreakdowns.length > 0 : Number(l.quantity)>0 && l.rate.trim()!=="");
       if(!valid.length)throw new Error("Add at least one bill item.");
-      const result=await createBill({
+      const payload={
         invoiceNo:invoiceNo||undefined,
         issuedAt:invoiceDate?new Date(invoiceDate+"T12:00:00").toISOString():undefined,
         shopId,customerId,subject:subject||undefined,modelNo:modelNo||undefined,notes:notes||undefined,
-        lines:valid.flatMap(l=>{const imagePath=designs.find(d=>d.id===l.designId)?.imagePath||undefined;const sizes=l.sizeBreakdowns.filter(row=>row.size.trim()&&Number(row.quantity)>0);if(l.orderId&&sizes.length)return sizes.map(row=>({orderId:l.orderId,orderNo:l.orderNo.trim()||undefined,imagePath,description:[l.description.trim(),row.size].filter(Boolean).join(" · "),sizeBreakdowns:[{size:row.size.trim(),quantity:Number(row.quantity)}],quantity:Number(row.quantity),unitPriceFils:fils(row.rate)}));return [{orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,imagePath,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)}];}),
-      });
+        lines:valid.flatMap(l=>{
+          const imagePath=l.imageFile?undefined:designs.find(d=>d.id===l.designId)?.imagePath||l.imagePath||undefined;
+          const sizes=l.sizeBreakdowns.filter(row=>row.size.trim()&&Number(row.quantity)>0);
+          if(l.orderId&&sizes.length)return sizes.map(row=>({orderId:l.orderId,orderNo:l.orderNo.trim()||undefined,imagePath,description:l.description.trim(),sizeBreakdowns:[{size:row.size.trim(),quantity:Number(row.quantity)}],quantity:Number(row.quantity),unitPriceFils:fils(row.rate)}));
+          return [{orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,imagePath,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)}];
+        }),
+      };
+      const result=editingInvoiceId?await updateBill(editingInvoiceId,payload):await createBill(payload);
       let resultLineIndex = 0;
       for (const line of valid) {
         const generatedCount = line.orderId && line.sizeBreakdowns.length ? line.sizeBreakdowns.length : 1;
@@ -115,14 +140,14 @@ export function BillsPage() {
         resultLineIndex += generatedCount;
       }
       navigate("/bills/"+result.data.id);
-    }catch(e){setError(e instanceof Error?e.message:"Unable to create bill");}finally{setSaving(false);}
+    }catch(e){setError(e instanceof Error?e.message:(editingInvoiceId?"Unable to update invoice":"Unable to create bill"));}finally{setSaving(false);}
   }
 
   if(loading)return <LoadingState label="Loading billing workspace…"/>;
 
   return <div className="mx-auto w-full min-w-0 max-w-[1400px] space-y-4 px-0 sm:space-y-5 sm:px-1">
     <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div><p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Invoices</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">Bills / Invoices</h3><p className="mt-1 text-sm text-slate-600">Select one order, then enter a separate quantity and rate for each size. Add another item only when billing a different order or garment.</p></div>
+      <div><p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Invoices</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">{editingInvoiceId?"Edit Invoice":"Bills / Invoices"}</h3><p className="mt-1 text-sm text-slate-600">{editingInvoiceId?"Update any invoice detail, line item, quantity, rate or image.":"Select one order, then enter a separate quantity and rate for each size. Add another item only when billing a different order or garment."}</p></div>
       <Link to="/orders" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-navy-900">Back to Orders</Link>
     </section>
     {error&&<ErrorState message={error}/>}
@@ -194,12 +219,12 @@ export function BillsPage() {
         </article>
 
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><label className="text-sm font-medium text-slate-700">Notes / Terms<textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={4} placeholder="Optional terms, payment instructions or notes…" className="mt-1.5 w-full p-3"/></label></article>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={()=>navigate("/orders")} className="w-full rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-medium sm:w-auto sm:py-2.5">Cancel</button><button type="button" disabled={saving} onClick={()=>void save()} className="w-full rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto sm:py-2.5">{saving?"Creating…":"Create Bill"}</button></div>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={()=>navigate(editingInvoiceId?"/bills/"+editingInvoiceId:"/orders")} className="w-full rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-medium sm:w-auto sm:py-2.5">Cancel</button><button type="button" disabled={saving} onClick={()=>void save()} className="w-full rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50 sm:w-auto sm:py-2.5">{saving?(editingInvoiceId?"Updating…":"Creating…"):(editingInvoiceId?"Update Invoice":"Create Bill")}</button></div>
       </section>
 
       <aside className="xl:sticky xl:top-24 xl:self-start">
         <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-2 shadow-sm sm:p-3">
-          <div className="mb-3 flex items-center justify-between px-2"><div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Live preview</p><p className="text-sm font-semibold text-navy-900">Customer bill</p></div><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">Draft</span></div>
+          <div className="mb-3 flex items-center justify-between px-2"><div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Live preview</p><p className="text-sm font-semibold text-navy-900">Customer bill</p></div><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{editingInvoiceId?"Editing":"Draft"}</span></div>
           <div className="min-h-[720px] bg-white p-5 text-[11px] text-slate-800 shadow-sm">
             {(()=>{const shop=shops.find(s=>s.id===shopId);const customer=customers.find(c=>c.id===customerId);return <>
               <InvoiceHeader shop={shop} compact />
@@ -213,6 +238,6 @@ export function BillsPage() {
         </div>
       </aside>
     </div>
-    <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5"><h4 className="font-semibold text-navy-900">Invoice history</h4><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-3">Invoice</th><th className="pb-3">Shop</th><th className="pb-3">Customer</th><th className="pb-3">Date</th><th className="pb-3 text-right">Total</th></tr></thead><tbody>{invoices.map(inv=><tr key={inv.id} className="border-b border-slate-50 last:border-0"><td className="py-3"><Link className="font-medium text-blue-700 hover:underline" to={"/bills/"+inv.id}>{inv.invoiceNo}</Link></td><td className="py-3">{inv.shop?.name}</td><td className="py-3">{inv.customer?.name}</td><td className="py-3">{new Date(inv.issuedAt).toLocaleDateString()}</td><td className="py-3 text-right font-semibold">{money(inv.totalFils)}</td></tr>)}</tbody></table></div></section>
+    <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5"><h4 className="font-semibold text-navy-900">Invoice history</h4><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-3">Invoice</th><th className="pb-3">Shop</th><th className="pb-3">Customer</th><th className="pb-3">Date</th><th className="pb-3 text-right">Total</th></tr></thead><tbody>{invoices.map(inv=><tr key={inv.id} className="border-b border-slate-50 last:border-0"><td className="py-3"><div className="flex items-center gap-3"><Link className="font-medium text-blue-700 hover:underline" to={"/bills/"+inv.id}>{inv.invoiceNo}</Link><Link className="text-xs font-medium text-slate-600 hover:text-blue-700 hover:underline" to={"/bills?edit="+inv.id}>Edit</Link></div></td><td className="py-3">{inv.shop?.name}</td><td className="py-3">{inv.customer?.name}</td><td className="py-3">{new Date(inv.issuedAt).toLocaleDateString()}</td><td className="py-3 text-right font-semibold">{money(inv.totalFils)}</td></tr>)}</tbody></table></div></section>
   </div>;
 }

@@ -156,6 +156,7 @@ export function BillPage(){
    <div className="flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
     <Link to="/bills" className="text-sm font-medium text-blue-700">← Back to Bills</Link>
     <div className="flex flex-wrap gap-2">
+      <Link to={`/bills?edit=${invoice.id}`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800">Edit Invoice</Link>
       <button disabled={busy} onClick={()=>void downloadPdf()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Download PDF</button>
       <button disabled={busy} onClick={()=>void downloadImage()} className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50">Download Image</button>
       <button disabled={busy} onClick={()=>void shareImage()} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 disabled:opacity-50">{busy?"Preparing…":"Share Image"}</button>
@@ -191,7 +192,7 @@ export function BillPage(){
           <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="use-credentials" src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.description}{line.sizeBreakdowns?.length ? <div className="mt-1 text-[9px] sm:text-xs">{line.sizeBreakdowns.map(item => `${item.size} – ${item.quantity} pcs`).join(", ")}</div> : null}</td>
+          <td className="break-words border border-slate-700 p-2 text-center">{line.description.replace(/\s*·\s*/g," ")}{line.sizeBreakdowns?.length ? <div className="mt-1 text-[9px] sm:text-xs">{line.sizeBreakdowns.map(item => `${item.size} – ${item.quantity} pcs`).join(", ")}</div> : null}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.quantity}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{(line.unitPriceFils/1000).toFixed(3)}</td>
           <td className="break-words border border-slate-700 p-2 text-right">{(line.totalFils/1000).toFixed(3)}</td>
