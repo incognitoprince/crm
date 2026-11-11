@@ -85,8 +85,18 @@ export function BillsPage() {
     setSaving(true);setError("");
     try{
       if(!shopId||!customerId)throw new Error("Select a shop and customer.");
-      const valid=lines.filter(l=>Number(l.quantity)>0&&Number(l.rate)>=0);
       if(lines.some(l=>l.orderId && !orders.some(o=>o.id===l.orderId && o.customer.id===customerId))) throw new Error("Selected orders must belong to the chosen customer.");
+      for (const line of lines) {
+        if (line.orderId && line.sizeBreakdowns.length) {
+          const incomplete = line.sizeBreakdowns.find(row => !row.size.trim() || Number(row.quantity) < 1 || row.rate.trim() === "" || !Number.isFinite(Number(row.rate)) || Number(row.rate) < 0);
+          if (incomplete) throw new Error("Enter a size, quantity and rate for every size row before saving.");
+        } else if (!line.orderNo.trim() && !line.description.trim()) {
+          throw new Error("Enter an order number or description for each invoice item.");
+        } else if (Number(line.quantity) < 1 || line.rate.trim() === "" || !Number.isFinite(Number(line.rate)) || Number(line.rate) < 0) {
+          throw new Error("Enter a valid quantity and rate for each invoice item.");
+        }
+      }
+      const valid=lines.filter(l=>l.orderId && l.sizeBreakdowns.length ? l.sizeBreakdowns.length > 0 : Number(l.quantity)>0 && l.rate.trim()!=="");
       if(!valid.length)throw new Error("Add at least one bill item.");
       const result=await createBill({
         invoiceNo:invoiceNo||undefined,
@@ -94,11 +104,14 @@ export function BillsPage() {
         shopId,customerId,subject:subject||undefined,modelNo:modelNo||undefined,notes:notes||undefined,
         lines:valid.flatMap(l=>{const imagePath=designs.find(d=>d.id===l.designId)?.imagePath||undefined;const sizes=l.sizeBreakdowns.filter(row=>row.size.trim()&&Number(row.quantity)>0);if(l.orderId&&sizes.length)return sizes.map(row=>({orderId:l.orderId,orderNo:l.orderNo.trim()||undefined,imagePath,description:[l.description.trim(),row.size].filter(Boolean).join(" · "),sizeBreakdowns:[{size:row.size.trim(),quantity:Number(row.quantity)}],quantity:Number(row.quantity),unitPriceFils:fils(row.rate)}));return [{orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,imagePath,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)}];}),
       });
-      for(let i=0;i<valid.length;i++){
-        const file = valid[i].imageFile;
-        if(file && result.data.lines[i]){
-          await uploadInvoiceLineImage(result.data.id,result.data.lines[i].id,file);
+      let resultLineIndex = 0;
+      for (const line of valid) {
+        const generatedCount = line.orderId && line.sizeBreakdowns.length ? line.sizeBreakdowns.length : 1;
+        const file = line.imageFile;
+        if (file && result.data.lines[resultLineIndex]) {
+          await uploadInvoiceLineImage(result.data.id, result.data.lines[resultLineIndex].id, file);
         }
+        resultLineIndex += generatedCount;
       }
       navigate("/bills/"+result.data.id);
     }catch(e){setError(e instanceof Error?e.message:"Unable to create bill");}finally{setSaving(false);}
