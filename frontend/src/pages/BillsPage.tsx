@@ -12,6 +12,7 @@ type DraftLine = {
   orderId: string;
   orderNo: string;
   description: string;
+  sizeBreakdowns: Array<{ size: string; quantity: string }>;
   quantity: string;
   rate: string;
   designId: string;
@@ -33,7 +34,7 @@ export function BillsPage() {
   const [subject,setSubject]=useState("");
   const [modelNo,setModelNo]=useState("");
   const [notes,setNotes]=useState("");
-  const [lines,setLines]=useState<DraftLine[]>([{orderId:"",orderNo:"",description:"",quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);
+  const [lines,setLines]=useState<DraftLine[]>([{orderId:"",orderNo:"",description:"",sizeBreakdowns:[],quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);
   const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState("");
 
   async function load(){
@@ -50,6 +51,17 @@ export function BillsPage() {
   function updateLine(index:number,key: keyof DraftLine,value:string|File|null){
     setLines(current=>current.map((line,i)=>i===index?{...line,[key]:value}:line));
   }
+  function selectOrder(index:number,orderId:string){
+    const order=orders.find(item=>item.id===orderId);
+    setLines(current=>current.map((line,i)=>i===index?{
+      ...line,orderId,orderNo:order?.orderNo??"",description:order?.description??line.description,
+      quantity:order?String(order.quantity):line.quantity,
+      sizeBreakdowns:order?.sizeBreakdowns.map(item=>({size:item.size,quantity:String(item.quantity)??""}))??[]
+    }:line));
+  }
+  function updateSizeBreakdown(index:number,rowIndex:number,key:"size"|"quantity",value:string){
+    setLines(current=>current.map((line,i)=>i===index?{...line,sizeBreakdowns:line.sizeBreakdowns.map((row,j)=>j===rowIndex?{...row,[key]:value}:row)}:line));
+  }
   function selectDesign(index:number,designId:string){
     const design=designs.find(d=>d.id===designId);
     setLines(current=>current.map((line,i)=>i===index?{...line,designId,imageFile:null,imagePreview:design?.imagePath??""}:line));
@@ -64,7 +76,7 @@ export function BillsPage() {
       return {...line,designId:"",imageFile:file,imagePreview:preview};
     }));
   }
-  function addLine(){setLines(current=>[...current,{orderId:"",orderNo:"",description:"",quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);}
+  function addLine(){setLines(current=>[...current,{orderId:"",orderNo:"",description:"",sizeBreakdowns:[],quantity:"1",rate:"",designId:"",imageFile:null,imagePreview:""}]);}
   function removeLine(index:number){
     setLines(current=>{const line=current[index];if(line?.imagePreview.startsWith("blob:"))URL.revokeObjectURL(line.imagePreview);return current.filter((_,i)=>i!==index);});
   }
@@ -80,7 +92,7 @@ export function BillsPage() {
         invoiceNo:invoiceNo||undefined,
         issuedAt:invoiceDate?new Date(invoiceDate+"T12:00:00").toISOString():undefined,
         shopId,customerId,subject:subject||undefined,modelNo:modelNo||undefined,notes:notes||undefined,
-        lines:valid.map(l=>({orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,imagePath:designs.find(d=>d.id===l.designId)?.imagePath||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)})),
+        lines:valid.map(l=>({orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,sizeBreakdowns:l.sizeBreakdowns.filter(row=>row.size.trim()&&Number(row.quantity)>0).map(row=>({size:row.size.trim(),quantity:Number(row.quantity)})),imagePath:designs.find(d=>d.id===l.designId)?.imagePath||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)})),
       });
       for(let i=0;i<valid.length;i++){
         const file = valid[i].imageFile;
@@ -120,7 +132,7 @@ export function BillsPage() {
             {lines.map((line,i)=><div key={i} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
               <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(64px,.55fr)_minmax(90px,.7fr)_auto] md:items-end">
                 <label className="col-span-2 min-w-0 text-xs font-medium text-slate-600 sm:col-span-2 md:col-span-1">Image<select value={line.designId} onChange={e=>selectDesign(i,e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Design library…</option>{designs.filter(d=>d.active).map(d=><option key={d.id} value={d.id}>{d.designNo} · {d.name}</option>)}</select></label>
-                <label className="text-xs font-medium text-slate-600">Existing order<select value={line.orderId} onChange={e=>{const order=orders.find(o=>o.id===e.target.value);updateLine(i,"orderId",e.target.value);updateLine(i,"orderNo",order?.orderNo??"");}} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Choose order…</option>{orders.filter(o=>o.customer.id===customerId && o.status!=="CANCELLED").map(o=><option key={o.id} value={o.id}>{o.orderNo} · {o.garment} · {new Date(o.orderDate).toLocaleDateString()}</option>)}</select><input value={line.orderNo} onChange={e=>{updateLine(i,"orderNo",e.target.value);updateLine(i,"orderId","");}} placeholder="Or enter legacy order no." className="mt-1 h-9 w-full px-2 text-sm"/></label>
+                <label className="text-xs font-medium text-slate-600">Existing order<select value={line.orderId} onChange={e=>selectOrder(i,e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Choose order…</option>{orders.filter(o=>o.customer.id===customerId && o.status!=="CANCELLED").map(o=><option key={o.id} value={o.id}>{o.orderNo} · {o.garment} · {new Date(o.orderDate).toLocaleDateString()}</option>)}</select><input value={line.orderNo} onChange={e=>{updateLine(i,"orderNo",e.target.value);updateLine(i,"orderId","");}} placeholder="Or enter legacy order no." className="mt-1 h-9 w-full px-2 text-sm"/></label>
                 <label className="text-xs font-medium text-slate-600">Qty<input type="number" min="1" value={line.quantity} onChange={e=>updateLine(i,"quantity",e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"/></label>
                 <label className="text-xs font-medium text-slate-600">Rate (K.D.)<input type="number" min="0" step="0.001" value={line.rate} onChange={e=>updateLine(i,"rate",e.target.value)} placeholder="0.000" className="mt-1 h-10 w-full px-2 text-sm"/></label>
                 <button type="button" onClick={()=>removeLine(i)} className="text-xs font-medium text-red-600">Remove</button>
@@ -129,6 +141,14 @@ export function BillsPage() {
                 <label className="min-w-0 text-xs font-medium text-slate-600">Upload image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>chooseFile(i,e)} className="mt-1 block w-full text-xs"/></label>
                 <label className="min-w-0 text-xs font-medium text-slate-600">Description<input value={line.description} onChange={e=>updateLine(i,"description",e.target.value)} placeholder="e.g. (1 TO 6) YEAR" className="mt-1 h-10 w-full px-2 text-sm"/></label>
               </div>
+              {line.orderId&&<div className="mt-3 rounded-md border border-slate-200 bg-white p-3">
+                <div className="mb-2 flex items-center justify-between"><span className="text-xs font-semibold text-slate-700">Size-wise quantity</span><button type="button" onClick={()=>setLines(current=>current.map((item,j)=>j===i?{...item,sizeBreakdowns:[...item.sizeBreakdowns,{size:"",quantity:""}]}:item))} className="text-xs font-medium text-blue-700">+ Add size</button></div>
+                {line.sizeBreakdowns.map((row,j)=><div key={j} className="mb-2 grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <input value={row.size} onChange={e=>updateSizeBreakdown(i,j,"size",e.target.value)} placeholder="Size (e.g. 1yr)" className="h-9 min-w-0 rounded border border-slate-300 px-2 text-sm"/>
+                  <input type="number" min="1" value={row.quantity} onChange={e=>updateSizeBreakdown(i,j,"quantity",e.target.value)} placeholder="Qty" className="h-9 min-w-0 rounded border border-slate-300 px-2 text-sm"/>
+                  <button type="button" onClick={()=>setLines(current=>current.map((item,k)=>k===i?{...item,sizeBreakdowns:item.sizeBreakdowns.filter((_,n)=>n!==j)}:item))} className="px-2 text-xs text-red-600">×</button>
+                </div>)}
+              </div>}
               {line.imagePreview&&<div className="mt-3 flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2"><img src={line.imagePreview} className="h-16 w-16 rounded object-contain" alt="Invoice line design"/><span className="text-xs text-slate-500">{line.imageFile?.name??"Design library image"}</span></div>}
               <div className="mt-3 flex justify-end border-t border-slate-200 pt-2 text-sm font-semibold">Line total: {money(Number(line.quantity||0)*fils(line.rate))}</div>
             </div>)}
@@ -158,7 +178,7 @@ export function BillsPage() {
               </div></div>
               <div className="py-4 text-center"><p className="text-base font-bold underline">INVOICE</p><p className="mt-1">{subject||"Bill / Invoice"}</p></div>
               <div className="grid grid-cols-2 gap-3 border-y border-slate-300 py-3"><div><b>Bill To</b><p>{customer?.name||"Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p>{customer.phone}</p>}</div><div className="text-right"><p>Invoice Date: {invoiceDate ? new Date(invoiceDate+"T12:00:00").toLocaleDateString() : "—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p></div></div>
-              <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1">Image</th><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.filter(l=>Number(l.quantity)>0&&Number(l.rate)>=0).map((l,i)=><tr key={i}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.description}</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>)}</tbody></table>
+              <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1">Image</th><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.filter(l=>Number(l.quantity)>0&&Number(l.rate)>=0).map((l,i)=><tr key={i}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.description}{l.sizeBreakdowns.length>0&&<div className="mt-1 text-[9px]">{l.sizeBreakdowns.filter(row=>row.size&&Number(row.quantity)>0).map(row=>`${row.size} – ${row.quantity} pcs`).join(", ")}</div>}</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>)}</tbody></table>
               <div className="mt-4 text-right font-bold">GRAND TOTAL&nbsp;&nbsp; {total?money(total):"K.D. 0.000"}</div>
               {notes&&<div className="mt-3 whitespace-pre-wrap border-t border-slate-300 pt-3">{notes}</div>}
             </>})()}
