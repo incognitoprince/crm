@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { Link, useParams } from "react-router-dom";
 import { getBill, resolveMediaUrl } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
+import { InvoiceHeader } from "../components/InvoiceHeader";
 import { LoadingState } from "../components/LoadingState";
 import type { Invoice } from "../types";
 
@@ -164,23 +165,9 @@ export function BillPage(){
    {error&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
 
    <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-3 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-5 md:p-7 print:p-0 print:shadow-none">
-     <header className="border-b-2 border-slate-800 pb-3">
-       <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[90px_minmax(0,1fr)] sm:gap-3 md:grid-cols-[110px_minmax(0,1fr)] md:gap-4">
-         <div className="flex justify-start">{shop?.logoUrl&&<img crossOrigin="use-credentials" src={resolveMediaUrl(shop.logoUrl)} className="max-h-20 max-w-28 object-contain" alt="Shop logo"/>}</div>
-         <div className="min-w-0 text-center">
-           {shop?.arabicName&&<p className="break-words text-base font-semibold sm:text-lg md:text-xl">{shop.arabicName}</p>}
-           {shop?.englishName&&<p className="break-words text-base font-bold sm:text-lg md:text-xl">{shop.englishName}</p>}
-           {!shop?.arabicName&&!shop?.englishName&&<p className="break-words text-base font-bold sm:text-lg md:text-xl">{shop?.name ?? "Tailor Shop"}</p>}
-           {shop?.address&&<p className="mt-1 break-words text-[9px] leading-tight whitespace-pre-line sm:text-[10px]">{shop.address}</p>}
-           {(shop?.phone||shop?.whatsapp||shop?.email)&&<div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[9px] font-medium sm:flex-nowrap sm:whitespace-nowrap sm:gap-3 sm:text-xs">
-             {(shop?.phone||shop?.whatsapp)&&<span>Tel/WhatsApp: {shop.phone||shop.whatsapp}</span>}
-             {shop?.email&&<span>Email: {shop.email}</span>}
-           </div>}
-         </div>
-       </div>
-     </header>
+     <InvoiceHeader shop={shop} />
 
-     <div className="py-4 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1>{invoice.subject&&<p className="mt-1 text-sm break-words">{invoice.subject}</p>}</div>
+     <div className="py-3 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1><p className="mt-1 text-sm break-words">{invoice.subject || "Bill / Invoice"}</p></div>
 
      <div className="grid gap-4 border-y border-slate-700 py-3 text-sm sm:grid-cols-2">
        <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p data-invoice-nowrap>{customer.phone}</p>}{customer?.address?.trim() && customer.address.trim().toLowerCase() !== "not provided" && <p className="break-words">{customer.address}</p>}</div>
