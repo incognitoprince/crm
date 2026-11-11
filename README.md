@@ -93,3 +93,18 @@ Phase 1 — Project foundation (complete once health checks pass).
 Next: Phase 2 — Database schema and authentication.
 
 See `docs/` for requirements, architecture, database, API, and deployment notes.
+
+
+## Development server (HTTP only)
+
+The shared `docker-compose.yml` and `nginx/nginx.conf` retain the HTTPS configuration used by production. For an HTTP-only development server, use the development override and its Nginx configuration:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml config
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
+```
+
+The override mounts `nginx/nginx.dev.conf`, which listens on port 80 only and retains the same frontend, API, uploads, and authenticated deployment-webhook proxy routes. It does not alter the production Nginx configuration. Continue using the base Compose file without the development override on production.
+
+On the development server, use both Compose files for subsequent Compose operations (logs, ps, up, restart). Do not run a plain `docker compose up` there, as that selects the production HTTPS configuration.

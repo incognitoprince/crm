@@ -1,0 +1,6 @@
+# Development-only override: HTTP Nginx configuration.
+# Use with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+services:
+  nginx:
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
