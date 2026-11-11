@@ -151,12 +151,15 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   const input = orderUpdateSchema.parse(req.body);
   const existing = await prisma.order.findUnique({ where: { id: req.params.id }, include: { masterAssignments: true, designs: { include: { assignments: true } }, sizeBreakdowns: true } });
   if (!existing) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
-  const hasAssignments = existing.masterAssignments.length > 0 || existing.designs.some(item => item.assignments.length > 0);
-  if (input.sizeBreakdowns && hasAssignments) {
-    const before = new Map(existing.sizeBreakdowns.map(row => [row.size, row.quantity]));
-    const after = new Map(input.sizeBreakdowns.map(row => [row.size, row.quantity]));
-    if (before.size !== after.size || [...before].some(([size, qty]) => after.get(size) !== qty))
-      throw new AppError("Size quantities cannot change while master assignments exist.", 409, "ACTIVE_ASSIGNMENTS");
+  const assignments = [...existing.masterAssignments, ...existing.designs.flatMap(item => item.assignments)];
+  if (input.sizeBreakdowns && assignments.length) {
+    const assigned = new Map<string, number>();
+    for (const item of assignments) assigned.set(item.size, (assigned.get(item.size) ?? 0) + item.quantity);
+    const requested = new Map(input.sizeBreakdowns.map(row => [row.size, row.quantity]));
+    for (const [size, assignedQuantity] of assigned) {
+      if ((requested.get(size) ?? 0) < assignedQuantity)
+        throw new AppError(`Size ${size} must remain at least ${assignedQuantity} because that quantity is assigned to masters.`, 409, "ASSIGNED_SIZE_QUANTITY");
+    }
   }
   const garment = input.garment ? await prisma.garment.findFirst({ where: { name: input.garment, active: true } }) : null;
   if (input.garment && !garment) throw new AppError("Garment not found or inactive", 400, "GARMENT_NOT_FOUND");
