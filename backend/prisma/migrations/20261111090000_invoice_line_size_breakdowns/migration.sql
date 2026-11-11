@@ -1,0 +1,1 @@
+ALTER TABLE "InvoiceLine" ADD COLUMN IF NOT EXISTS "sizeBreakdowns" JSONB;
