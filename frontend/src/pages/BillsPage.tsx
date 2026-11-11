@@ -12,7 +12,7 @@ type DraftLine = {
   orderId: string;
   orderNo: string;
   description: string;
-  sizeBreakdowns: Array<{ size: string; quantity: string }>;
+  sizeBreakdowns: Array<{ size: string; quantity: string; rate: string }>;
   quantity: string;
   rate: string;
   designId: string;
@@ -56,10 +56,10 @@ export function BillsPage() {
     setLines(current=>current.map((line,i)=>i===index?{
       ...line,orderId,orderNo:order?.orderNo??"",description:order?.description??line.description,
       quantity:order?String(order.quantity):line.quantity,
-      sizeBreakdowns:order?.sizeBreakdowns.map(item=>({size:item.size,quantity:String(item.quantity)??""}))??[]
+      sizeBreakdowns:order?.sizeBreakdowns.map(item=>({size:item.size,quantity:String(item.quantity),rate:""}))??[]
     }:line));
   }
-  function updateSizeBreakdown(index:number,rowIndex:number,key:"size"|"quantity",value:string){
+  function updateSizeBreakdown(index:number,rowIndex:number,key:"size"|"quantity"|"rate",value:string){
     setLines(current=>current.map((line,i)=>i===index?{...line,sizeBreakdowns:line.sizeBreakdowns.map((row,j)=>j===rowIndex?{...row,[key]:value}:row)}:line));
   }
   function selectDesign(index:number,designId:string){
@@ -92,7 +92,7 @@ export function BillsPage() {
         invoiceNo:invoiceNo||undefined,
         issuedAt:invoiceDate?new Date(invoiceDate+"T12:00:00").toISOString():undefined,
         shopId,customerId,subject:subject||undefined,modelNo:modelNo||undefined,notes:notes||undefined,
-        lines:valid.map(l=>({orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,sizeBreakdowns:l.sizeBreakdowns.filter(row=>row.size.trim()&&Number(row.quantity)>0).map(row=>({size:row.size.trim(),quantity:Number(row.quantity)})),imagePath:designs.find(d=>d.id===l.designId)?.imagePath||undefined,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)})),
+        lines:valid.flatMap(l=>{const imagePath=designs.find(d=>d.id===l.designId)?.imagePath||undefined;const sizes=l.sizeBreakdowns.filter(row=>row.size.trim()&&Number(row.quantity)>0);if(l.orderId&&sizes.length)return sizes.map(row=>({orderId:l.orderId,orderNo:l.orderNo.trim()||undefined,imagePath,description:[l.description.trim(),row.size].filter(Boolean).join(" · "),sizeBreakdowns:[{size:row.size.trim(),quantity:Number(row.quantity)}],quantity:Number(row.quantity),unitPriceFils:fils(row.rate)}));return [{orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,imagePath,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)}];}),
       });
       for(let i=0;i<valid.length;i++){
         const file = valid[i].imageFile;
@@ -130,9 +130,9 @@ export function BillsPage() {
           <div className="flex items-end justify-between gap-3 border-b border-slate-100 pb-4"><div><h4 className="font-semibold text-navy-900">Bill Items</h4><p className="mt-1 text-xs text-slate-500">Select an existing customer order or enter a legacy order number. Choose an image from Design Library or upload one for each row.</p></div><button type="button" onClick={addLine} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white">+ Add row</button></div>
           <div className="mt-4 space-y-3">
             {lines.map((line,i)=><div key={i} className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
-              <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(64px,.55fr)_minmax(90px,.7fr)_auto] md:items-end">
-                <label className="col-span-2 min-w-0 text-xs font-medium text-slate-600 sm:col-span-2 md:col-span-1">Image<select value={line.designId} onChange={e=>selectDesign(i,e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Design library…</option>{designs.filter(d=>d.active).map(d=><option key={d.id} value={d.id}>{d.designNo} · {d.name}</option>)}</select></label>
-                <label className="text-xs font-medium text-slate-600">Existing order<select value={line.orderId} onChange={e=>selectOrder(i,e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Choose order…</option>{orders.filter(o=>o.customer.id===customerId && o.status!=="CANCELLED").map(o=><option key={o.id} value={o.id}>{o.orderNo} · {o.garment} · {new Date(o.orderDate).toLocaleDateString()}</option>)}</select><input value={line.orderNo} onChange={e=>{updateLine(i,"orderNo",e.target.value);updateLine(i,"orderId","");}} placeholder="Or enter legacy order no." className="mt-1 h-9 w-full px-2 text-sm"/></label>
+              <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(64px,.55fr)_minmax(90px,.7fr)_auto] md:items-end">
+                <label className="col-span-2 min-w-0 text-xs font-medium text-slate-600 sm:col-span-2 md:col-span-1">Design image<select value={line.designId} onChange={e=>selectDesign(i,e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"><option value="">Design library…</option>{designs.filter(d=>d.active).map(d=><option key={d.id} value={d.id}>{d.designNo} · {d.name}</option>)}</select></label>
+                <label className="col-span-2 min-w-0 text-xs font-medium text-slate-600 sm:col-span-2 md:col-span-1">Order number <input list={`customer-orders-${i}`} value={line.orderNo} onChange={e=>{const value=e.target.value;const match=orders.find(o=>o.customer.id===customerId&&o.orderNo.toLowerCase()===value.trim().toLowerCase());if(match)selectOrder(i,match.id);else{updateLine(i,"orderNo",value);updateLine(i,"orderId","");updateLine(i,"sizeBreakdowns",[]);}}} placeholder="Select or type order number…" className="mt-1 h-10 w-full px-2 text-sm"/><datalist id={`customer-orders-${i}`}>{orders.filter(o=>o.customer.id===customerId&&o.status!=="CANCELLED").map(o=><option key={o.id} value={o.orderNo}>{o.garment} · {new Date(o.orderDate).toLocaleDateString()}</option>)}</datalist></label>
                 <label className="text-xs font-medium text-slate-600">Qty<input type="number" min="1" value={line.quantity} onChange={e=>updateLine(i,"quantity",e.target.value)} className="mt-1 h-10 w-full px-2 text-sm"/></label>
                 <label className="text-xs font-medium text-slate-600">Rate (K.D.)<input type="number" min="0" step="0.001" value={line.rate} onChange={e=>updateLine(i,"rate",e.target.value)} placeholder="0.000" className="mt-1 h-10 w-full px-2 text-sm"/></label>
                 <button type="button" onClick={()=>removeLine(i)} className="text-xs font-medium text-red-600">Remove</button>
@@ -142,11 +142,13 @@ export function BillsPage() {
                 <label className="min-w-0 text-xs font-medium text-slate-600">Description<input value={line.description} onChange={e=>updateLine(i,"description",e.target.value)} placeholder="e.g. (1 TO 6) YEAR" className="mt-1 h-10 w-full px-2 text-sm"/></label>
               </div>
               {line.orderId&&<div className="mt-3 rounded-md border border-slate-200 bg-white p-3">
-                <div className="mb-2 flex items-center justify-between"><span className="text-xs font-semibold text-slate-700">Size-wise quantity</span><button type="button" onClick={()=>setLines(current=>current.map((item,j)=>j===i?{...item,sizeBreakdowns:[...item.sizeBreakdowns,{size:"",quantity:""}]}:item))} className="text-xs font-medium text-blue-700">+ Add size</button></div>
-                {line.sizeBreakdowns.map((row,j)=><div key={j} className="mb-2 grid grid-cols-[1fr_1fr_auto] gap-2">
-                  <input value={row.size} onChange={e=>updateSizeBreakdown(i,j,"size",e.target.value)} placeholder="Size (e.g. 1yr)" className="h-9 min-w-0 rounded border border-slate-300 px-2 text-sm"/>
+                <div className="mb-2 flex items-center justify-between"><div><span className="text-xs font-semibold text-slate-700">Invoice size rows</span><p className="text-[11px] text-slate-500">Each size has its own quantity and rate.</p></div><button type="button" onClick={()=>setLines(current=>current.map((item,j)=>j===i?{...item,sizeBreakdowns:[...item.sizeBreakdowns,{size:"",quantity:"",rate:""}]}:item))} className="text-xs font-medium text-blue-700">+ Add size</button></div>
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(60px,.65fr)_minmax(80px,.8fr)_auto] gap-2 pb-1 text-[11px] font-semibold text-slate-500"><span>Size</span><span>Qty</span><span>Rate (K.D.)</span><span></span></div>
+                {line.sizeBreakdowns.map((row,j)=><div key={j} className="mb-2 grid grid-cols-[minmax(0,1fr)_minmax(60px,.65fr)_minmax(80px,.8fr)_auto] items-center gap-2">
+                  <input value={row.size} onChange={e=>updateSizeBreakdown(i,j,"size",e.target.value)} placeholder="e.g. 1yr" className="h-9 min-w-0 rounded border border-slate-300 px-2 text-sm"/>
                   <input type="number" min="1" value={row.quantity} onChange={e=>updateSizeBreakdown(i,j,"quantity",e.target.value)} placeholder="Qty" className="h-9 min-w-0 rounded border border-slate-300 px-2 text-sm"/>
-                  <button type="button" onClick={()=>setLines(current=>current.map((item,k)=>k===i?{...item,sizeBreakdowns:item.sizeBreakdowns.filter((_,n)=>n!==j)}:item))} className="px-2 text-xs text-red-600">×</button>
+                  <input type="number" min="0" step="0.001" value={row.rate} onChange={e=>updateSizeBreakdown(i,j,"rate",e.target.value)} placeholder="0.000" className="h-9 min-w-0 rounded border border-slate-300 px-2 text-sm"/>
+                  <button type="button" onClick={()=>setLines(current=>current.map((item,k)=>k===i?{...item,sizeBreakdowns:item.sizeBreakdowns.filter((_,n)=>n!==j)}:item))} className="px-1 text-xs text-red-600">×</button>
                 </div>)}
               </div>}
               {line.imagePreview&&<div className="mt-3 flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2"><img src={line.imagePreview} className="h-16 w-16 rounded object-contain" alt="Invoice line design"/><span className="text-xs text-slate-500">{line.imageFile?.name??"Design library image"}</span></div>}
