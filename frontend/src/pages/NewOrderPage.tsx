@@ -80,10 +80,9 @@ export function NewOrderPage() {
   }, [shopId]);
 
   const breakdown = useMemo(() => sizeRows
-    .filter(row => row.size && Number(row.quantity) > 0)
-    .map(row => ({ size: row.size, quantity: Number(row.quantity) })), [sizeRows]);
+    .map(row => ({ size: row.size.trim(), quantity: Number(row.quantity) }))
+    .filter(row => row.size && row.quantity > 0), [sizeRows]);
   const breakdownTotal = breakdown.reduce((sum, item) => sum + item.quantity, 0);
-  const sizeOptions = Array.from({ length: 15 }, (_, index) => `${index + 1}yr`);
 
   function addSizeRow() {
     setSizeRows(rows => [...rows, { id: Date.now(), size: "", quantity: "" }]);
@@ -135,6 +134,15 @@ export function NewOrderPage() {
     if (breakdownTotal < 1) {
       setError("Add at least one piece in the size breakdown.");
       return;
+    }
+    const enteredSizes = new Set<string>();
+    for (const item of breakdown) {
+      const normalizedSize = item.size.toLocaleLowerCase();
+      if (enteredSizes.has(normalizedSize)) {
+        setError("Enter each size only once in the size breakdown.");
+        return;
+      }
+      enteredSizes.add(normalizedSize);
     }
     // Design is optional. The owner can create the order first and attach a design later.
 
@@ -277,10 +285,12 @@ export function NewOrderPage() {
         <div className="mt-3 space-y-2">
           {sizeRows.map(row => <div key={row.id} className="grid grid-cols-[1fr_1fr_auto] gap-2">
             <label className="text-xs text-slate-600">Size
-              <select value={row.size} onChange={e => updateSizeRow(row.id, { size: e.target.value })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                <option value="">Choose size…</option>
-                {sizeOptions.map(size => <option key={size} value={size} disabled={sizeRows.some(other => other.id !== row.id && other.size === size)}>{size}</option>)}
-              </select>
+              <input
+                value={row.size}
+                onChange={e => updateSizeRow(row.id, { size: e.target.value })}
+                placeholder="e.g. M, 42, 12yr"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
             </label>
             <label className="text-xs text-slate-600">Quantity
               <input type="number" min="1" step="1" value={row.quantity} onChange={e => updateSizeRow(row.id, { quantity: e.target.value })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
