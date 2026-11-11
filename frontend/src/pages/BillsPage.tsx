@@ -48,7 +48,7 @@ export function BillsPage() {
   useEffect(()=>{void load();},[]);
   const total=lines.reduce((sum,l)=>sum+(l.orderId&&l.sizeBreakdowns.length?l.sizeBreakdowns.reduce((part,row)=>part+(Number(row.quantity||0)*fils(row.rate)),0):Number(l.quantity||0)*fils(l.rate)),0);
 
-  function updateLine(index:number,key: keyof DraftLine,value:string|File|null){
+  function updateLine(index:number,key: keyof DraftLine,value:DraftLine[keyof DraftLine]){
     setLines(current=>current.map((line,i)=>i===index?{...line,[key]:value}:line));
   }
   function selectOrder(index:number,orderId:string){
