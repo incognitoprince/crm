@@ -13,7 +13,6 @@ import {
 } from "../services/api";
 import type { Customer, Design, Garment, GarmentType, Master, Shop } from "../types";
 
-const defaultSizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
 type AssignmentDraft = { id: number; size: string; masterId: string; quantity: string; notes: string };
 
