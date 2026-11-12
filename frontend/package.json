@@ -22,7 +22,9 @@
     "jspdf": "^4.2.1",
     "@capacitor/android": "^7.0.0",
     "@capacitor/core": "^7.0.0",
-    "@capacitor/status-bar": "^7.0.0"
+    "@capacitor/status-bar": "^7.0.0",
+    "@fontsource-variable/noto-naskh-arabic": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

@@ -42,10 +42,8 @@ export function PaymentsPage() {
 
   useEffect(() => { void load(); }, []);
 
-  // Keep every non-cancelled order selectable, including delivered and fully paid orders.
-  // The submit handler still prevents recording more than the outstanding balance.
   const payableOrders = useMemo(
-    () => orders.filter(order => order.status !== "CANCELLED"),
+    () => orders.filter(order => order.status !== "CANCELLED" && order.totalAmountFils > order.paidAmountFils),
     [orders],
   );
 
@@ -60,8 +58,10 @@ export function PaymentsPage() {
     const selected = payableOrders.find(order => order.id === orderId);
     const amountFils = Math.round(Number(amount) * 1000);
 
-    if (!selected) { setError("Select an order."); return; }
+    if (!selected) { setError("Select an order with an outstanding balance."); return; }
     if (!Number.isFinite(amountFils) || amountFils <= 0) { setError("Enter a valid payment amount."); return; }
+    if (amountFils > selected.totalAmountFils - selected.paidAmountFils) { setError("Payment cannot exceed the outstanding balance."); return; }
+
     setSaving(true);
     try {
       await createPayment({ orderId, amountFils, method, reference: reference || undefined, notes: notes || undefined });
@@ -118,12 +118,12 @@ export function PaymentsPage() {
           <label className="block text-sm"><span className="mb-1 block text-xs text-slate-500">Reference <span className="text-slate-400">(optional)</span></span><input value={reference} onChange={e => setReference(e.target.value)} placeholder="Receipt / transaction reference" className="w-full rounded-md border border-slate-300 px-3 py-2" /></label>
           <label className="block text-sm"><span className="mb-1 block text-xs text-slate-500">Notes <span className="text-slate-400">(optional)</span></span><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full rounded-md border border-slate-300 px-3 py-2" /></label>
           <button disabled={saving || !payableOrders.length} className="w-full rounded-md bg-navy-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">{saving ? "Saving…" : "Record payment"}</button>
-          {!payableOrders.length && <p className="text-xs text-slate-500">There are no available orders to record a payment.</p>}
+          {!payableOrders.length && <p className="text-xs text-slate-500">There are no orders with an outstanding balance.</p>}
         </form>
       </section>
 
       <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:col-span-2">
-        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h4 className="font-semibold text-navy-900">Payment history</h4><p className="mt-0.5 text-xs text-slate-500">{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</p></div><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search order or customer…" className="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-64" /></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h4 className="font-semibold text-navy-900">Payment history</h4><p className="mt-0.5 text-xs text-slate-500">{payments.length} recorded payment{payments.length === 1 ? "" : "s"}</p></div><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search order or customer…" className="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 text-sm sm:w-64" /></div>
         <div className="mt-4 min-w-0 overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-3 font-medium">Date</th><th className="pb-3 font-medium">Order</th><th className="pb-3 font-medium">Customer</th><th className="pb-3 font-medium">Method</th><th className="pb-3 font-medium">Reference</th><th className="pb-3 text-right font-medium">Amount</th></tr></thead>
