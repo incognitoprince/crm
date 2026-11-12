@@ -8,7 +8,7 @@ import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { apiRouter } from "./routes/index.js";
 import { authenticate } from "./middleware/auth.js";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { AppError, errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 const configuredCorsOrigins = env.CORS_ORIGIN.split(",").map((value) => value.trim()).filter(Boolean);
 // Capacitor Android uses https://localhost as its WebView origin with androidScheme=https.
@@ -25,7 +25,7 @@ export function createApp() {
       origin(origin, callback) {
         // Requests without Origin (e.g. health checks/server-to-server) are not browser CORS requests.
         if (!origin || allowedCorsOrigins.has(origin)) return callback(null, true);
-        return callback(new Error("Origin not allowed by CORS"));
+        return callback(new AppError("Request origin is not allowed", 403, "ORIGIN_NOT_ALLOWED"));
       },
       credentials: true,
     }),
