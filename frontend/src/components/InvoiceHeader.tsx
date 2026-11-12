@@ -15,8 +15,8 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
   const logoSource = shop?.logoPath || shop?.logoUrl;
 
   const gridClass = compact
-    ? "grid min-h-[84px] grid-cols-[76px_minmax(0,1fr)_76px] items-center gap-2"
-    : "grid min-h-[132px] grid-cols-[140px_minmax(0,1fr)_140px] items-center gap-3 sm:grid-cols-[170px_minmax(0,1fr)_170px] sm:gap-4 md:grid-cols-[210px_minmax(0,1fr)_210px]";
+    ? "grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
+    : "grid min-h-[132px] grid-cols-[140px_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-4 md:grid-cols-[210px_minmax(0,1fr)]";
   const logoClass = compact
     ? "max-h-20 max-w-[72px] object-contain"
     : "max-h-32 max-w-[132px] object-contain sm:max-h-36 sm:max-w-[164px] md:max-h-40 md:max-w-[200px]";
@@ -24,8 +24,8 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     ? "break-words text-[15px] font-bold leading-tight"
     : "break-words text-xl font-bold leading-tight sm:text-2xl md:text-3xl";
   const englishHeadingClass = compact
-    ? "mt-1 break-words font-serif text-[14px] font-bold leading-tight"
-    : "mt-1 break-words font-serif text-xl font-bold leading-tight sm:text-2xl md:text-3xl";
+    ? "mt-1 overflow-hidden text-ellipsis whitespace-nowrap font-serif text-[14px] font-bold leading-tight"
+    : "mt-1 overflow-hidden text-ellipsis whitespace-nowrap font-serif text-xl font-bold leading-tight sm:text-2xl md:text-3xl";
   const addressClass = compact
     ? "text-[9px] font-medium leading-tight"
     : "text-[10px] font-medium leading-tight sm:text-xs md:text-sm";
@@ -35,12 +35,11 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
       <div className="flex h-full items-center justify-start">
         {logoSource && <img src={resolveMediaUrl(logoSource)} className={logoClass} alt="" onError={event => { event.currentTarget.style.display = "none"; }} />}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 text-center">
         {shop?.arabicName && <p dir="rtl" className={headingClass}>{shop.arabicName}</p>}
         {shop?.englishName && <p className={englishHeadingClass}>{shop.englishName}</p>}
         {!shop?.arabicName && !shop?.englishName && <p className={englishHeadingClass}>{shop?.name ?? "Tailor Shop"}</p>}
       </div>
-      <div aria-hidden="true" />
     </div>
 
     <div className={compact ? "mt-2 border-t-2 border-slate-800" : "mt-3 border-t-2 border-slate-800"} />
