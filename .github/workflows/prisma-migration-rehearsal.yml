@@ -1,0 +1,194 @@
+name: Prisma migration rehearsal
+
+on:
+  pull_request:
+    branches: [prod]
+    paths:
+      - "backend/prisma/**"
+      - ".github/workflows/prisma-migration-rehearsal.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  migration-rehearsal:
+    name: Rehearse production-to-release migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: rehearsal
+          POSTGRES_PASSWORD: rehearsal-only-password
+          POSTGRES_DB: tailoring_crm_rehearsal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rehearsal -d tailoring_crm_rehearsal"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://rehearsal:rehearsal-only-password@localhost:5432/tailoring_crm_rehearsal?schema=public
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Fetch the exact production base schema
+        run: |
+          test -n "$BASE_SHA"
+          git fetch origin "$BASE_SHA" --depth=1
+          git show FETCH_HEAD:backend/prisma/schema.prisma > backend/prisma/rehearsal-baseline.prisma
+          test -s backend/prisma/rehearsal-baseline.prisma
+
+      - name: Build the production-equivalent baseline schema
+        working-directory: backend
+        run: npx prisma db push --schema=prisma/rehearsal-baseline.prisma --skip-generate
+
+      - name: Recreate the two already-applied production migration records
+        working-directory: backend
+        run: |
+          npx prisma migrate resolve --schema=prisma/schema.prisma --applied 20260925_admin_username_transition
+          npx prisma migrate resolve --schema=prisma/schema.prisma --applied 20260927160000_invoice_creator_and_line_images
+
+      - name: Apply the six release migrations
+        working-directory: backend
+        run: npx prisma migrate deploy --schema=prisma/schema.prisma
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npm run prisma:generate
+
+      - name: Verify migration history and resulting schema
+        working-directory: backend
+        run: |
+          node --input-type=module <<'NODE'
+          import { PrismaClient } from "@prisma/client";
+
+          const prisma = new PrismaClient();
+
+          try {
+            const migrations = await prisma.$queryRawUnsafe(`
+              SELECT migration_name
+              FROM "_prisma_migrations"
+              WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL
+              ORDER BY migration_name
+            `);
+
+            const expected = [
+              "20260925_admin_username_transition",
+              "20260927160000_invoice_creator_and_line_images",
+              "20261108090000_customer_scoped_designs",
+              "20261111090000_invoice_line_size_breakdowns",
+              "20261111100000_customer_scoped_design_number",
+              "20261111100000_customer_scoped_design_numbers",
+              "20261112100000_fix_customer_design_number_unique",
+              "20261112110000_reconcile_customer_design_number_unique"
+            ];
+
+            const actual = migrations.map((row) => row.migration_name).sort();
+            if (JSON.stringify(actual) !== JSON.stringify([...expected].sort())) {
+              throw new Error(`Expected exactly 8 successful migrations; found: ${actual.join(", ")}`);
+            }
+
+            const failed = await prisma.$queryRawUnsafe(`
+              SELECT COUNT(*)::int AS count
+              FROM "_prisma_migrations"
+              WHERE finished_at IS NULL AND rolled_back_at IS NULL
+            `);
+            if (failed[0].count !== 0) throw new Error("There are unfinished or failed migrations.");
+
+            const designIndex = await prisma.$queryRawUnsafe(`
+              SELECT indexdef
+              FROM pg_indexes
+              WHERE schemaname = 'public'
+                AND indexname = 'Design_customerId_designNo_key'
+            `);
+            if (
+              designIndex.length !== 1 ||
+              !designIndex[0].indexdef.includes('("customerId", "designNo")') ||
+              !designIndex[0].indexdef.includes("UNIQUE")
+            ) {
+              throw new Error("The intended customer-scoped unique index is missing or incorrect.");
+            }
+
+            const reversedIndex = await prisma.$queryRawUnsafe(`
+              SELECT COUNT(*)::int AS count
+              FROM pg_indexes
+              WHERE schemaname = 'public'
+                AND indexname = 'Design_designNo_customerId_key'
+            `);
+            if (reversedIndex[0].count !== 0) throw new Error("The redundant reversed design index still exists.");
+
+            const sizeBreakdowns = await prisma.$queryRawUnsafe(`
+              SELECT data_type
+              FROM information_schema.columns
+              WHERE table_schema = 'public'
+                AND table_name = 'InvoiceLine'
+                AND column_name = 'sizeBreakdowns'
+            `);
+            if (sizeBreakdowns.length !== 1 || sizeBreakdowns[0].data_type !== "jsonb") {
+              throw new Error("InvoiceLine.sizeBreakdowns is missing or is not JSONB.");
+            }
+
+            const customerForeignKey = await prisma.$queryRawUnsafe(`
+              SELECT COUNT(*)::int AS count
+              FROM pg_constraint
+              WHERE conname = 'Design_customerId_fkey'
+                AND conrelid = 'public."Design"'::regclass
+                AND contype = 'f'
+            `);
+            if (customerForeignKey[0].count !== 1) {
+              throw new Error("Design.customerId foreign key is missing.");
+            }
+
+            await prisma.$executeRaw`
+              INSERT INTO "Customer" ("id", "customerNo", "name", "phone", "createdAt", "updatedAt")
+              VALUES
+                ('rehearsal-customer-a', 'REHEARSAL-A', 'Rehearsal A', '0000000001', NOW(), NOW()),
+                ('rehearsal-customer-b', 'REHEARSAL-B', 'Rehearsal B', '0000000002', NOW(), NOW())
+            `;
+
+            await prisma.$executeRaw`
+              INSERT INTO "Design" ("id", "designNo", "name", "garment", "customerId", "createdAt", "updatedAt")
+              VALUES
+                ('rehearsal-design-a', 'DUPLICATE-TEST', 'Design A', 'THOBE', 'rehearsal-customer-a', NOW(), NOW()),
+                ('rehearsal-design-b', 'DUPLICATE-TEST', 'Design B', 'THOBE', 'rehearsal-customer-b', NOW(), NOW()),
+                ('rehearsal-design-null-a', 'NULL-TEST', 'Legacy Design A', 'THOBE', NULL, NOW(), NOW()),
+                ('rehearsal-design-null-b', 'NULL-TEST', 'Legacy Design B', 'THOBE', NULL, NOW(), NOW())
+            `;
+
+            let duplicateRejected = false;
+            try {
+              await prisma.$executeRaw`
+                INSERT INTO "Design" ("id", "designNo", "name", "garment", "customerId", "createdAt", "updatedAt")
+                VALUES ('rehearsal-design-duplicate', 'DUPLICATE-TEST', 'Invalid duplicate', 'THOBE', 'rehearsal-customer-a', NOW(), NOW())
+              `;
+            } catch (error) {
+              duplicateRejected = error?.meta?.code === "23505";
+              if (!duplicateRejected) throw error;
+            }
+            if (!duplicateRejected) {
+              throw new Error("Duplicate design number for the same customer was not rejected.");
+            }
+
+            console.log("PASS: all 8 migration records are successful.");
+            console.log("PASS: customer-scoped unique index is correct; reversed index is absent.");
+            console.log("PASS: same design number is allowed for different customers and NULL customer IDs.");
+            console.log("PASS: duplicate design number for the same customer is rejected.");
+            console.log("PASS: customer foreign key and InvoiceLine.sizeBreakdowns JSONB exist.");
+          } finally {
+            await prisma.$disconnect();
+          }
+          NODE
