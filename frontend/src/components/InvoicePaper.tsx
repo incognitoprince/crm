@@ -39,11 +39,8 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
   const showOrderDate = lines.some(l => !!l.orderDate);
   const showSize = lines.some(l => !!l.sizeBreakdowns?.length);
 
-  const phone = clean(shop?.phone) || clean(shop?.whatsapp);
-  const addressLines = (shop?.address ?? "").split("\n").map(s => s.trim()).filter(Boolean);
   const custPhone = clean(customer?.phone);
   const custAddress = clean(customer?.address);
-  const shopName = shop?.englishName || shop?.arabicName ? null : shop?.name ?? "Tailor Shop";
 
   const cols: Array<{ key: string; w?: number }> = [
     { key: "#", w: 34 },
