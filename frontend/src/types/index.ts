@@ -7,7 +7,7 @@ export type OrderStatus = "PENDING" | "MEASUREMENT" | "CUTTING" | "STITCHING" | 
 export type GarmentType = string;
 
 export interface Garment { id: string; name: string; active: boolean; sortOrder: number; }
-export interface Shop { id: string; name: string; area: string; phone?: string | null; whatsapp?: string | null; email?: string | null; arabicName?: string | null; englishName?: string | null; address?: string | null; logoUrl?: string | null; _count?: { customers: number; orders: number }; }
+export interface Shop { id: string; name: string; area: string; phone?: string | null; whatsapp?: string | null; email?: string | null; arabicName?: string | null; englishName?: string | null; address?: string | null; logoPath?: string | null; logoUrl?: string | null; _count?: { customers: number; orders: number }; }
 export interface Customer { id: string; customerNo: string; name: string; phone: string; email?: string | null; address?: string | null; notes?: string | null; status?: "ACTIVE" | "INACTIVE"; shop?: Shop | null; _count?: { orders: number }; }
 export interface Measurement { id: string; garment: GarmentType; profileName: string; values: Record<string, number>; notes?: string | null; }
 export interface OrderSizeBreakdown { id: string; size: string; quantity: number; }

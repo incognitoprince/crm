@@ -190,7 +190,7 @@ export function BillPage(){
           </tr>
         </thead>
         <tbody>{invoice.lines.map(line=><tr key={line.id}>
-          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="use-credentials" src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
+          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.description.replace(/\s*·\s*/g," ").trim() || "—"}</td>
