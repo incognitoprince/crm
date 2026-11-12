@@ -1,5 +1,6 @@
 import type { InvoicePaperData } from "./InvoicePaper";
 import { amountInWords, clean, fmtDate, kwd } from "../utils/invoiceLayout";
+import { resolveMediaUrl } from "../services/api";
 
 /** Phone-friendly, reflowing version of the invoice. PDF / image exports always use the A4 InvoicePaper. */
 export function InvoiceMobileView({ data }: { data: InvoicePaperData }) {
@@ -14,7 +15,7 @@ export function InvoiceMobileView({ data }: { data: InvoicePaperData }) {
       <div className="h-2 bg-gradient-to-r from-navy-900 to-brand-500" />
       <div className="space-y-5 p-4">
         <header className="flex items-center gap-3 border-b-2 border-navy-900 pb-4">
-          {shop?.logoUrl && <img src={shop.logoUrl} alt="Shop logo" className="h-14 w-14 shrink-0 object-contain" />}
+          {shop?.logoUrl && <img src={resolveMediaUrl(shop.logoPath || shop.logoUrl)} alt="Shop logo" className="h-14 w-14 shrink-0 object-contain" />}
           <div className="min-w-0 flex-1 text-center">
             {shop?.arabicName && <p dir="rtl" className="text-[17px] font-bold leading-snug text-navy-900">{shop.arabicName}</p>}
             {shop?.englishName
@@ -49,7 +50,7 @@ export function InvoiceMobileView({ data }: { data: InvoicePaperData }) {
             return (
               <div key={line.id} className="flex gap-3 rounded-xl border border-slate-200 p-3">
                 {line.imagePath
-                  ? <img src={line.imagePath} alt="Design" className="h-16 w-16 shrink-0 rounded-lg border border-slate-200 bg-white object-contain" />
+                  ? <img src={resolveMediaUrl(line.imagePath)} alt="Design" className="h-16 w-16 shrink-0 rounded-lg border border-slate-200 bg-white object-contain" />
                   : <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-400">{i + 1}</span>}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
@@ -60,6 +61,7 @@ export function InvoiceMobileView({ data }: { data: InvoicePaperData }) {
                     {orderNo && <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">Order {orderNo}</span>}
                     {line.quantity} × {kwd(line.unitPriceFils)} K.D.
                   </p>
+                  {line.sizeBreakdowns?.length ? <p className="mt-0.5 text-[11px] text-slate-500">Sizes: {line.sizeBreakdowns.map(item => item.size).filter(Boolean).join(", ")}</p> : null}
                   {line.orderDate && <p className="mt-0.5 text-[11px] text-slate-400">{new Date(line.orderDate).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}</p>}
                 </div>
               </div>

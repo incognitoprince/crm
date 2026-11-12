@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import type { Customer, Shop } from "../types";
+import { InvoiceHeader } from "./InvoiceHeader";
 import { INVOICE_PAPER_WIDTH, amountInWords, clean, fmtDate, kwd } from "../utils/invoiceLayout";
 
 export interface InvoicePaperLine {
@@ -7,6 +8,7 @@ export interface InvoicePaperLine {
   imagePath?: string | null;
   orderNo?: string | null;
   orderDate?: string | null;
+  sizeBreakdowns?: Array<{ size: string; quantity: number }> | null;
   description: string;
   quantity: number;
   unitPriceFils: number;
@@ -35,6 +37,7 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
   const showImage = lines.some(l => !!l.imagePath);
   const showOrderNo = lines.some(l => !!clean(l.orderNo));
   const showOrderDate = lines.some(l => !!l.orderDate);
+  const showSize = lines.some(l => !!l.sizeBreakdowns?.length);
 
   const phone = clean(shop?.phone) || clean(shop?.whatsapp);
   const addressLines = (shop?.address ?? "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -48,6 +51,7 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
     ...(showOrderNo ? [{ key: "orderNo", w: 92 }] : []),
     ...(showOrderDate ? [{ key: "orderDate", w: 112 }] : []),
     { key: "details" },
+    ...(showSize ? [{ key: "size", w: 70 }] : []),
     { key: "qty", w: 52 },
     { key: "rate", w: 84 },
     { key: "total", w: 92 },
@@ -64,33 +68,7 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
     >
       <div data-pdf-break style={{ height: 8, background: `linear-gradient(90deg, ${NAVY}, #2f86f6)` }} />
       <div className="px-10 pb-10 pt-8">
-        {/* ---------- Shop header ---------- */}
-        <header data-pdf-break>
-          <div className="grid grid-cols-[96px_minmax(0,1fr)_96px] items-center gap-3">
-            <div className="flex h-24 items-center justify-start">
-              {shop?.logoUrl && <img crossOrigin="anonymous" src={shop.logoUrl} alt="Shop logo" className="max-h-24 max-w-[96px] object-contain" />}
-            </div>
-            <div className="min-w-0 text-center">
-              {shop?.arabicName && <p dir="rtl" className="text-[22px] font-bold leading-snug" style={{ color: NAVY }}>{shop.arabicName}</p>}
-              {shop?.englishName && <p className="text-[19px] font-extrabold leading-snug tracking-tight" style={{ color: NAVY }}>{shop.englishName}</p>}
-              {shopName && <p className="text-[20px] font-extrabold leading-snug" style={{ color: NAVY }}>{shopName}</p>}
-              {addressLines.length > 0 && (
-                <div className="mt-1.5 space-y-0.5 text-[9px] leading-snug text-slate-600">
-                  {addressLines.map((line, i) => <p key={i} dir="auto">{line}</p>)}
-                </div>
-              )}
-              {(phone || shop?.email) && (
-                <p className="mt-1.5 text-[11px] font-semibold text-slate-700">
-                  {phone && <span>Tel / WhatsApp: {phone}</span>}
-                  {phone && shop?.email && <span className="mx-2 text-slate-300">|</span>}
-                  {shop?.email && <span>{shop.email}</span>}
-                </p>
-              )}
-            </div>
-            <div />
-          </div>
-          <div className="mt-5 h-[2px] w-full" style={{ background: NAVY }} />
-        </header>
+        <InvoiceHeader shop={shop} />
 
         {/* ---------- Title + meta ---------- */}
         <section data-pdf-break className="mt-6 grid grid-cols-[1fr_auto] items-start gap-6">
@@ -136,6 +114,7 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
                   {showOrderNo && <th className={th + " text-center"}>Order No</th>}
                   {showOrderDate && <th className={th + " text-center"}>Order Date</th>}
                   <th className={th + " text-left"}>Details</th>
+                  {showSize && <th className={th + " text-center"}>Size</th>}
                   <th className={th + " text-center"}>Qty</th>
                   <th className={th + " text-right"}>Rate (K.D.)</th>
                   <th className={th + " text-right"}>Total (K.D.)</th>
@@ -155,6 +134,7 @@ export const InvoicePaper = forwardRef<HTMLDivElement, { data: InvoicePaperData 
                     {showOrderNo && <td className={td + " break-words text-center font-semibold"}>{clean(line.orderNo) || "—"}</td>}
                     {showOrderDate && <td className={td + " text-center text-[11px]"}>{line.orderDate ? new Date(line.orderDate).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" }) : "—"}</td>}
                     <td dir="auto" className={td + " whitespace-pre-wrap break-words text-left"}>{line.description || <span className="text-slate-300">—</span>}</td>
+                    {showSize && <td className={td + " break-words text-center"}>{line.sizeBreakdowns?.map(item => item.size).filter(Boolean).join(", ") || "—"}</td>}
                     <td className={td + " text-center font-semibold"}>{line.quantity}</td>
                     <td className={td + " text-right tabular-nums"}>{kwd(line.unitPriceFils)}</td>
                     <td className={td + " text-right font-bold tabular-nums"}>{kwd(line.totalFils)}</td>
