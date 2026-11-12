@@ -13,7 +13,6 @@ import {
 } from "../services/api";
 import type { Customer, Design, Garment, GarmentType, Master, Shop } from "../types";
 
-const defaultSizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
 type AssignmentDraft = { id: number; size: string; masterId: string; quantity: string; notes: string };
 
@@ -31,11 +30,12 @@ export function NewOrderPage() {
   const [showGarmentForm, setShowGarmentForm] = useState(false);
   const [newGarmentName, setNewGarmentName] = useState("");
   const [description, setDescription] = useState("");
-  const [deliveryDate] = useState("");
-  const [notes] = useState("");
-  const [sizeBreakdowns, setSizeBreakdowns] = useState<Record<string, string>>(
-    Object.fromEntries(defaultSizes.map(s => [s, ""]))
-  );
+  const [orderDate, setOrderDate] = useState(new Date().toISOString().slice(0,16));
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [sizeRows, setSizeRows] = useState<Array<{ id: number; size: string; quantity: string }>>([
+    { id: 1, size: "", quantity: "" },
+  ]);
   const [designSource, setDesignSource] = useState<"existing" | "upload">("existing");
   const [selectedDesignId, setSelectedDesignId] = useState("");
   const [designImage, setDesignImage] = useState<File | null>(null);
@@ -65,11 +65,11 @@ export function NewOrderPage() {
 
   useEffect(() => {
     if (!garment) return;
-    getDesigns(garment).then(r => {
+    getDesigns(garment, customerId).then(r => {
       setDesigns(r.data);
       if (!r.data.some(d => d.id === selectedDesignId)) setSelectedDesignId(r.data[0]?.id ?? "");
     }).catch(e => setError(e instanceof Error ? e.message : "Unable to load designs"));
-  }, [garment]);
+  }, [garment, customerId]);
 
   useEffect(() => {
     if (!shopId) {
@@ -79,15 +79,21 @@ export function NewOrderPage() {
     getMasters(shopId).then(r => setMasters(r.data)).catch(e => setError(e instanceof Error ? e.message : "Unable to load masters"));
   }, [shopId]);
 
-  const breakdown = useMemo(() => defaultSizes
-    .map(size => ({ size, quantity: Number(sizeBreakdowns[size] || 0) }))
-    .filter(item => item.quantity > 0), [sizeBreakdowns]);
+  const breakdown = useMemo(() => sizeRows
+    .map(row => ({ size: row.size.trim(), quantity: Number(row.quantity) }))
+    .filter(row => row.size && row.quantity > 0), [sizeRows]);
   const breakdownTotal = breakdown.reduce((sum, item) => sum + item.quantity, 0);
 
-  function updateSize(size: string, value: string) {
-    if (value === "" || /^\d+$/.test(value)) {
-      setSizeBreakdowns(current => ({ ...current, [size]: value }));
-    }
+  function addSizeRow() {
+    setSizeRows(rows => [...rows, { id: Date.now(), size: "", quantity: "" }]);
+  }
+
+  function updateSizeRow(id: number, patch: Partial<{ size: string; quantity: string }>) {
+    setSizeRows(rows => rows.map(row => row.id === id ? { ...row, ...patch } : row));
+  }
+
+  function removeSizeRow(id: number) {
+    setSizeRows(rows => rows.filter(row => row.id !== id));
   }
 
   async function addGarment() {
@@ -129,6 +135,15 @@ export function NewOrderPage() {
       setError("Add at least one piece in the size breakdown.");
       return;
     }
+    const enteredSizes = new Set<string>();
+    for (const item of breakdown) {
+      const normalizedSize = item.size.toLocaleLowerCase();
+      if (enteredSizes.has(normalizedSize)) {
+        setError("Enter each size only once in the size breakdown.");
+        return;
+      }
+      enteredSizes.add(normalizedSize);
+    }
     // Design is optional. The owner can create the order first and attach a design later.
 
     const assignmentTotals: Record<string, number> = {};
@@ -159,6 +174,7 @@ export function NewOrderPage() {
         garment,
         description,
         quantity: breakdownTotal,
+        orderDate: orderDate ? new Date(orderDate).toISOString() : undefined,
         deliveryDate: deliveryDate ? new Date(deliveryDate + "T00:00:00").toISOString() : null,
         notes: notes || null,
         sizeBreakdowns: breakdown,
@@ -235,6 +251,21 @@ export function NewOrderPage() {
         </div>
 
         <label className="text-sm">
+          Order Date & Time
+          <input type="datetime-local" required value={orderDate} onChange={e => setOrderDate(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+        </label>
+
+        <label className="text-sm">
+          Delivery Date
+          <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+        </label>
+
+        <label className="text-sm">
+          Notes
+          <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+        </label>
+
+        <label className="text-sm">
           Total Quantity
           <input readOnly type="number" value={breakdownTotal} className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 font-medium text-slate-700" />
           <span className="mt-1 block text-xs text-slate-500">Automatically calculated from the size breakdown.</span>
@@ -247,13 +278,25 @@ export function NewOrderPage() {
       </div>
 
       <section className="rounded-lg border border-slate-200 p-4">
-        <h4 className="font-semibold text-navy-900">Size breakdown</h4>
-        <p className="mt-1 text-xs text-slate-500">Enter the quantity for each size. Total Quantity is calculated automatically.</p>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-          {defaultSizes.map(size => <label key={size} className="text-xs font-medium text-slate-600">
-            {size}
-            <input type="number" min="0" step="1" value={sizeBreakdowns[size]} onChange={e => updateSize(size, e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
-          </label>)}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div><h4 className="font-semibold text-navy-900">Size breakdown</h4><p className="mt-1 text-xs text-slate-500">Add one row for each size needed and enter its quantity.</p></div>
+          <button type="button" onClick={addSizeRow} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium">+ Add size</button>
+        </div>
+        <div className="mt-3 space-y-2">
+          {sizeRows.map(row => <div key={row.id} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <label className="text-xs text-slate-600">Size
+              <input
+                value={row.size}
+                onChange={e => updateSizeRow(row.id, { size: e.target.value })}
+                placeholder="e.g. M, 42, 12yr"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-slate-600">Quantity
+              <input type="number" min="1" step="1" value={row.quantity} onChange={e => updateSizeRow(row.id, { quantity: e.target.value })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+            </label>
+            <button type="button" disabled={sizeRows.length === 1} onClick={() => removeSizeRow(row.id)} aria-label="Remove size row" className="mt-5 rounded-md border border-red-200 px-3 py-2 text-xs text-red-700 disabled:opacity-40">Remove</button>
+          </div>)}
         </div>
         <p className="mt-3 text-sm font-medium text-emerald-700">Total pieces: {breakdownTotal}</p>
       </section>

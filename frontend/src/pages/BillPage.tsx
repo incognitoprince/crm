@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { Link, useParams } from "react-router-dom";
 import { getBill, resolveMediaUrl } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
+import { InvoiceHeader } from "../components/InvoiceHeader";
 import { LoadingState } from "../components/LoadingState";
 import type { Invoice } from "../types";
 
@@ -61,7 +62,7 @@ export function BillPage(){
      table.style.tableLayout="fixed";
      table.style.borderCollapse="collapse";
 
-     const widths=["12%","13%","19%","24%","9%","11%","12%"];
+     const widths=["11%","12%","17%","20%","9%","8%","11%","12%"];
      table.querySelectorAll("tr").forEach(row=>{
        row.querySelectorAll<HTMLElement>("th,td").forEach((cell,index)=>{
          if(index<widths.length)cell.style.width=widths[index];
@@ -155,6 +156,7 @@ export function BillPage(){
    <div className="flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
     <Link to="/bills" className="text-sm font-medium text-blue-700">← Back to Bills</Link>
     <div className="flex flex-wrap gap-2">
+      <Link to={`/bills?edit=${invoice.id}`} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800">Edit Invoice</Link>
       <button disabled={busy} onClick={()=>void downloadPdf()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Download PDF</button>
       <button disabled={busy} onClick={()=>void downloadImage()} className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50">Download Image</button>
       <button disabled={busy} onClick={()=>void shareImage()} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 disabled:opacity-50">{busy?"Preparing…":"Share Image"}</button>
@@ -164,23 +166,9 @@ export function BillPage(){
    {error&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
 
    <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-3 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-5 md:p-7 print:p-0 print:shadow-none">
-     <header className="border-b-2 border-slate-800 pb-3">
-       <div className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[90px_minmax(0,1fr)] sm:gap-3 md:grid-cols-[110px_minmax(0,1fr)] md:gap-4">
-         <div className="flex justify-start">{shop?.logoUrl&&<img crossOrigin="use-credentials" src={resolveMediaUrl(shop.logoUrl)} className="max-h-20 max-w-28 object-contain" alt="Shop logo"/>}</div>
-         <div className="min-w-0 text-center">
-           {shop?.arabicName&&<p className="break-words text-base font-semibold sm:text-lg md:text-xl">{shop.arabicName}</p>}
-           {shop?.englishName&&<p className="break-words text-base font-bold sm:text-lg md:text-xl">{shop.englishName}</p>}
-           {!shop?.arabicName&&!shop?.englishName&&<p className="break-words text-base font-bold sm:text-lg md:text-xl">{shop?.name ?? "Tailor Shop"}</p>}
-           {shop?.address&&<p className="mt-1 break-words text-[9px] leading-tight whitespace-pre-line sm:text-[10px]">{shop.address}</p>}
-           {(shop?.phone||shop?.whatsapp||shop?.email)&&<div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[9px] font-medium sm:flex-nowrap sm:whitespace-nowrap sm:gap-3 sm:text-xs">
-             {(shop?.phone||shop?.whatsapp)&&<span>Tel/WhatsApp: {shop.phone||shop.whatsapp}</span>}
-             {shop?.email&&<span>Email: {shop.email}</span>}
-           </div>}
-         </div>
-       </div>
-     </header>
+     <InvoiceHeader shop={shop} />
 
-     <div className="py-4 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1>{invoice.subject&&<p className="mt-1 text-sm break-words">{invoice.subject}</p>}</div>
+     <div className="py-3 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1><p className="mt-1 text-sm break-words">{invoice.subject || "Bill / Invoice"}</p></div>
 
      <div className="grid gap-4 border-y border-slate-700 py-3 text-sm sm:grid-cols-2">
        <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p data-invoice-nowrap>{customer.phone}</p>}{customer?.address?.trim() && customer.address.trim().toLowerCase() !== "not provided" && <p className="break-words">{customer.address}</p>}</div>
@@ -188,34 +176,36 @@ export function BillPage(){
      </div>
 
      <div data-invoice-table-wrap className="mt-4 overflow-x-auto border border-slate-700">
-       <table data-invoice-table className="w-full min-w-[620px] table-fixed border-collapse text-[10px] sm:text-sm">
+       <table data-invoice-table className="w-full min-w-[720px] table-fixed border-collapse text-[10px] sm:text-sm">
         <thead>
           <tr className="bg-slate-50">
-            <th className="w-[12%] break-words border border-slate-700 p-2">Image</th>
-            <th className="w-[13%] break-words border border-slate-700 p-2">Order No</th>
-            <th className="w-[19%] break-words border border-slate-700 p-2">Order Date &amp; Time</th>
-            <th className="w-[24%] break-words border border-slate-700 p-2">Order Details</th>
-            <th className="w-[9%] break-words border border-slate-700 p-2">Quantity</th>
+            <th className="w-[11%] break-words border border-slate-700 p-2">Image</th>
+            <th className="w-[12%] break-words border border-slate-700 p-2">Order No</th>
+            <th className="w-[17%] break-words border border-slate-700 p-2">Order Date &amp; Time</th>
+            <th className="w-[20%] break-words border border-slate-700 p-2">Order Details</th>
+            <th className="w-[9%] break-words border border-slate-700 p-2">Size</th>
+            <th className="w-[8%] break-words border border-slate-700 p-2">Quantity</th>
             <th className="w-[11%] break-words border border-slate-700 p-2">Rate Per Piece<br/>(K.D.)</th>
             <th className="w-[12%] break-words border border-slate-700 p-2">Total</th>
           </tr>
         </thead>
         <tbody>{invoice.lines.map(line=><tr key={line.id}>
-          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img crossOrigin="use-credentials" src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
+          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.description}</td>
+          <td className="break-words border border-slate-700 p-2 text-center">{line.description.replace(/\s*·\s*/g," ").trim() || "—"}</td>
+          <td className="break-words border border-slate-700 p-2 text-center">{line.sizeBreakdowns?.map(item => item.size).join(", ") || "—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.quantity}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{(line.unitPriceFils/1000).toFixed(3)}</td>
           <td className="break-words border border-slate-700 p-2 text-right">{(line.totalFils/1000).toFixed(3)}</td>
         </tr>)}</tbody>
         <tfoot>
           <tr>
-            <td colSpan={4} className="border border-slate-700 p-2 font-bold">TOTAL QTY: {totalQty}</td>
+            <td colSpan={5} className="border border-slate-700 p-2 font-bold">TOTAL QTY: {totalQty}</td>
             <td colSpan={2} className="border border-slate-700 p-2 text-right font-bold">GRAND TOTAL</td>
             <td className="border border-slate-700 p-2 text-right font-bold">{(invoice.totalFils/1000).toFixed(3)}</td>
           </tr>
-          <tr><td colSpan={7} className="break-words border border-slate-700 p-2 text-center font-bold uppercase">{words(invoice.totalFils)}</td></tr>
+          <tr><td colSpan={8} className="break-words border border-slate-700 p-2 text-center font-bold uppercase">{words(invoice.totalFils)}</td></tr>
         </tfoot>
        </table>
      </div>

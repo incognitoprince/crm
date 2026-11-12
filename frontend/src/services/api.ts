@@ -2,17 +2,23 @@ import type { Customer, CustomerDetail, DashboardSummary, HealthResponse, Measur
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
-// Resolve private uploaded media against the API host. In Capacitor the app origin is
-// https://localhost, so relative /uploads paths must not resolve against the WebView origin.
+// Browser deployments use their own origin for private uploaded media so the
+// authenticated session cookie is sent. Capacitor's HTTPS localhost WebView keeps
+// using the public API host unless a specific API base URL is configured.
 export function resolveMediaUrl(path?: string | null): string {
   if (!path) return "";
-  const apiBase = API_BASE || "https://tailorshopcrm.com";
+  const isNativeWebView = typeof window !== "undefined"
+    && window.location.protocol === "https:"
+    && window.location.hostname === "localhost";
+  const apiBase = API_BASE || (isNativeWebView
+    ? "https://tailorshopcrm.com"
+    : typeof window !== "undefined" ? window.location.origin : "https://tailorshopcrm.com");
   try {
     const parsed = new URL(path, apiBase);
     if (["localhost", "127.0.0.1", "backend", "frontend"].includes(parsed.hostname)) {
-      const production = new URL(apiBase);
-      parsed.protocol = production.protocol;
-      parsed.host = production.host;
+      const publicApi = new URL(apiBase);
+      parsed.protocol = publicApi.protocol;
+      parsed.host = publicApi.host;
     }
     return parsed.toString();
   } catch {
@@ -49,7 +55,8 @@ export function updateGarment(id: string, data: { name?: string; active?: boolea
 
 export function getOrders() { return request<{ data: Order[] }>("/api/orders"); }
 export function getOrder(id: string) { return request<{ data: Order }>("/api/orders/" + id); }
-export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils?: number; paidAmountFils?: number; paymentMethod?: PaymentMethod; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
+export function createOrder(data: { customerId: string; shopId?: string | null; garment: GarmentType; description: string; quantity: number; totalAmountFils?: number; paidAmountFils?: number; paymentMethod?: PaymentMethod; orderDate?: string; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders", { method: "POST", body: JSON.stringify(data) }); }
+export function updateOrder(id: string, data: { shopId?: string | null; garment?: GarmentType; description?: string; quantity?: number; orderDate?: string; deliveryDate?: string | null; notes?: string | null; sizeBreakdowns?: Array<{ size: string; quantity: number }> }) { return request<{ data: Order }>("/api/orders/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function updateOrderStatus(id: string, status: Order["status"]) { return request<{ data: Order }>("/api/orders/" + id + "/status", { method: "PATCH", body: JSON.stringify({ status }) }); }
 
 export function uploadOrderReferenceImage(orderId: string, file: File) {
@@ -65,9 +72,9 @@ export function getMasters(shopId = "") { return request<{ data: Master[] }>("/a
 export function createMaster(data: { name: string; phone?: string; shopId: string }) { return request<{ data: Master }>("/api/masters", { method: "POST", body: JSON.stringify(data) }); }
 export function updateMaster(id: string, data: { name?: string; phone?: string | null; shopId?: string; active?: boolean }) { return request<{ data: Master }>("/api/masters/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 
-export function getDesigns(garment = "") { return request<{ data: Design[] }>("/api/designs" + (garment ? "?garment=" + encodeURIComponent(garment) : "")); }
-export function createDesign(data: { designNo: string; name: string; garment: GarmentType; description?: string }) { return request<{ data: Design }>("/api/designs", { method: "POST", body: JSON.stringify(data) }); }
-export function updateDesign(id: string, data: { designNo?: string; name?: string; garment?: GarmentType; description?: string | null; active?: boolean }) { return request<{ data: Design }>("/api/designs/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
+export function getDesigns(garment = "", customerId = "") { const params = new URLSearchParams(); if (garment) params.set("garment", garment); if (customerId) params.set("customerId", customerId); const query = params.toString(); return request<{ data: Design[] }>("/api/designs" + (query ? "?" + query : "")); }
+export function createDesign(data: { designNo: string; name: string; garment: GarmentType; customerId?: string | null; description?: string }) { return request<{ data: Design }>("/api/designs", { method: "POST", body: JSON.stringify(data) }); }
+export function updateDesign(id: string, data: { designNo?: string; name?: string; garment?: GarmentType; customerId?: string | null; description?: string | null; active?: boolean }) { return request<{ data: Design }>("/api/designs/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function uploadDesignImage(id: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Design }>("/api/designs/" + id + "/image", { method: "POST", body }); }
 
 export function getProductionOrder(orderId: string) { return request<{ data: ProductionOrder }>("/api/production/orders/" + orderId); }
@@ -102,9 +109,11 @@ export function getPayments(orderId = "") { return request<{ data: Payment[] }>(
 export function createPayment(data: { orderId: string; amountFils: number; method: PaymentMethod; reference?: string; notes?: string; receivedAt?: string }) { return request<{ data: Payment }>("/api/payments", { method: "POST", body: JSON.stringify(data) }); }
 
 
+export type BillPayload = { invoiceNo?: string; issuedAt?: string; shopId: string; customerId: string; subject?: string; modelNo?: string; notes?: string; lines: Array<{ orderId?: string; orderNo?: string; imagePath?: string; description: string; sizeBreakdowns?: Array<{ size: string; quantity: number }>; quantity: number; unitPriceFils: number }> };
 export function getBills() { return request<{ data: Invoice[] }>("/api/bills"); }
 export function getBill(id: string) { return request<{ data: Invoice }>("/api/bills/" + id); }
-export function createBill(data: { invoiceNo?: string; issuedAt?: string; shopId: string; customerId: string; subject?: string; modelNo?: string; notes?: string; lines: Array<{ orderId?: string; orderNo?: string; imagePath?: string; description: string; quantity: number; unitPriceFils: number }> }) { return request<{ data: Invoice }>("/api/bills", { method: "POST", body: JSON.stringify(data) }); }
+export function createBill(data: BillPayload) { return request<{ data: Invoice }>("/api/bills", { method: "POST", body: JSON.stringify(data) }); }
+export function updateBill(id: string, data: BillPayload) { return request<{ data: Invoice }>("/api/bills/" + id, { method: "PATCH", body: JSON.stringify(data) }); }
 export function uploadInvoiceLineImage(invoiceId: string, lineId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: InvoiceLine }>(`/api/bills/${invoiceId}/lines/${lineId}/image`, { method: "POST", body }); }
 export function uploadInvoiceModelImage(invoiceId: string, file: File) { const body = new FormData(); body.append("image", file); return request<{ data: Invoice }>("/api/bills/" + invoiceId + "/model-image", { method: "POST", body }); }
 
