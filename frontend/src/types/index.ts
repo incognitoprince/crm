@@ -7,12 +7,12 @@ export type OrderStatus = "PENDING" | "MEASUREMENT" | "CUTTING" | "STITCHING" | 
 export type GarmentType = string;
 
 export interface Garment { id: string; name: string; active: boolean; sortOrder: number; }
-export interface Shop { id: string; name: string; area: string; phone?: string | null; whatsapp?: string | null; email?: string | null; arabicName?: string | null; englishName?: string | null; address?: string | null; logoUrl?: string | null; _count?: { customers: number; orders: number }; }
+export interface Shop { id: string; name: string; area: string; phone?: string | null; whatsapp?: string | null; email?: string | null; arabicName?: string | null; englishName?: string | null; address?: string | null; logoPath?: string | null; logoUrl?: string | null; _count?: { customers: number; orders: number }; }
 export interface Customer { id: string; customerNo: string; name: string; phone: string; email?: string | null; address?: string | null; notes?: string | null; status?: "ACTIVE" | "INACTIVE"; shop?: Shop | null; _count?: { orders: number }; }
 export interface Measurement { id: string; garment: GarmentType; profileName: string; values: Record<string, number>; notes?: string | null; }
 export interface OrderSizeBreakdown { id: string; size: string; quantity: number; }
 export interface OrderReferenceImage { id: string; fileName: string; storagePath: string; mimeType: string; sortOrder: number; createdAt: string; }
-export interface Design { id: string; designNo: string; name: string; garment: GarmentType; garmentId?: string | null; garmentMaster?: Garment | null; description?: string | null; imagePath?: string | null; active: boolean; createdAt?: string; }
+export interface Design { id: string; designNo: string; name: string; customerId?: string | null; customer?: Customer | null; garment: GarmentType; garmentId?: string | null; garmentMaster?: Garment | null; description?: string | null; imagePath?: string | null; active: boolean; createdAt?: string; }
 export interface Master { id: string; name: string; phone?: string | null; shopId: string; active: boolean; shop: Shop; _count?: { assignments: number }; currentAssignments?: MasterAssignment[]; completedAssignments?: MasterAssignment[]; assignments?: MasterAssignment[]; }
 export interface MasterAssignment { id: string; masterId: string; orderId?: string | null; size: string; quantity: number; notes?: string | null; startedAt?: string | null; completedAt?: string | null; master: Master; order?: { id: string; orderNo: string; customer: { name: string }; garment: GarmentType; quantity: number; status?: OrderStatus } | null; orderDesignId?: string | null; orderDesign?: { order: { id: string; orderNo: string; customer: { name: string }; garment: GarmentType; quantity: number }; design?: Design | null; designName?: string | null } | null; }
 export interface OrderDesign { id: string; orderId: string; designId?: string | null; designName?: string | null; imagePath?: string | null; design?: Design | null; notes?: string | null; assignments: MasterAssignment[]; }
@@ -23,7 +23,7 @@ export interface Invoice {
   subject?: string | null; modelNo?: string | null; modelImagePath?: string | null; totalFils: number; notes?: string | null;
   issuedAt: string; shop?: Shop | null; customer?: Customer | null; order?: (Order & { payments?: Payment[] }) | null; lines: InvoiceLine[];
 }
-export interface InvoiceLine { id: string; orderId?: string | null; orderNo?: string | null; imagePath?: string | null; orderDate?: string | null; description: string; quantity: number; unitPriceFils: number; totalFils: number; order?: Order | null; }
+export interface InvoiceLine { id: string; orderId?: string | null; orderNo?: string | null; imagePath?: string | null; orderDate?: string | null; description: string; sizeBreakdowns?: Array<{ size: string; quantity: number }> | null; quantity: number; unitPriceFils: number; totalFils: number; order?: Order | null; }
 
 export interface Order {
   id: string;

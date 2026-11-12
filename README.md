@@ -93,3 +93,36 @@ Phase 1 — Project foundation (complete once health checks pass).
 Next: Phase 2 — Database schema and authentication.
 
 See `docs/` for requirements, architecture, database, API, and deployment notes.
+
+
+## Development server (HTTP only)
+
+The shared `docker-compose.yml` and `nginx/nginx.conf` retain the HTTPS configuration used by production. For an HTTP-only development server, use the development override and its Nginx configuration:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml config
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
+```
+
+The override mounts `nginx/nginx.dev.conf`, which listens on port 80 only and retains the same frontend, API, uploads, and authenticated deployment-webhook proxy routes. It does not alter the production Nginx configuration. Continue using the base Compose file without the development override on production.
+
+On the development server, use both Compose files for subsequent Compose operations (logs, ps, up, restart). Do not run a plain `docker compose up` there, as that selects the production HTTPS configuration.
+
+
+### Development CORS origin
+
+Set `DEV_CORS_ORIGIN` in the development server's local `.env` file to the exact browser origin used to open the app. For the current Azure HTTP server:
+
+```env
+DEV_CORS_ORIGIN=http://4.240.48.242
+```
+
+For multiple development origins, separate them with commas and do not add a trailing slash. The development Compose override passes this value to the backend as `CORS_ORIGIN`; it takes precedence over the base production value without changing the production environment. After changing it, recreate only the backend:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate backend
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs --tail=50 backend
+```
+
+Do not put development origins into the production `.env`.

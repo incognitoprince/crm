@@ -14,6 +14,7 @@ const lineSchema = z.object({
   orderNo: z.string().trim().max(80).optional().nullable(),
   imagePath: z.string().trim().max(1000).optional().nullable(),
   description: z.string().trim().max(300).default(""),
+  sizeBreakdowns: z.array(z.object({ size: z.string().trim().min(1).max(30), quantity: z.coerce.number().int().positive() })).optional(),
   quantity: z.coerce.number().int().positive(),
   unitPriceFils: z.coerce.number().int().nonnegative(),
 });
@@ -74,11 +75,69 @@ router.post("/", asyncHandler(async (req, res) => {
       modelNo: input.modelNo ?? null,
       notes: input.notes ?? null,
       totalFils,
-      lines: { create: input.lines.map(line => ({ orderId: line.orderId ?? null, orderNo: line.orderNo ?? null, imagePath: line.imagePath ?? null, description: line.description, quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: orders.find(order => order.id === line.orderId)?.orderDate ?? null })) },
+      lines: { create: input.lines.map(line => { const linkedOrder = orders.find(order => order.id === line.orderId); const sizeBreakdowns = line.sizeBreakdowns ?? linkedOrder?.sizeBreakdowns.map(item => ({ size: item.size, quantity: item.quantity })); return { orderId: line.orderId ?? null, orderNo: linkedOrder?.orderNo ?? line.orderNo ?? null, imagePath: line.imagePath ?? null, description: line.description, ...(sizeBreakdowns?.length ? { sizeBreakdowns } : {}), quantity: line.quantity, unitPriceFils: line.unitPriceFils, totalFils: line.quantity * line.unitPriceFils, orderDate: linkedOrder?.orderDate ?? null }; }) },
     },
     include,
   });
   res.status(201).json({ data: invoice });
+}));
+
+
+router.patch("/:id", asyncHandler(async (req, res) => {
+  const input = billSchema.parse(req.body);
+  const existing = await prisma.invoice.findUnique({ where: { id: req.params.id } });
+  if (!existing) throw new AppError("Invoice not found", 404, "INVOICE_NOT_FOUND");
+
+  const shop = await prisma.shop.findUnique({ where: { id: input.shopId } });
+  const customer = await prisma.customer.findUnique({ where: { id: input.customerId } });
+  if (!shop || !shop.active) throw new AppError("Shop not found or inactive", 400, "SHOP_NOT_FOUND");
+  if (!customer) throw new AppError("Customer not found", 400, "CUSTOMER_NOT_FOUND");
+
+  const orderIds = [...new Set(input.lines.map(line => line.orderId).filter(Boolean) as string[])];
+  const orders = orderIds.length ? await prisma.order.findMany({ where: { id: { in: orderIds } }, include: { sizeBreakdowns: true } }) : [];
+  if (orders.length !== orderIds.length) throw new AppError("One or more selected orders were not found", 400, "ORDER_NOT_FOUND");
+  if (orders.some(order => order.customerId !== customer.id)) throw new AppError("Invoice lines must belong to the selected customer", 400, "CUSTOMER_MISMATCH");
+  if (orders.some(order => order.status === "CANCELLED")) throw new AppError("Cancelled orders cannot be billed", 400, "ORDER_CANCELLED");
+
+  const totalFils = input.lines.reduce((sum, line) => sum + line.quantity * line.unitPriceFils, 0);
+  const invoice = await prisma.invoice.update({
+    where: { id: existing.id },
+    data: {
+      invoiceNo: input.invoiceNo?.trim() || existing.invoiceNo,
+      issuedAt: input.issuedAt ? new Date(input.issuedAt) : existing.issuedAt,
+      shopId: shop.id,
+      customerId: customer.id,
+      orderId: orderIds[0] ?? null,
+      subject: input.subject ?? null,
+      modelNo: input.modelNo ?? null,
+      notes: input.notes ?? null,
+      totalFils,
+      lines: {
+        deleteMany: {},
+        create: input.lines.map(line => {
+          const linkedOrder = orders.find(order => order.id === line.orderId);
+          const sizeBreakdowns = line.sizeBreakdowns ?? linkedOrder?.sizeBreakdowns.map(item => ({ size: item.size, quantity: item.quantity }));
+          return {
+            orderId: line.orderId ?? null,
+            orderNo: linkedOrder?.orderNo ?? line.orderNo ?? null,
+            imagePath: line.imagePath ?? null,
+            description: line.description,
+            ...(sizeBreakdowns?.length ? { sizeBreakdowns } : {}),
+            quantity: line.quantity,
+            unitPriceFils: line.unitPriceFils,
+            totalFils: line.quantity * line.unitPriceFils,
+            orderDate: linkedOrder?.orderDate ?? null,
+          };
+        }),
+      },
+    },
+    include,
+  }).catch(error => {
+    if (error?.code === "P2002") throw new AppError("Invoice number already exists", 409, "INVOICE_EXISTS");
+    throw error;
+  });
+
+  res.json({ data: invoice });
 }));
 
 

@@ -1,184 +1,74 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { createDesign, createGarment, getDesigns, getGarments, updateDesign, updateGarment, uploadDesignImage } from "../services/api";
+import { useEffect, useState, type FormEvent } from "react";
+import { createDesign, getCustomers, getDesigns, getGarments, updateDesign, uploadDesignImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import type { Design, Garment } from "../types";
-
-const label = (v: string) => v.replaceAll("_", " ");
+import type { Customer, Design, Garment } from "../types";
 
 export function DesignsPage() {
-  const [designs, setDesigns] = useState<Design[]>([]);
-  const [garments, setGarments] = useState<Garment[]>([]);
-  const [show, setShow] = useState(false);
-  const [selected, setSelected] = useState<Design | null>(null);
-  const [newGarmentName, setNewGarmentName] = useState("");
-  const [showGarmentForm, setShowGarmentForm] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [designNo, setDesignNo] = useState("");
-  const [name, setName] = useState("");
-  const [garment, setGarment] = useState("");
-  const [garmentDropdownOpen, setGarmentDropdownOpen] = useState(false);
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [customers,setCustomers]=useState<Customer[]>([]);
+  const [designs,setDesigns]=useState<Design[]>([]);
+  const [garments,setGarments]=useState<Garment[]>([]);
+  const [selectedCustomer,setSelectedCustomer]=useState<Customer|null>(null);
+  const [showAdd,setShowAdd]=useState(false);
+  const [editingDesign,setEditingDesign]=useState<Design|null>(null);
+  const [designNo,setDesignNo]=useState("");
+  const [name,setName]=useState("");
+  const [garment,setGarment]=useState("");
+  const [description,setDescription]=useState("");
+  const [image,setImage]=useState<File|null>(null);
+  const [error,setError]=useState("");
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
 
   async function load() {
+    setError("");
     try {
-      const [d, g] = await Promise.all([getDesigns(), getGarments()]);
-      setDesigns(d.data);
-      setGarments(g.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to load designs");
-    }
+      const [c,d,g]=await Promise.all([getCustomers(),getDesigns(),getGarments()]);
+      setCustomers(c.data);setDesigns(d.data);setGarments(g.data);
+      if(selectedCustomer) setSelectedCustomer(c.data.find(item=>item.id===selectedCustomer.id)??null);
+    } catch(e) { setError(e instanceof Error?e.message:"Unable to load Design Library"); }
+    finally { setLoading(false); }
   }
+  useEffect(()=>{void load();},[]);
 
-  useEffect(() => { load(); }, []);
-
-  async function submit(e: FormEvent) {
+  function resetForm() {
+    setDesignNo("");setName("");setGarment("");setDescription("");setImage(null);setError("");setEditingDesign(null);
+  }
+  function openAdd() {
+    resetForm();setShowAdd(true);
+  }
+  function openEdit(design: Design) {
+    setDesignNo(design.designNo);setName(design.name);setGarment(design.garmentMaster?.name ?? design.garment);setDescription(design.description ?? "");setImage(null);setError("");setEditingDesign(design);setShowAdd(true);
+  }
+  function closeForm() {
+    setShowAdd(false);setEditingDesign(null);
+  }
+  async function submit(e:FormEvent) {
     e.preventDefault();
-    if (!garment) { setError("Choose a garment before saving the design."); return; }
-    setSaving(true);
-    setError("");
+    if(!selectedCustomer) return;
+    if(!garment) {setError("Choose a garment.");return;}
+    setSaving(true);setError("");
     try {
-      await createDesign({ designNo, name, garment, description: description || undefined });
-      setDesignNo("");
-      setName("");
-      setDescription("");
-      setGarment("");
-      setShowGarmentForm(false);
-      setShow(false);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to create design");
-    } finally {
-      setSaving(false);
-    }
+      const payload={designNo,name,garment,customerId:selectedCustomer.id,description:description||undefined};
+      const saved=editingDesign?await updateDesign(editingDesign.id,payload):await createDesign(payload);
+      if(image) await uploadDesignImage(saved.data.id,image);
+      setShowAdd(false);await load();
+    } catch(e) {setError(e instanceof Error?e.message:"Unable to save design");}
+    finally {setSaving(false);}
   }
 
-  async function image(id: string, file?: File) {
-    if (!file) return;
-    try {
-      await uploadDesignImage(id, file);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to upload image");
-    }
-  }
-
-  async function deleteGarment(garmentId: string) {
-    const selectedGarment = garments.find(item => item.id === garmentId);
-    if (!selectedGarment || selectedGarment.name.trim().toUpperCase() === "OTHER") return;
-    const confirmed = window.confirm('Remove "' + selectedGarment.name + '" from the garment list? Existing orders and designs will be preserved.');
-    if (!confirmed) return;
-    setError("");
-    try {
-      await updateGarment(selectedGarment.id, { active: false });
-      setGarments(current => current.filter(item => item.id !== selectedGarment.id));
-      if (garment === selectedGarment.name) setGarment("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to remove garment");
-    }
-  }
-
-  async function addGarment() {
-    const name = newGarmentName.trim();
-    if (!name) return;
-    setError("");
-    try {
-      const result = await createGarment({ name });
-      setGarments(current => [...current, result.data].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)));
-      setNewGarmentName("");
-      setShowGarmentForm(false);
-      setGarment("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to add garment");
-    }
-  }
-
-  function openDesign(design: Design) {
-    setShow(false);
-    setShowGarmentForm(false);
-    setSelected(design);
-    setDesignNo(design.designNo);
-    setName(design.name);
-    setGarment(design.garmentMaster?.name ?? design.garment);
-    setDescription(design.description ?? "");
-  }
-
-  async function saveEdit() {
-    if (!selected) return;
-    setSaving(true);
-    setError("");
-    try {
-      await updateDesign(selected.id, {
-        designNo,
-        name,
-        garment,
-        description: description || null,
-      });
-      setSelected(null);
-      setDesignNo("");
-      setName("");
-      setGarment("");
-      setDescription("");
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to update design");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const visible = filter ? designs.filter(d => d.garment === filter) : designs;
-
+  if(loading)return <LoadingState label="Loading customers…"/>;
+  const customerDesigns=selectedCustomer?designs.filter(item=>item.customerId===selectedCustomer.id):[];
   return <div className="mx-auto max-w-6xl space-y-5">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Library</p><h3 className="text-2xl font-semibold text-navy-900">Designs</h3><p className="text-sm text-slate-600">Reusable designs. Order-specific customer designs are stored directly on the order.</p></div>
-      <button onClick={() => { setSelected(null); setShow(v => !v); setDesignNo(""); setName(""); setGarment(""); setDescription(""); setShowGarmentForm(false); }} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">{show ? "Close" : "+ Add design"}</button>
-    </div>
-    {error && <ErrorState message={error} />}
-    {show && <section className="rounded-xl border border-sand-100 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div><p className="text-xs uppercase tracking-wide text-slate-500">Design details</p><h4 className="mt-1 text-xl font-semibold text-navy-900">Add new design</h4></div>
-        <button type="button" onClick={() => setShow(false)} className="text-sm text-slate-500 hover:underline">Close</button>
-      </div>
-      <form onSubmit={submit} className="mt-4 grid items-start gap-3 md:grid-cols-4">
-        <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-        <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-        <div className="text-sm">
-          <div className="relative min-w-0"><button type="button" aria-haspopup="listbox" aria-expanded={garmentDropdownOpen} onClick={() => setGarmentDropdownOpen(open => !open)} className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm"><span className={garment ? "truncate text-slate-800" : "truncate text-slate-400"}>{garment || "Choose garment…"}</span><span className="text-slate-500">▾</span></button>{garmentDropdownOpen && <div role="listbox" aria-label="Garments" className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg">{garments.map(g => <div key={g.id} role="option" aria-selected={garment === g.name} className="group flex items-center gap-2 rounded px-2 py-1 hover:bg-slate-50 focus-within:bg-slate-50"><button type="button" onClick={() => { setGarment(g.name); setGarmentDropdownOpen(false); }} className="min-w-0 flex-1 truncate py-1 text-left text-sm text-slate-700">{g.name}</button><button type="button" aria-label={"Delete " + g.name} title={g.name.trim().toUpperCase() === "OTHER" ? undefined : "Delete " + g.name} disabled={g.name.trim().toUpperCase() === "OTHER"} onClick={() => void deleteGarment(g.id)} className="rounded px-1.5 py-1 text-sm text-red-600 opacity-0 transition-opacity hover:bg-red-100 group-hover:opacity-100 focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-0">×</button></div>)}{!garments.length && <p className="px-2 py-2 text-xs text-slate-500">No garments available.</p>}</div>}{garmentDropdownOpen && <button type="button" aria-label="Close garment dropdown" className="fixed inset-0 z-10 cursor-default" onClick={() => setGarmentDropdownOpen(false)} />}</div>
-          <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
-          {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
-        </div>
-        <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description" className="rounded-md border border-slate-300 px-3 py-2 text-sm md:col-span-4" />
-        <div className="flex gap-2 md:col-span-4 md:justify-end">
-          <button type="button" onClick={() => setShow(false)} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button>
-          <button disabled={saving || !garment} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">{saving ? "Saving…" : "Save design"}</button>
-        </div>
-      </form>
-    </section>}    {selected && <section className="rounded-xl border border-navy-100 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-wide text-slate-500">Design details</p><h4 className="mt-1 text-xl font-semibold text-navy-900">Edit design</h4></div><button type="button" onClick={() => setSelected(null)} className="text-sm text-slate-500 hover:underline">Close</button></div>
-      <div className="mt-4 grid items-start gap-3 md:grid-cols-4">
-        <input required value={designNo} onChange={e => setDesignNo(e.target.value)} placeholder="Design number" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-        <input required value={name} onChange={e => setName(e.target.value)} placeholder="Design name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-        <div className="text-sm">
-          <select required value={garment} onChange={e => setGarment(e.target.value)} className="h-10 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">Choose garment…</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select>
-          <button type="button" onClick={() => setShowGarmentForm(v => !v)} className="mt-2 text-xs font-medium text-navy-900 hover:underline">+ Add garment</button>
-          {showGarmentForm && <div className="mt-2 flex gap-2 rounded-lg bg-slate-50 p-2"><input autoFocus value={newGarmentName} onChange={e => setNewGarmentName(e.target.value)} placeholder="New garment name" className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm" /><button type="button" onClick={addGarment} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white">Add</button></div>}
-        </div>
-        <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description" className="rounded-md border border-slate-300 px-3 py-2 text-sm md:col-span-4" />
-      </div>
-      <div className="mt-3 flex gap-2"><button disabled={saving || !garment} onClick={() => void saveEdit()} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">Save changes</button><button type="button" onClick={() => setSelected(null)} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button></div>
-    </section>}
-    <div className="flex flex-col gap-3 sm:flex-row"><select value={filter} onChange={e => setFilter(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm"><option value="">All garments</option>{garments.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}</select><span className="self-center text-sm text-slate-500">{visible.length} design(s)</span></div>
-    {!visible.length ? <LoadingState label="No designs found." /> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {visible.map(d => <article key={d.id} onClick={() => openDesign(d)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") openDesign(d); }} role="button" tabIndex={0} className="cursor-pointer overflow-hidden rounded-xl border border-sand-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-        <div className="aspect-[4/3] bg-slate-100">{d.imagePath ? <img src={d.imagePath} alt={d.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-3xl font-semibold text-slate-300">SP</div>}</div>
-        <div className="p-4"><div className="flex items-center justify-between gap-2"><span className="text-xs font-medium text-slate-500">{d.designNo}</span><span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600">{label(d.garmentMaster?.name ?? d.garment)}</span></div><h4 className="mt-2 font-semibold text-navy-900">{d.name}</h4><p className="mt-1 min-h-10 text-sm text-slate-600">{d.description || "No description added."}</p>
-          <input ref={el => { fileRefs.current[d.id] = el; }} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => image(d.id, e.target.files?.[0])} /><button onClick={e => { e.stopPropagation(); fileRefs.current[d.id]?.click(); }} className="mt-3 w-full rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">{d.imagePath ? "Replace image" : "Add design image"}</button>
-        </div>
-      </article>)}
-    </div>}
+    <div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Library</p><h3 className="text-2xl font-semibold text-navy-900">Design Library</h3><p className="mt-1 text-sm text-slate-600">Choose a customer to view their saved designs and images.</p></div>
+    {error&&<ErrorState message={error}/>}
+    {!selectedCustomer ? <section className="space-y-3">
+      <h4 className="font-semibold text-navy-900">Customers</h4>
+      {!customers.length?<p className="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-500">No customers found.</p>:<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{customers.map(customer=><button key={customer.id} type="button" onClick={()=>setSelectedCustomer(customer)} className="rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-300 hover:shadow-md"><p className="font-semibold text-navy-900">{customer.name}</p><p className="mt-1 text-xs text-slate-500">{customer.customerNo}{customer.phone?" · "+customer.phone:""}</p><p className="mt-3 text-sm text-blue-700">View designs →</p></button>)}</div>}
+    </section> : <>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"><div><button type="button" onClick={()=>{setSelectedCustomer(null);closeForm();}} className="text-sm text-blue-700 hover:underline">← All customers</button><h4 className="mt-1 text-xl font-semibold text-navy-900">{selectedCustomer.name}</h4><p className="text-xs text-slate-500">{customerDesigns.length} design(s)</p></div><button type="button" onClick={openAdd} className="rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white">+ Add design</button></div>
+      {showAdd&&<form onSubmit={submit} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2"><h4 className="font-semibold sm:col-span-2">{editingDesign ? "Edit" : "Add"} design for {selectedCustomer.name}</h4><label className="text-sm">Design number<input required value={designNo} onChange={e=>setDesignNo(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label><label className="text-sm">Design name<input value={name} onChange={e=>setName(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label><label className="text-sm">Garment<select required value={garment} onChange={e=>setGarment(e.target.value)} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option value="">Choose garment…</option>{garments.filter(item=>item.active).map(item=><option key={item.id} value={item.name}>{item.name}</option>)}</select></label><label className="text-sm">Design image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setImage(e.target.files?.[0]??null)} className="mt-2 block w-full text-sm"/></label><label className="text-sm sm:col-span-2">Description<textarea value={description} onChange={e=>setDescription(e.target.value)} rows={2} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"/></label><div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={closeForm} className="rounded-md border border-slate-300 px-4 py-2 text-sm">Cancel</button><button disabled={saving} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white">{saving ? "Saving…" : editingDesign ? "Save changes" : "Save design"}</button></div></form>}
+      {!customerDesigns.length?<p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No designs saved for this customer yet. Select Add design to create the first one.</p>:<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{customerDesigns.map(design=><article key={design.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div className="aspect-[4/3] bg-slate-100">{design.imagePath?<img src={design.imagePath} alt={design.name || design.designNo} className="h-full w-full object-contain"/>:<div className="flex h-full items-center justify-center text-sm text-slate-400">No image uploaded</div>}</div><div className="p-4"><div className="flex items-start justify-between gap-3"><div><h5 className="font-semibold text-navy-900">{design.designNo}</h5><p className="mt-1 text-xs text-slate-500">{design.garmentMaster?.name??design.garment}</p></div><button type="button" onClick={()=>openEdit(design)} className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-navy-900 hover:bg-slate-50">Edit</button></div>{design.name&&<p className="mt-2 text-sm text-slate-700">{design.name}</p>}<p className="mt-1 text-sm text-slate-600">{design.description||"No description"}</p></div></article>)}</div>}
+    </>}
   </div>;
 }

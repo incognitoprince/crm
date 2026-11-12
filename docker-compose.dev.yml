@@ -1,0 +1,10 @@
+# Development-only override: HTTP Nginx configuration and development CORS origin.
+# Use with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+services:
+  backend:
+    environment:
+      # Keep development browser origins separate from the production CORS_ORIGIN.
+      CORS_ORIGIN: ${DEV_CORS_ORIGIN:-${CORS_ORIGIN:?CORS_ORIGIN must be set}}
+  nginx:
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
