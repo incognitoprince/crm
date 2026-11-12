@@ -24,8 +24,8 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     ? "break-words text-[15px] font-bold leading-tight"
     : "break-words text-xl font-bold leading-tight sm:text-2xl md:text-3xl";
   const englishHeadingClass = compact
-    ? "mt-1 overflow-hidden text-ellipsis whitespace-nowrap font-serif text-[14px] font-bold leading-tight"
-    : "mt-1 overflow-hidden text-ellipsis whitespace-nowrap font-serif text-xl font-bold leading-tight sm:text-2xl md:text-3xl";
+    ? "mt-1 whitespace-nowrap font-serif text-[12px] font-bold leading-tight"
+    : "mt-1 whitespace-nowrap font-serif text-base font-bold leading-tight sm:text-lg md:text-xl";
   const addressClass = compact
     ? "text-[9px] font-medium leading-tight"
     : "text-[10px] font-medium leading-tight sm:text-xs md:text-sm";
