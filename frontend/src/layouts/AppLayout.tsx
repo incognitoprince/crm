@@ -92,11 +92,13 @@ const sidebarBg = "bg-[radial-gradient(120%_60%_at_0%_0%,#1b5aa8_0%,transparent_
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [quickSearch, setQuickSearch] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
   const visibleLinks = links.filter(link => user?.role === "ADMIN" || (user?.role === "INVOICE_CREATOR" ? link.to === "/bills" : !["/dashboard", "/payments", "/bills", "/users"].includes(link.to)));
   const roleLabel = user?.role === "ADMIN" ? "Administrator" : user?.role === "INVOICE_CREATOR" ? "Invoicing" : "Staff";
+  const quickMatches = quickSearch.trim() ? visibleLinks.filter(link => link.label.toLowerCase().includes(quickSearch.trim().toLowerCase())).slice(0, 5) : [];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 6);
@@ -153,6 +155,25 @@ export function AppLayout() {
           >
             <Icon name="menu" />
           </button>
+          <div className="relative hidden w-full max-w-sm md:block">
+            <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A8377]" />
+            <input
+              aria-label="Search CRM pages"
+              type="search"
+              value={quickSearch}
+              onChange={event => setQuickSearch(event.target.value)}
+              onKeyDown={event => { if (event.key === "Escape") setQuickSearch(""); }}
+              placeholder="Search pages…"
+              className="atelier-search-input"
+            />
+            <Icon name="scissors" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B5892E]" />
+            {quickMatches.length > 0 && <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-[#DED6C6] bg-[#FAF7F0] p-1.5 shadow-xl">
+              {quickMatches.map(link => <NavLink key={link.to} to={link.to} onClick={() => setQuickSearch("")} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-[#1E1C1A] hover:bg-[#EFE9DC]">
+                <Icon name={link.icon} className="h-4 w-4 text-[#B5892E]" />{link.label}
+              </NavLink>)}
+            </div>}
+            {quickSearch.trim() && quickMatches.length === 0 && <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-[#DED6C6] bg-[#FAF7F0] px-3 py-3 text-xs text-[#5C5852] shadow-xl">No matching pages</div>}
+          </div>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <div className="relative">
               <button
