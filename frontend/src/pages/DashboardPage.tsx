@@ -159,7 +159,7 @@ export function DashboardPage() {
         return <article key={card.key} style={{ animationDelay: 100 + index * 70 + "ms" }} className="atelier-card group relative animate-fade-up overflow-hidden p-4">
           <div className="flex items-start justify-between gap-2">
             <p className="text-xs font-semibold text-[#5C5852]">{card.label}</p>
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFE9DC] transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110"><MetricIcon className="h-7 w-7" {...(card.key === "paidFils" ? { color: card.tone } : {})} /></span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFE9DC] transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110"><MetricIcon className="h-7 w-7" /></span>
           </div>
           <p className="atelier-serif mt-4 text-2xl font-bold tracking-tight text-[#1E1C1A] tabular-nums"><StatValue value={data[card.key]} isMoney={isMoney} /></p>
           <span className="absolute inset-x-5 bottom-2 h-px bg-[#B5892E]/35" />
