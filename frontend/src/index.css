@@ -274,3 +274,94 @@ body {
     page-break-inside: avoid;
   }
 }
+
+
+/* ── Sartorial Atelier theme ───────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+
+:root {
+  --bg-linen: #F5F1E8;
+  --bg-card: #FAF7F0;
+  --bg-card-kraft: #EFE9DC;
+  --ink-primary: #1E1C1A;
+  --ink-secondary: #5C5852;
+  --ink-muted: #8A8377;
+  --stitch-border: #C5BCA8;
+  --card-edge: #DED6C6;
+  --accent-brass: #B5892E;
+  --accent-forest: #244F41;
+  --accent-crimson: #A83830;
+}
+
+body {
+  color: var(--ink-primary);
+  background-color: var(--bg-linen);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(160,148,128,.045) 0, rgba(160,148,128,.045) 1px, transparent 1px, transparent 4px),
+    repeating-linear-gradient(90deg, rgba(160,148,128,.045) 0, rgba(160,148,128,.045) 1px, transparent 1px, transparent 4px);
+  background-attachment: fixed;
+}
+.atelier-serif { font-family: 'Playfair Display', Georgia, serif; }
+.atelier-card {
+  position: relative;
+  isolation: isolate;
+  background: var(--bg-card);
+  border: 1px solid var(--card-edge);
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(45,38,28,.05);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.atelier-card::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 4px;
+  border: 1.5px dashed var(--stitch-border);
+  border-radius: 9px;
+  pointer-events: none;
+}
+.atelier-card:hover { box-shadow: 0 6px 18px rgba(45,38,28,.09); }
+.atelier-card-kraft { background-color: var(--bg-card-kraft); }
+.atelier-row { border-bottom: 1.5px dashed #D5CCB9; transition: background-color .15s ease; }
+.atelier-row:last-child { border-bottom: 0; }
+.atelier-row:hover { background: rgba(181,137,46,.06); }
+.atelier-swatch-empty {
+  position: relative;
+  display: inline-block;
+  padding: .65rem 1.85rem;
+  color: var(--ink-secondary);
+  background: #EDE6D8;
+  border-block: 1px solid #D9C3C3;
+  font-size: .875rem;
+  font-weight: 500;
+  clip-path: polygon(0 0, 3% 8%, 0 16%, 3% 24%, 0 32%, 3% 40%, 0 48%, 3% 56%, 0 64%, 3% 72%, 0 80%, 3% 88%, 0 100%, 100% 100%, 97% 88%, 100% 80%, 97% 72%, 100% 64%, 97% 56%, 100% 48%, 97% 40%, 100% 32%, 97% 24%, 100% 16%, 97% 8%, 100% 0);
+}
+.atelier-search-input {
+  width: 100%;
+  border: 1.5px solid #C8BFA8;
+  outline: 1.5px dashed #B5A992;
+  outline-offset: -4px;
+  border-radius: 9999px;
+  padding: .55rem 2.75rem .55rem 2.25rem;
+  color: var(--ink-primary);
+  background: #FAF7F0;
+}
+.atelier-thread-line { position: relative; }
+.atelier-thread-line::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 16px;
+  bottom: 16px;
+  width: 1.5px;
+  background: repeating-linear-gradient(to bottom, #9C9283 0 4px, transparent 4px 7px);
+}
+.atelier-donut-center {
+  border: 1.5px dashed var(--stitch-border);
+  border-radius: 9999px;
+}
+.atelier-activity-divider::after {
+  content: "  ·  ✂";
+  color: var(--accent-brass);
+  font-size: 10px;
+}
