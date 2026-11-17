@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
-import { Icon, type IconName } from "../components/Icons";
+import { Icon } from "../components/Icons";
+import { PinIcon, SpoolIcon, ShearsIcon, SeamRipperIcon, WarningTagIcon, SkeinButtonIcon, ButtonBadge } from "../components/AtelierIcons";
 import { useCountUp } from "../hooks/useCountUp";
 import { getDashboardSummary } from "../services/api";
 import type { DashboardSummary, OrderStatus } from "../types";
@@ -21,24 +22,24 @@ const statusLabels: Record<OrderStatus, string> = {
 };
 
 const statusItems: Array<{ key: OrderStatus; className: string; color: string }> = [
-  { key: "DELIVERED", className: "bg-emerald-500", color: "#10b981" },
-  { key: "STITCHING", className: "bg-blue-500", color: "#3b82f6" },
-  { key: "PENDING", className: "bg-amber-400", color: "#fbbf24" },
-  { key: "READY", className: "bg-violet-500", color: "#8b5cf6" },
-  { key: "QUALITY_CHECK", className: "bg-orange-400", color: "#fb923c" },
-  { key: "MEASUREMENT", className: "bg-cyan-500", color: "#06b6d4" },
-  { key: "CUTTING", className: "bg-indigo-500", color: "#6366f1" },
-  { key: "CANCELLED", className: "bg-slate-400", color: "#94a3b8" },
+  { key: "DELIVERED", className: "bg-[#244F41]", color: "#244F41" },
+  { key: "STITCHING", className: "bg-[#B5892E]", color: "#B5892E" },
+  { key: "PENDING", className: "bg-[#A83830]", color: "#A83830" },
+  { key: "READY", className: "bg-[#6F8294]", color: "#6F8294" },
+  { key: "QUALITY_CHECK", className: "bg-[#B97854]", color: "#B97854" },
+  { key: "MEASUREMENT", className: "bg-[#C5BCA8]", color: "#C5BCA8" },
+  { key: "CUTTING", className: "bg-[#5C5852]", color: "#5C5852" },
+  { key: "CANCELLED", className: "bg-[#8A8377]", color: "#8A8377" },
 ];
 
-const cardStyles: ReadonlyArray<{ key: "orders" | "paidFils" | "pending" | "ready" | "delayed" | "outstandingFils"; label: string; icon: IconName; gradient: string; chip: string }> = [
-  { key: "orders", label: "Total orders", icon: "orders", gradient: "from-blue-50 via-white to-white", chip: "from-blue-500 to-blue-700 shadow-blue-500/40" },
-  { key: "paidFils", label: "Payments received", icon: "wallet", gradient: "from-emerald-50 via-white to-white", chip: "from-emerald-400 to-emerald-600 shadow-emerald-500/40" },
-  { key: "pending", label: "Pending orders", icon: "clock", gradient: "from-amber-50 via-white to-white", chip: "from-amber-400 to-orange-500 shadow-amber-500/40" },
-  { key: "ready", label: "Ready for delivery", icon: "check", gradient: "from-violet-50 via-white to-white", chip: "from-violet-400 to-violet-600 shadow-violet-500/40" },
-  { key: "delayed", label: "Delayed orders", icon: "alert", gradient: "from-rose-50 via-white to-white", chip: "from-rose-400 to-rose-600 shadow-rose-500/40" },
-  { key: "outstandingFils", label: "Outstanding payments", icon: "payments", gradient: "from-slate-100 via-white to-white", chip: "from-slate-500 to-slate-700 shadow-slate-500/40" },
-];
+const cardStyles = [
+  { key: "orders", label: "Total orders", IconComponent: PinIcon, tone: "#B5892E" },
+  { key: "paidFils", label: "Payments received", IconComponent: SpoolIcon, tone: "#244F41" },
+  { key: "pending", label: "Pending orders", IconComponent: ShearsIcon, tone: "#B5892E" },
+  { key: "ready", label: "Ready for delivery", IconComponent: SeamRipperIcon, tone: "#244F41" },
+  { key: "delayed", label: "Delayed orders", IconComponent: WarningTagIcon, tone: "#A83830" },
+  { key: "outstandingFils", label: "Outstanding payments", IconComponent: SkeinButtonIcon, tone: "#5C5852" },
+] as const;
 
 function StatValue({ value, isMoney }: { value: number; isMoney: boolean }) {
   const animated = useCountUp(value);
@@ -130,22 +131,22 @@ export function DashboardPage() {
 
   const rowDelay = (n: number) => ({ animationDelay: 120 + n * 60 + "ms" });
 
-  return <div className="mx-auto max-w-7xl space-y-6">
-    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f3a6e] via-[#1554b8] to-[#2f86f6] p-6 text-white shadow-lift sm:p-8">
-      <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 animate-blob rounded-full bg-white/15 blur-2xl" />
-      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 animate-blob rounded-full bg-cyan-300/20 blur-3xl [animation-delay:-6s]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:22px_22px]" />
+  return <div className="crm-layout-bg mx-auto max-w-7xl space-y-6">
+    <section className="atelier-card relative overflow-hidden p-6 sm:p-8">
+      <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-[#B5892E]/10 blur-2xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-[#244F41]/10 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:radial-gradient(#B5892E_1px,transparent_1px)] [background-size:22px_22px]" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-brand-100/80">Admin dashboard</p>
-          <h3 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">{greeting}, Admin <span className="inline-block origin-[70%_70%] animate-float">👋</span></h3>
-          <p className="mt-2 max-w-xl text-sm text-brand-100/90">Here’s what’s happening across your tailoring business today.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#8A8377]">Admin dashboard</p>
+          <h3 className="atelier-serif mt-2 text-3xl font-bold tracking-tight text-[#1E1C1A] sm:text-4xl">{greeting}, Admin <span className="inline-block origin-[70%_70%] animate-float">👋</span></h3>
+          <p className="mt-2 max-w-xl text-sm text-[#5C5852]">Here’s what’s happening across your tailoring business today.</p>
         </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-5 py-3.5 backdrop-blur-md">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20"><Icon name="clock" className="h-5 w-5" /></span>
+        <div className="flex items-center gap-3 rounded-2xl border border-[#DED6C6] bg-[#EFE9DC] px-5 py-3.5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B5892E]/15 text-[#5C5852]"><Icon name="clock" className="h-5 w-5" /></span>
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-brand-100/80">Today</p>
-            <p className="font-semibold">{new Intl.DateTimeFormat("en-KW", { weekday: "long", day: "2-digit", month: "short", year: "numeric" }).format(new Date())}</p>
+            <p className="text-[11px] font-medium uppercase tracking-wider text-[#8A8377]">Today</p>
+            <p className="font-semibold text-[#1E1C1A]">{new Intl.DateTimeFormat("en-KW", { weekday: "long", day: "2-digit", month: "short", year: "numeric" }).format(new Date())}</p>
           </div>
         </div>
       </div>
@@ -154,28 +155,29 @@ export function DashboardPage() {
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
       {cardStyles.map((card, index) => {
         const isMoney = card.key.endsWith("Fils");
-        return <article key={card.key} style={{ animationDelay: 100 + index * 70 + "ms" }} className={"group relative animate-fade-up overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-br p-4 shadow-soft " + card.gradient}>
+        const MetricIcon = card.IconComponent;
+        return <article key={card.key} style={{ animationDelay: 100 + index * 70 + "ms" }} className="atelier-card group relative animate-fade-up overflow-hidden p-4">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-semibold text-slate-500">{card.label}</p>
-            <span className={"flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 " + card.chip}><Icon name={card.icon} className="h-[18px] w-[18px]" /></span>
+            <p className="text-xs font-semibold text-[#5C5852]">{card.label}</p>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFE9DC] transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110"><MetricIcon className="h-7 w-7" {...(card.key === "paidFils" ? { color: card.tone } : {})} /></span>
           </div>
-          <p className="mt-4 text-2xl font-extrabold tracking-tight text-navy-900 tabular-nums"><StatValue value={data[card.key]} isMoney={isMoney} /></p>
-          <span className={"absolute inset-x-0 bottom-0 h-1 origin-left animate-grow-x bg-gradient-to-r " + card.chip.split(" shadow")[0]} style={{ animationDelay: 400 + index * 70 + "ms" }} />
+          <p className="atelier-serif mt-4 text-2xl font-bold tracking-tight text-[#1E1C1A] tabular-nums"><StatValue value={data[card.key]} isMoney={isMoney} /></p>
+          <span className="absolute inset-x-5 bottom-2 h-px bg-[#B5892E]/35" />
         </article>;
       })}
     </section>
 
     <section className="grid items-start gap-4 lg:grid-cols-12">
-      <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft lg:col-span-6">
+      <article className="atelier-card atelier-card-kraft p-5 lg:col-span-6">
         <div className="flex items-center justify-between">
-          <div><h4 className="font-bold text-navy-900">Shop performance</h4><p className="mt-0.5 text-xs text-slate-500">Orders and revenue by active shop</p></div>
+          <div><h4 className="atelier-serif font-bold text-[#1E1C1A]">Shop performance</h4><p className="mt-0.5 text-xs text-slate-500">Orders and revenue by active shop</p></div>
           <Link to="/shops" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-600 hover:bg-brand-50">View shops →</Link>
         </div>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
-            <thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-3 font-medium">Shop</th><th className="pb-3 font-medium">Orders</th><th className="pb-3 font-medium">Completed</th><th className="pb-3 font-medium">In progress</th><th className="pb-3 text-right font-medium">Revenue</th></tr></thead>
+            <thead><tr className="border-b border-[#D5CCB9] text-left text-xs text-[#5C5852]"><th className="pb-3 font-medium">Shop</th><th className="pb-3 font-medium">Orders</th><th className="pb-3 font-medium">Completed</th><th className="pb-3 font-medium">In progress</th><th className="pb-3 text-right font-medium">Revenue</th></tr></thead>
             <tbody>
-              {data.shops.map((shop, i) => <tr key={shop.id} style={rowDelay(i)} className="animate-fade-up border-b border-slate-50 last:border-0">
+              {data.shops.map((shop, i) => <tr key={shop.id} style={rowDelay(i)} className="atelier-row animate-fade-up">
                 <td className="py-3"><p className="font-semibold text-slate-800">{shop.name}</p><p className="text-[11px] text-slate-500">{shop.area}</p></td>
                 <td className="py-3 font-medium">{shop.orders}</td>
                 <td className="py-3 font-medium text-emerald-700">{shop.completed}</td>
@@ -193,19 +195,19 @@ export function DashboardPage() {
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft lg:col-span-3">
+      <article className="atelier-card p-5 lg:col-span-3">
         <div><h4 className="font-bold text-navy-900">Order status</h4><p className="mt-0.5 text-xs text-slate-500">Current order distribution</p></div>
         <div className="mt-5 flex flex-col items-center gap-5">
           <div className="relative h-40 w-40 shrink-0">
             <StatusDonut total={totalStatusOrders} counts={statusItems.map(item => ({ color: item.color, value: data.orderStatus[item.key] ?? 0 }))} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-extrabold text-navy-900 tabular-nums"><StatValue value={totalStatusOrders} isMoney={false} /></span>
-              <span className="text-[11px] font-medium text-slate-500">Orders</span>
+            <div className="atelier-donut-center absolute inset-[22px] flex flex-col items-center justify-center">
+              <span className="atelier-serif text-3xl font-bold text-[#1E1C1A] tabular-nums"><StatValue value={totalStatusOrders} isMoney={false} /></span>
+              <span className="text-[11px] font-medium text-[#5C5852]">Orders</span>
             </div>
           </div>
           <div className="w-full space-y-1.5">
-            {statusItems.map(item => <div key={item.key} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs transition-colors hover:bg-slate-50">
-              <span className="flex min-w-0 items-center gap-2"><span className={"h-2.5 w-2.5 shrink-0 rounded-full " + item.className}></span><span className="truncate text-slate-600">{statusLabels[item.key]}</span></span>
+            {statusItems.map(item => <div key={item.key} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs transition-colors hover:bg-[#EFE9DC]">
+              <span className="flex min-w-0 items-center gap-2"><ButtonBadge color={item.color} size={14} /><span className="truncate text-slate-600">{statusLabels[item.key]}</span></span>
               <span className="font-bold text-slate-800">{data.orderStatus[item.key] ?? 0}</span>
             </div>)}
           </div>
@@ -214,10 +216,10 @@ export function DashboardPage() {
 
       <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft lg:col-span-3">
         <div className="flex items-center justify-between"><div><h4 className="font-bold text-navy-900">Recent activity</h4><p className="mt-0.5 text-xs text-slate-500">Latest order changes</p></div><Link to="/orders" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-600 hover:bg-brand-50">View all</Link></div>
-        <div className="relative mt-3 max-h-[360px] space-y-0.5 overflow-y-auto pr-1">
+        <div className="atelier-thread-line relative mt-3 max-h-[360px] space-y-0.5 overflow-y-auto pr-1">
           {data.activity.slice(0, 5).map((item, i) => <Link key={item.id} to={"/orders/" + item.orderId} style={rowDelay(i)} className="flex animate-slide-right gap-3 rounded-xl p-2.5 hover:bg-brand-50/70">
-            <span className={"mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold " + (item.type === "ORDER_CREATED" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>{item.type === "ORDER_CREATED" ? "+" : "↻"}</span>
-            <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-slate-800">{item.type === "ORDER_CREATED" ? "New order created" : "Order updated"}</span><span className="block truncate text-[11px] text-slate-500">{item.orderNo} · {item.customerName}</span><span className="mt-0.5 block text-[10px] text-slate-400">{dateTime(item.timestamp)}</span></span>
+            <span className="relative z-10 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FAF7F0] ring-2 ring-[#DED6C6]"><SpoolIcon color={item.type === "ORDER_CREATED" ? "#244F41" : "#B5892E"} className="h-6 w-6" /></span>
+            <span className="min-w-0 flex-1"><span className="atelier-activity-divider block truncate text-xs font-semibold text-[#1E1C1A]">{item.type === "ORDER_CREATED" ? "New order created" : "Order updated"}</span><span className="block truncate text-[11px] text-slate-500">{item.orderNo} · {item.customerName}</span><span className="mt-0.5 block text-[10px] text-slate-400">{dateTime(item.timestamp)}</span></span>
           </Link>)}
           {!data.activity.length && <p className="py-8 text-center text-sm text-slate-500">No recent activity.</p>}
         </div>
@@ -225,7 +227,7 @@ export function DashboardPage() {
     </section>
 
     <section className="grid gap-4 lg:grid-cols-12">
-      <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft lg:col-span-7">
+      <article className="atelier-card p-5 lg:col-span-7">
         <div className="flex items-center justify-between"><div><h4 className="font-bold text-navy-900">Upcoming deliveries</h4><p className="mt-0.5 text-xs text-slate-500">Next scheduled customer orders</p></div><Link to="/orders" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-600 hover:bg-brand-50">View all</Link></div>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
@@ -236,11 +238,11 @@ export function DashboardPage() {
               <td className="py-3 text-right"><span className={"rounded-full px-2.5 py-1 text-[11px] font-semibold " + statusBadge(order.status)}>{statusLabels[order.status]}</span></td>
             </tr>)}</tbody>
           </table>
-          {!data.upcomingDeliveries.length && <p className="py-8 text-center text-sm text-slate-500">No upcoming deliveries.</p>}
+          {!data.upcomingDeliveries.length && <div className="py-7 text-center"><span className="atelier-swatch-empty">No upcoming deliveries.</span></div>}
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft lg:col-span-5">
+      <article className="atelier-card p-5 lg:col-span-5">
         <div className="flex items-center justify-between"><div><h4 className="font-bold text-navy-900">Pending payments</h4><p className="mt-0.5 text-xs text-slate-500">Customers with an outstanding balance</p></div><span className="rounded-full bg-rose-50 px-3 py-1 text-sm font-bold text-rose-700">{money(data.outstandingFils)}</span></div>
         <div className="mt-4 space-y-2">
           {data.pendingPayments.map((payment, i) => <Link key={payment.id} to={"/orders/" + payment.id} style={rowDelay(i)} className="group flex animate-fade-up items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 hover:border-brand-200 hover:bg-brand-50/50 hover:shadow-soft">
@@ -252,7 +254,7 @@ export function DashboardPage() {
       </article>
     </section>
 
-    <section className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-soft">
+    <section className="atelier-card p-5">
       <div className="flex items-center justify-between"><div><h4 className="font-bold text-navy-900">Top designs</h4><p className="mt-0.5 text-xs text-slate-500">Most frequently attached reusable designs</p></div><Link to="/designs" className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-600 hover:bg-brand-50">View library →</Link></div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {data.topDesigns.map((design, i) => <Link key={design.id} to="/designs" style={rowDelay(i)} className="group animate-fade-up overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-soft transition duration-300 hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-lift">
