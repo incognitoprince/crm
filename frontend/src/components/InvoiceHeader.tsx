@@ -12,8 +12,7 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     .map(line => line.trim())
     .filter(Boolean);
   const contacts = [...new Set([shop?.phone, shop?.whatsapp].filter((value): value is string => Boolean(value?.trim())))].join(" - ");
-  const address = addressLines.join(", ");
-  const contactLine = [address, contacts ? "Tel: " + contacts : "", shop?.email ? "Email: " + shop.email : ""]
+  const contactLine = [contacts ? "Tel: " + contacts : "", shop?.email ? "Email: " + shop.email : ""]
     .filter(Boolean)
     .join(" · ");
   const logoSource = shop?.logoPath || shop?.logoUrl;
@@ -48,10 +47,15 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
               {shop?.englishName || shop?.name || "Tailor Shop"}
             </p>
           )}
+          {addressLines.map((line, index) => (
+            <p key={index} className={compact
+              ? "mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight"
+              : "mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight"}>
+              {line}
+            </p>
+          ))}
           {contactLine && (
-            <p className={compact
-              ? "mt-1 w-full whitespace-nowrap text-[8px] font-medium leading-tight"
-              : "mt-1 w-full whitespace-nowrap text-[8px] font-medium leading-tight sm:text-[9px] md:text-[10px]"}>
+            <p className="mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight">
               {contactLine}
             </p>
           )}
