@@ -116,7 +116,7 @@ export function BillPage(){
  }
 
  async function createInvoiceImage(){
-   const canvas=await createInvoiceCanvas();
+   const {canvas}=await createInvoiceCanvas();
    return new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Unable to create invoice image")),"image/png"));
  }
 
@@ -156,7 +156,6 @@ export function BillPage(){
        }
        const last=chunks[chunks.length-1];
        if(canvas.height>last.end){
-         const used=last.repeatHeader?headerBounds.height+(last.end-last.start):last.end;
          if(canvas.height-last.start+(last.repeatHeader?headerBounds.height:0)<=pageHeightPx){
            last.end=canvas.height;
          }else{
