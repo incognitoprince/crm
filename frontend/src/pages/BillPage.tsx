@@ -220,10 +220,10 @@ export function BillPage(){
    <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-2 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-3 md:p-4 print:p-0 print:shadow-none">
      <InvoiceHeader shop={shop} />
 
-     <div className="py-2 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1><p className="mt-1 text-sm break-words">{invoice.subject || "Bill / Invoice"}</p></div>
+     <div className="py-2 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1></div>
 
      <div className="grid gap-3 border-y border-slate-700 py-2 text-sm sm:grid-cols-2">
-       <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p data-invoice-nowrap>{customer.phone}</p>}{customer?.address?.trim() && customer.address.trim().toLowerCase() !== "not provided" && <p className="break-words">{customer.address}</p>}</div>
+       <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{invoice.subject && <p className="text-xs">Subject: {invoice.subject}</p>}{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p data-invoice-nowrap>{customer.phone}</p>}{customer?.address?.trim() && customer.address.trim().toLowerCase() !== "not provided" && <p className="break-words">{customer.address}</p>}</div>
        <div className="sm:text-right"><p data-invoice-nowrap>Invoice Date: {date(invoice.issuedAt)}</p><p data-invoice-nowrap>Invoice No: {invoice.invoiceNo}</p>{invoice.modelNo&&<p data-invoice-nowrap>Model No: {invoice.modelNo}</p>}</div>
      </div>
 
