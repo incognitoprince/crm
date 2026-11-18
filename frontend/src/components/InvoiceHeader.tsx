@@ -21,10 +21,10 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     <header className="border-b-2 border-slate-800 pb-1 text-center">
       <div className={compact
         ? "relative grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
-        : "relative flex min-h-[112px] items-center justify-center"}>
+        : "grid min-h-[112px] grid-cols-[34%_minmax(0,1fr)] items-center gap-1"}>
         <div className={compact
           ? "flex h-full items-center justify-start"
-          : "absolute left-[25%] top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"}>
+          : "flex h-full items-center justify-end pr-2"}>
           {logoSource && (
             <img
               src={resolveMediaUrl(logoSource)}
@@ -36,30 +36,30 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
         </div>
         <div className={compact
           ? "flex min-w-0 flex-col items-center justify-center text-center"
-          : "flex w-full min-w-0 flex-col items-center justify-center text-center"}>
+          : "flex min-w-0 flex-col items-center justify-center text-center"}>
           {shop?.arabicName && (
             <p dir="rtl" className={compact
               ? "w-full whitespace-nowrap text-[14px] font-bold leading-tight"
-              : "w-full whitespace-nowrap text-base font-bold leading-tight sm:text-lg md:text-xl"}>
+              : "w-full whitespace-nowrap text-sm font-bold leading-tight sm:text-base md:text-lg"}>
               {shop.arabicName}
             </p>
           )}
           {(shop?.englishName || (!shop?.arabicName && !shop?.englishName)) && (
             <p className={compact
               ? "mt-0.5 w-full whitespace-nowrap font-serif text-[11px] font-bold leading-tight"
-              : "mt-0.5 w-full whitespace-nowrap font-serif text-xs font-bold leading-tight sm:text-sm md:text-base"}>
+              : "mt-0.5 w-full whitespace-nowrap font-serif text-[11px] font-bold leading-tight sm:text-xs md:text-sm"}>
               {shop?.englishName || shop?.name || "Tailor Shop"}
             </p>
           )}
           {addressLines.map((line, index) => (
             <p key={index} className={compact
               ? "mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight"
-              : "mt-0.5 w-full whitespace-nowrap text-[9px] font-medium leading-tight"}>
+              : "mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight"}>
               {line}
             </p>
           ))}
           {contactLine && (
-            <p className="mt-0.5 w-full whitespace-nowrap text-[9px] font-medium leading-tight">
+            <p className="mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight">
               {contactLine}
             </p>
           )}
