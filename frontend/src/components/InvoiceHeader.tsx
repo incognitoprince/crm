@@ -20,9 +20,11 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
   return (
     <header className="border-b-2 border-slate-800 pb-1 text-center">
       <div className={compact
-        ? "grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
-        : "grid min-h-[112px] grid-cols-[15%_minmax(0,1fr)] items-center gap-1"}>
-        <div className="flex h-full items-center justify-start">
+        ? "relative grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
+        : "relative flex min-h-[112px] items-center justify-center"}>
+        <div className={compact
+          ? "flex h-full items-center justify-start"
+          : "absolute left-[25%] top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"}>
           {logoSource && (
             <img
               src={resolveMediaUrl(logoSource)}
@@ -32,7 +34,9 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
             />
           )}
         </div>
-        <div className="flex min-w-0 flex-col items-center justify-center text-center">
+        <div className={compact
+          ? "flex min-w-0 flex-col items-center justify-center text-center"
+          : "flex w-full min-w-0 flex-col items-center justify-center text-center"}>
           {shop?.arabicName && (
             <p dir="rtl" className={compact
               ? "w-full whitespace-nowrap text-[14px] font-bold leading-tight"
