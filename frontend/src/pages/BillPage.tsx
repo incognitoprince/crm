@@ -147,7 +147,7 @@ export function BillPage(){
          const repeatedHeight=firstPage?0:headerBounds.height;
          const available=pageHeightPx-repeatedHeight;
          let endIndex=rowIndex;
-         while(endIndex<rowBounds.length && rowBounds[endIndex].bottom-start<=available)endIndex++;
+         while(endIndex<rowBounds.length && rowBounds[endIndex].bottom-(firstPage?0:start)<=available)endIndex++;
          if(endIndex===rowIndex)endIndex++;
          const end=rowBounds[endIndex-1].bottom;
          chunks.push({start:firstPage?0:start,end,repeatHeader:!firstPage});
@@ -218,34 +218,34 @@ export function BillPage(){
    </div>
    {error&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
 
-   <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-3 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-5 md:p-7 print:p-0 print:shadow-none">
+   <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-2 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-3 md:p-4 print:p-0 print:shadow-none">
      <InvoiceHeader shop={shop} />
 
-     <div className="py-3 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1><p className="mt-1 text-sm break-words">{invoice.subject || "Bill / Invoice"}</p></div>
+     <div className="py-2 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1><p className="mt-1 text-sm break-words">{invoice.subject || "Bill / Invoice"}</p></div>
 
-     <div className="grid gap-4 border-y border-slate-700 py-3 text-sm sm:grid-cols-2">
+     <div className="grid gap-3 border-y border-slate-700 py-2 text-sm sm:grid-cols-2">
        <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p data-invoice-nowrap>{customer.phone}</p>}{customer?.address?.trim() && customer.address.trim().toLowerCase() !== "not provided" && <p className="break-words">{customer.address}</p>}</div>
        <div className="sm:text-right"><p data-invoice-nowrap>Invoice Date: {date(invoice.issuedAt)}</p><p data-invoice-nowrap>Invoice No: {invoice.invoiceNo}</p>{invoice.modelNo&&<p data-invoice-nowrap>Model No: {invoice.modelNo}</p>}</div>
      </div>
 
-     <div data-invoice-table-wrap className="mt-4 overflow-x-auto border border-slate-700">
-       <table data-invoice-table className="w-full min-w-[720px] table-fixed border-collapse text-[10px] sm:text-sm">
+     <div data-invoice-table-wrap className="mt-2 overflow-x-auto border border-slate-700">
+       <table data-invoice-table className="w-full min-w-[720px] table-fixed border-collapse text-[10px] sm:text-[11px]">
         <thead>
           <tr className="bg-slate-50">
-            <th className="w-[11%] break-words border border-slate-700 p-2">Image</th>
-            <th className="w-[12%] break-words border border-slate-700 p-2">Order No</th>
-            <th className="w-[17%] break-words border border-slate-700 p-2">Order Date &amp; Time</th>
-            <th className="w-[20%] break-words border border-slate-700 p-2">Order Details</th>
-            <th className="w-[9%] break-words border border-slate-700 p-2">Size</th>
-            <th className="w-[8%] break-words border border-slate-700 p-2">Quantity</th>
-            <th className="w-[11%] break-words border border-slate-700 p-2">Rate Per Piece<br/>(K.D.)</th>
-            <th className="w-[12%] break-words border border-slate-700 p-2">Total</th>
+            <th className="w-[10%] break-words border border-slate-700 p-1.5">Image</th>
+            <th className="w-[12%] whitespace-nowrap border border-slate-700 p-1.5">Order No</th>
+            <th className="w-[17%] break-words border border-slate-700 p-1.5">Order Date &amp; Time</th>
+            <th className="w-[22%] break-words border border-slate-700 p-1.5">Order Details</th>
+            <th className="w-[10%] break-words border border-slate-700 p-1.5">Size</th>
+            <th className="w-[8%] whitespace-nowrap border border-slate-700 p-1.5">Quantity</th>
+            <th className="w-[10%] break-words border border-slate-700 p-1.5">Rate Per Piece<br/>(K.D.)</th>
+            <th className="w-[11%] break-words border border-slate-700 p-1.5">Total</th>
           </tr>
         </thead>
         <tbody>{invoice.lines.map(line=><tr key={line.id}>
           <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.orderNo??line.order?.orderNo??"—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
+          <td className="whitespace-nowrap border border-slate-700 p-1.5 text-center text-[9px]">{line.orderNo??line.order?.orderNo??"—"}</td>
+          <td className="break-words border border-slate-700 p-1.5 text-center text-[9px]">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.description.replace(/\s*·\s*/g," ").trim() || "—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.sizeBreakdowns?.map(item => item.size).join(", ") || "—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.quantity}</td>
@@ -263,8 +263,8 @@ export function BillPage(){
        </table>
      </div>
 
-     {invoice.notes&&<div className="mt-5 whitespace-pre-wrap break-words border-t border-slate-700 pt-4 text-sm">{invoice.notes}</div>}
-     <div className="mt-12 grid grid-cols-2 gap-10 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
+     {invoice.notes&&<div className="mt-3 whitespace-pre-wrap break-words border-t border-slate-700 pt-2 text-sm">{invoice.notes}</div>}
+     <div className="mt-6 grid grid-cols-2 gap-8 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
    </article>
  </div>;
 }
