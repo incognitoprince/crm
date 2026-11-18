@@ -15,14 +15,14 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
   const logoSource = shop?.logoPath || shop?.logoUrl;
 
   const gridClass = compact
-    ? "relative flex min-h-[84px] items-center justify-center"
-    : "relative flex min-h-[112px] items-center justify-center";
+    ? "grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
+    : "grid min-h-[112px] grid-cols-[24%_minmax(0,1fr)] items-center gap-3";
   const logoWrapClass = compact
-    ? "absolute inset-y-0 left-0 flex w-[84px] items-center justify-start"
-    : "absolute inset-y-0 left-0 flex w-[140px] items-center justify-start sm:w-[170px] md:w-[210px]";
+    ? "flex h-full items-center justify-start"
+    : "flex h-full items-center justify-start";
   const headingWrapClass = compact
-    ? "mx-auto w-[calc(100%-168px)] min-w-0 text-center"
-    : "mx-auto w-[calc(100%-280px)] min-w-0 text-center sm:w-[calc(100%-340px)] md:w-[calc(100%-420px)]";
+    ? "min-w-0 text-left"
+    : "min-w-0 text-left";
   const logoClass = compact
     ? "max-h-20 max-w-[72px] object-contain"
     : "max-h-32 max-w-[132px] object-contain sm:max-h-36 sm:max-w-[164px] md:max-h-40 md:max-w-[200px]";
@@ -42,9 +42,9 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
         {logoSource && <img src={resolveMediaUrl(logoSource)} className={logoClass} alt="" onError={event => { event.currentTarget.style.display = "none"; }} />}
       </div>
       <div className={headingWrapClass}>
-        {shop?.arabicName && <p dir="rtl" className={headingClass}>{shop.arabicName}</p>}
-        {shop?.englishName && <p className={englishHeadingClass}>{shop.englishName}</p>}
-        {!shop?.arabicName && !shop?.englishName && <p className={englishHeadingClass}>{shop?.name ?? "Tailor Shop"}</p>}
+        {shop?.arabicName && <p dir="rtl" className={`${headingClass} text-left`}>{shop.arabicName}</p>}
+        {shop?.englishName && <p className={`${englishHeadingClass} text-left`}>{shop.englishName}</p>}
+        {!shop?.arabicName && !shop?.englishName && <p className={`${englishHeadingClass} text-left`}>{shop?.name ?? "Tailor Shop"}</p>}
       </div>
     </div>
 
