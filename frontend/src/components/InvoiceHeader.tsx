@@ -12,11 +12,14 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     .map(line => line.trim())
     .filter(Boolean);
   const contacts = [...new Set([shop?.phone, shop?.whatsapp].filter((value): value is string => Boolean(value?.trim())))].join(" - ");
+  const addressWithContact = addressLines.length
+    ? [...addressLines.slice(0, -1), addressLines[addressLines.length - 1] + (contacts ? " · Tel: " + contacts : "")]
+    : contacts ? ["Tel: " + contacts] : [];
   const logoSource = shop?.logoPath || shop?.logoUrl;
 
   const gridClass = compact
     ? "grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
-    : "grid min-h-[112px] grid-cols-[24%_minmax(0,1fr)] items-center gap-3";
+    : "grid min-h-[96px] grid-cols-[20%_minmax(0,1fr)] items-center gap-2";
   const logoWrapClass = compact
     ? "flex h-full items-center justify-start"
     : "flex h-full items-center justify-start";
@@ -25,16 +28,16 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     : "min-w-0 text-left";
   const logoClass = compact
     ? "max-h-20 max-w-[72px] object-contain"
-    : "max-h-32 max-w-[132px] object-contain sm:max-h-36 sm:max-w-[164px] md:max-h-40 md:max-w-[200px]";
+    : "max-h-24 max-w-full object-contain";
   const headingClass = compact
     ? "break-words text-[15px] font-bold leading-tight"
-    : "break-words text-xl font-bold leading-tight sm:text-2xl md:text-3xl";
+    : "break-words text-lg font-bold leading-tight sm:text-xl md:text-2xl";
   const englishHeadingClass = compact
     ? "mt-1 whitespace-nowrap font-serif text-[12px] font-bold leading-tight"
-    : "mt-1 whitespace-nowrap font-serif text-base font-bold leading-tight sm:text-lg md:text-xl";
+    : "mt-0.5 whitespace-normal break-words font-serif text-sm font-bold leading-tight sm:text-base md:text-lg";
   const addressClass = compact
     ? "text-[9px] font-medium leading-tight"
-    : "text-[10px] font-medium leading-tight sm:text-xs md:text-sm";
+    : "text-[9px] font-medium leading-tight sm:text-[10px] md:text-xs";
 
   return <header className="text-center">
     <div className={gridClass}>
@@ -48,10 +51,9 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
       </div>
     </div>
 
-    <div className={compact ? "mt-2 border-t-2 border-slate-800" : "mt-2 border-t-2 border-slate-800"} />
-    {(addressLines.length > 0 || contacts || shop?.email) && <div className={compact ? "space-y-0.5 py-1.5" : "space-y-0.5 py-1.5"}>
-      {addressLines.map((line, index) => <p key={index} className={addressClass}>{line}</p>)}
-      {contacts && <p className={addressClass}>Tel: {contacts}</p>}
+    <div className={compact ? "mt-1 border-t-2 border-slate-800" : "mt-1 border-t-2 border-slate-800"} />
+    {(addressWithContact.length > 0 || shop?.email) && <div className={compact ? "space-y-0 py-1" : "space-y-0 py-1"}>
+      {addressWithContact.map((line, index) => <p key={index} className={addressClass}>{line}</p>)}
       {shop?.email && <p className={addressClass}>Email: {shop.email}</p>}
     </div>}
     <div className="border-b-2 border-slate-800" />
