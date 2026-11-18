@@ -62,7 +62,7 @@ export function BillPage(){
      table.style.tableLayout="fixed";
      table.style.borderCollapse="collapse";
 
-     const widths=["11%","12%","17%","20%","9%","8%","11%","12%"];
+     const widths=["10%","12%","17%","22%","10%","8%","10%","11%"];
      table.querySelectorAll("tr").forEach(row=>{
        row.querySelectorAll<HTMLElement>("th,td").forEach((cell,index)=>{
          if(index<widths.length)cell.style.width=widths[index];
