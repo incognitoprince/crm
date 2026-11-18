@@ -21,14 +21,14 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     <header className="border-b-2 border-slate-800 pb-1 text-center">
       <div className={compact
         ? "relative grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
-        : "grid min-h-[112px] grid-cols-[34%_minmax(0,1fr)] items-center gap-1"}>
+        : "flex min-h-[112px] w-full items-center justify-center gap-3"}>
         <div className={compact
           ? "flex h-full items-center justify-start"
-          : "flex h-full items-center justify-end pr-2"}>
+          : "flex shrink-0 items-center justify-center"}>
           {logoSource && (
             <img
               src={resolveMediaUrl(logoSource)}
-              className={compact ? "max-h-20 max-w-[72px] object-contain" : "max-h-28 max-w-full object-contain"}
+              className={compact ? "max-h-20 max-w-[72px] object-contain" : "max-h-28 w-[112px] max-w-[24vw] object-contain"}
               alt=""
               onError={event => { event.currentTarget.style.display = "none"; }}
             />
@@ -36,7 +36,7 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
         </div>
         <div className={compact
           ? "flex min-w-0 flex-col items-center justify-center text-center"
-          : "flex min-w-0 flex-col items-center justify-center text-center"}>
+          : "flex min-w-0 max-w-[min(68%,620px)] flex-col items-center justify-center text-center"}>
           {shop?.arabicName && (
             <p dir="rtl" className={compact
               ? "w-full whitespace-nowrap text-[14px] font-bold leading-tight"
