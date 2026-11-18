@@ -21,12 +21,12 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
     <header className="border-b-2 border-slate-800 pb-1 text-center">
       <div className={compact
         ? "grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
-        : "grid min-h-[96px] grid-cols-[20%_minmax(0,1fr)] items-center gap-2"}>
+        : "grid min-h-[112px] grid-cols-[15%_minmax(0,1fr)] items-center gap-1"}>
         <div className="flex h-full items-center justify-start">
           {logoSource && (
             <img
               src={resolveMediaUrl(logoSource)}
-              className={compact ? "max-h-20 max-w-[72px] object-contain" : "max-h-24 max-w-full object-contain"}
+              className={compact ? "max-h-20 max-w-[72px] object-contain" : "max-h-28 max-w-full object-contain"}
               alt=""
               onError={event => { event.currentTarget.style.display = "none"; }}
             />
@@ -50,12 +50,12 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
           {addressLines.map((line, index) => (
             <p key={index} className={compact
               ? "mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight"
-              : "mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight"}>
+              : "mt-0.5 w-full whitespace-nowrap text-[9px] font-medium leading-tight"}>
               {line}
             </p>
           ))}
           {contactLine && (
-            <p className="mt-0.5 w-full whitespace-nowrap text-[8px] font-medium leading-tight">
+            <p className="mt-0.5 w-full whitespace-nowrap text-[9px] font-medium leading-tight">
               {contactLine}
             </p>
           )}
