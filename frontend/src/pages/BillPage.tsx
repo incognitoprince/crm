@@ -87,7 +87,7 @@ export function BillPage(){
        return new Promise<void>(resolve=>{img.addEventListener("load",()=>resolve(),{once:true});img.addEventListener("error",()=>resolve(),{once:true});});
      }));
      await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
-     return await html2canvas(clone,{
+     const canvas = await html2canvas(clone,{
        backgroundColor:"#ffffff",
        scale:2,
        useCORS:true,
@@ -96,6 +96,20 @@ export function BillPage(){
        width:INVOICE_CAPTURE_WIDTH,
        windowWidth:INVOICE_CAPTURE_WIDTH
      });
+     const scale = canvas.width / clone.offsetWidth;
+     const table = clone.querySelector<HTMLTableElement>("[data-invoice-table]");
+     const headerRow = table?.querySelector("thead tr");
+     const headerRect = headerRow?.getBoundingClientRect();
+     const cloneTop = clone.getBoundingClientRect().top;
+     const rowBounds = Array.from(table?.querySelectorAll("tbody tr") ?? []).map(row => {
+       const rect = row.getBoundingClientRect();
+       return { top: Math.round((rect.top - cloneTop) * scale), bottom: Math.round((rect.bottom - cloneTop) * scale) };
+     });
+     const headerBounds = headerRect ? {
+       top: Math.round((headerRect.top - cloneTop) * scale),
+       height: Math.round(headerRect.height * scale)
+     } : { top: 0, height: 0 };
+     return { canvas, rowBounds, headerBounds };
    }finally{
      clone.remove();
    }
@@ -118,15 +132,54 @@ export function BillPage(){
    if(!invoice)return;
    setBusy(true);setError("");
    try{
-     const canvas=await createInvoiceCanvas();
+     const {canvas,rowBounds,headerBounds}=await createInvoiceCanvas();
      const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
      const pageWidth=pdf.internal.pageSize.getWidth();const pageHeight=pdf.internal.pageSize.getHeight();
-     const imageWidth=pageWidth;const imageHeight=(canvas.height*imageWidth)/canvas.width;
-     const pageCount=Math.max(1,Math.ceil(imageHeight/pageHeight));
-     for(let page=0;page<pageCount;page++){
-       if(page>0)pdf.addPage();
-       pdf.addImage(canvas.toDataURL("image/jpeg",0.95),"JPEG",0,-page*pageHeight,imageWidth,imageHeight);
+     const pageHeightPx=Math.floor(canvas.width*pageHeight/pageWidth);
+     const chunks:Array<{start:number;end:number;repeatHeader:boolean}>=[];
+     if(rowBounds.length===0){
+       for(let start=0;start<canvas.height;start+=pageHeightPx)chunks.push({start,end:Math.min(start+pageHeightPx,canvas.height),repeatHeader:false});
+     }else{
+       let rowIndex=0;
+       let firstPage=true;
+       while(rowIndex<rowBounds.length){
+         const start=rowBounds[rowIndex].top;
+         const repeatedHeight=firstPage?0:headerBounds.height;
+         const available=pageHeightPx-repeatedHeight;
+         let endIndex=rowIndex;
+         while(endIndex<rowBounds.length && rowBounds[endIndex].bottom-start<=available)endIndex++;
+         if(endIndex===rowIndex)endIndex++;
+         const end=rowBounds[endIndex-1].bottom;
+         chunks.push({start:firstPage?0:start,end,repeatHeader:!firstPage});
+         rowIndex=endIndex;
+         firstPage=false;
+       }
+       const last=chunks[chunks.length-1];
+       if(canvas.height>last.end){
+         const used=last.repeatHeader?headerBounds.height+(last.end-last.start):last.end;
+         if(canvas.height-last.start+(last.repeatHeader?headerBounds.height:0)<=pageHeightPx){
+           last.end=canvas.height;
+         }else{
+           chunks.push({start:last.end,end:canvas.height,repeatHeader:false});
+         }
+       }
      }
+     chunks.forEach((chunk,index)=>{
+       if(index>0)pdf.addPage();
+       const pageCanvas=document.createElement("canvas");
+       pageCanvas.width=canvas.width;pageCanvas.height=pageHeightPx;
+       const ctx=pageCanvas.getContext("2d");
+       if(!ctx)throw new Error("Unable to prepare invoice PDF page");
+       ctx.fillStyle="#ffffff";ctx.fillRect(0,0,pageCanvas.width,pageCanvas.height);
+       let destinationY=0;
+       if(chunk.repeatHeader&&headerBounds.height>0){
+         ctx.drawImage(canvas,0,headerBounds.top,canvas.width,headerBounds.height,0,0,canvas.width,headerBounds.height);
+         destinationY=headerBounds.height;
+       }
+       const sourceHeight=Math.min(chunk.end-chunk.start,pageHeightPx-destinationY);
+       if(sourceHeight>0)ctx.drawImage(canvas,0,chunk.start,canvas.width,sourceHeight,0,destinationY,canvas.width,sourceHeight);
+       pdf.addImage(pageCanvas.toDataURL("image/jpeg",0.95),"JPEG",0,0,pageWidth,pageHeight);
+     });
      pdf.save(`invoice-${invoice.invoiceNo}.pdf`);
    }catch(e){setError(e instanceof Error?e.message:"Unable to create invoice PDF");}finally{setBusy(false);}
  }
