@@ -101,7 +101,7 @@ export function BillPage(){
      const headerRow = table?.querySelector("thead tr");
      const headerRect = headerRow?.getBoundingClientRect();
      const cloneTop = clone.getBoundingClientRect().top;
-     const rowBounds = Array.from(table?.querySelectorAll("tbody tr") ?? []).map(row => {
+     const rowBounds = Array.from(table?.querySelectorAll("tbody tr, tfoot tr") ?? []).map(row => {
        const rect = row.getBoundingClientRect();
        return { top: Math.round((rect.top - cloneTop) * scale), bottom: Math.round((rect.bottom - cloneTop) * scale) };
      });
