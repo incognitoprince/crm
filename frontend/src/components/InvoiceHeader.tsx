@@ -16,7 +16,7 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
 
   const gridClass = compact
     ? "grid min-h-[84px] grid-cols-[84px_minmax(0,1fr)] items-center gap-2"
-    : "grid min-h-[132px] grid-cols-[140px_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-4 md:grid-cols-[210px_minmax(0,1fr)]";
+    : "grid min-h-[112px] grid-cols-[140px_minmax(0,1fr)] items-center gap-3 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-4 md:grid-cols-[210px_minmax(0,1fr)]";
   const logoClass = compact
     ? "max-h-20 max-w-[72px] object-contain"
     : "max-h-32 max-w-[132px] object-contain sm:max-h-36 sm:max-w-[164px] md:max-h-40 md:max-w-[200px]";
@@ -42,8 +42,8 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
       </div>
     </div>
 
-    <div className={compact ? "mt-2 border-t-2 border-slate-800" : "mt-3 border-t-2 border-slate-800"} />
-    {(addressLines.length > 0 || contacts || shop?.email) && <div className={compact ? "space-y-0.5 py-1.5" : "space-y-0.5 py-2"}>
+    <div className={compact ? "mt-2 border-t-2 border-slate-800" : "mt-2 border-t-2 border-slate-800"} />
+    {(addressLines.length > 0 || contacts || shop?.email) && <div className={compact ? "space-y-0.5 py-1.5" : "space-y-0.5 py-1.5"}>
       {addressLines.map((line, index) => <p key={index} className={addressClass}>{line}</p>)}
       {contacts && <p className={addressClass}>Tel: {contacts}</p>}
       {shop?.email && <p className={addressClass}>Email: {shop.email}</p>}
