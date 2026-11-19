@@ -61,9 +61,17 @@ export function BillsPage() {
   async function load(){
     setLoading(true);setError("");
     try{
+      const labelFailure=(label:string)=>(error:unknown)=>{
+        const detail=error instanceof Error?error.message:"Unknown request error";
+        throw new Error(label+": "+detail);
+      };
       const [b,c,s,d,o,existing]=await Promise.all([
-        getBills(),getCustomers(),getShops(),getDesigns(),getOrders(),
-        editingInvoiceId ? getBill(editingInvoiceId) : Promise.resolve(null),
+        getBills().catch(labelFailure("Loading invoice history failed")),
+        getCustomers().catch(labelFailure("Loading customers failed")),
+        getShops().catch(labelFailure("Loading shops failed")),
+        getDesigns().catch(labelFailure("Loading Design Library failed")),
+        getOrders().catch(labelFailure("Loading orders failed")),
+        editingInvoiceId ? getBill(editingInvoiceId).catch(labelFailure("Loading invoice for editing failed")) : Promise.resolve(null),
       ]);
       setInvoices(b.data);setCustomers(c.data);setShops(s.data);setDesigns(d.data);setOrders(o.data);
       if(existing){
@@ -118,6 +126,7 @@ export function BillsPage() {
 
   async function save(){
     setSaving(true);setError("");
+    let failedStep=editingInvoiceId?"Validating invoice before update":"Validating invoice before creation";
     try{
       if(!shopId||!customerId)throw new Error("Select a shop and customer.");
       if(lines.some(l=>l.orderId && !orders.some(o=>o.id===l.orderId && o.customer.id===customerId))) throw new Error("Selected orders must belong to the chosen customer.");
@@ -144,18 +153,24 @@ export function BillsPage() {
           return [{orderId:l.orderId||undefined,orderNo:l.orderNo.trim()||undefined,imagePath,description:l.description.trim(),quantity:Number(l.quantity),unitPriceFils:fils(l.rate)}];
         }),
       };
+      failedStep=editingInvoiceId?"Updating invoice via PATCH /api/bills/:id":"Creating invoice via POST /api/bills";
       const result=editingInvoiceId?await updateBill(editingInvoiceId,payload):await createBill(payload);
       let resultLineIndex = 0;
       for (const line of valid) {
         const generatedCount = line.orderId && line.sizeBreakdowns.length ? line.sizeBreakdowns.length : 1;
         const file = line.imageFile;
         if (file && result.data.lines[resultLineIndex]) {
+          failedStep="Uploading image for invoice line "+(resultLineIndex+1);
           await uploadInvoiceLineImage(result.data.id, result.data.lines[resultLineIndex].id, file);
         }
         resultLineIndex += generatedCount;
       }
       navigate("/bills/"+result.data.id);
-    }catch(e){setError(e instanceof Error?e.message:(editingInvoiceId?"Unable to update invoice":"Unable to create bill"));}finally{setSaving(false);}
+    }catch(e){
+      const detail=e instanceof Error?e.message:"Unknown error";
+      console.error("[BillsPage] "+failedStep, e);
+      setError(failedStep+": "+detail);
+    }finally{setSaving(false);}
   }
 
   if(loading)return <LoadingState label="Loading billing workspace…"/>;
@@ -249,7 +264,7 @@ export function BillsPage() {
                 <div className="sm:text-right"><p>Invoice Date: {invoiceDate?new Date(invoiceDate+"T12:00:00").toLocaleDateString("en-GB"):"—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p>{modelNo&&<p>Model No: {modelNo}</p>}</div>
               </div>
               <div className="mt-2 overflow-x-auto border border-slate-700">
-                <table className="w-full min-w-[720px] table-fixed border-collapse text-[12px] leading-snug sm:text-[13px]">
+                <table className="w-full min-w-[720px] table-fixed border-collapse text-[13px] leading-snug sm:text-[14px]">
                   <thead><tr className="bg-slate-50">
                     <th className="w-[10%] break-words border border-slate-700 p-1.5 align-middle">Image</th>
                     <th className="w-[12%] whitespace-nowrap border border-slate-700 p-1.5 align-middle">Order No</th>
@@ -262,8 +277,8 @@ export function BillsPage() {
                   </tr></thead>
                   <tbody>{previewRows.map(row=><tr key={row.key} className="align-middle">
                     <td className="border border-slate-700 p-1 text-center align-middle">{row.line.imagePreview?<img src={row.line.imagePreview} className="mx-auto h-12 w-12 max-w-full object-contain" alt="Design"/>:"—"}</td>
-                    <td className="whitespace-nowrap border border-slate-700 p-1.5 text-center text-[11px] align-middle">{row.line.orderNo||"—"}</td>
-                    <td className="break-words border border-slate-700 p-1.5 text-center text-[11px] align-middle">{row.line.orderDate?new Date(row.line.orderDate).toLocaleString("en-GB"):"—"}</td>
+                    <td className="max-w-0 overflow-hidden text-ellipsis whitespace-nowrap border border-slate-700 p-1 text-center text-[9px] font-medium leading-tight tracking-tight align-middle" title={row.line.orderNo||"—"}>{row.line.orderNo||"—"}</td>
+                    <td className="break-words border border-slate-700 p-1.5 text-center text-[12px] align-middle">{row.line.orderDate?new Date(row.line.orderDate).toLocaleString("en-GB"):"—"}</td>
                     <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{row.line.description.replace(/\s*·\s*/g," ").trim()||"—"}</td>
                     <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{row.size}</td>
                     <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{row.quantity}</td>
