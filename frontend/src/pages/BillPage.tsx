@@ -246,7 +246,7 @@ export function BillPage(){
           <td className="whitespace-nowrap border border-slate-700 p-1.5 text-center text-[11px] align-middle">{line.orderNo??line.order?.orderNo??"—"}</td>
           <td className="break-words border border-slate-700 p-1.5 text-center text-[11px] align-middle">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
           <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{line.description.replace(/\s*·\s*/g," ").trim() || "—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.sizeBreakdowns?.map(item => item.size).join(", ") || "—"}</td>
+          <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{line.sizeBreakdowns?.map(item => item.size).join(", ") || "—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.quantity}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{(line.unitPriceFils/1000).toFixed(3)}</td>
           <td className="break-words border border-slate-700 p-1.5 text-right align-middle">{(line.totalFils/1000).toFixed(3)}</td>
