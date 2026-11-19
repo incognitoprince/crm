@@ -116,12 +116,61 @@ body {
     box-shadow: none !important;
   }
 
-  .invoice-printable table {
-    page-break-inside: avoid;
+  /* Remove screen-only scrolling and the 720px mobile preview minimum
+     so the complete invoice table fits inside the printable A4 content area. */
+  .invoice-printable,
+  .invoice-printable * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .invoice-printable {
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  .invoice-printable [data-invoice-table-wrap] {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  .invoice-printable [data-invoice-table] {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+  }
+
+  .invoice-printable [data-invoice-table] th,
+  .invoice-printable [data-invoice-table] td {
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    padding: 4px 3px !important;
+    vertical-align: middle !important;
+  }
+
+  .invoice-printable [data-invoice-table] th:nth-child(2),
+  .invoice-printable [data-invoice-table] td:nth-child(2) {
+    font-size: 9px !important;
+    letter-spacing: -0.15px;
   }
 
   .invoice-printable tr,
   .invoice-printable img {
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .invoice-printable img {
+    max-width: 100% !important;
   }
 }
