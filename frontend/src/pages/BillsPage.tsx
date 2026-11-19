@@ -6,6 +6,20 @@ import { InvoiceHeader } from "../components/InvoiceHeader";
 import { LoadingState } from "../components/LoadingState";
 import type { Customer, Design, Invoice, Order, Shop } from "../types";
 
+const previewAmountWords=(n:number)=>{
+  const ones=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  const tens=["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+  const under100=(x:number)=>x<20?ones[x]:tens[Math.floor(x/10)]+(x%10?" "+ones[x%10]:"");
+  const under1000=(x:number)=>x<100?under100(x):(ones[Math.floor(x/100)]+" hundred"+(x%100?" "+under100(x%100):""));
+  if(n===0)return "Zero";
+  const dinars=Math.floor(n/1000),fils=n%1000;let out="";
+  if(dinars>=1000000)out+=under1000(Math.floor(dinars/1000000))+" million ";
+  if(dinars%1000000>=1000)out+=under1000(Math.floor((dinars%1000000)/1000))+" thousand ";
+  if(dinars%1000)out+=under1000(dinars%1000)+" ";
+  out+="Kuwaiti Dinar";if(fils)out+=" and "+String(fils).padStart(3,"0")+" Fils";
+  return out.trim()+" only";
+};
+
 const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 const fils = (value: string) => Math.round(Number(value || 0) * 1000);
 
@@ -226,14 +240,44 @@ export function BillsPage() {
       <aside className="xl:sticky xl:top-24 xl:self-start">
         <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-2 shadow-sm sm:p-3">
           <div className="mb-3 flex items-center justify-between px-2"><div><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Live preview</p><p className="text-sm font-semibold text-navy-900">Customer bill</p></div><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{editingInvoiceId?"Editing":"Draft"}</span></div>
-          <div className="min-h-[720px] bg-white p-5 text-[11px] text-slate-800 shadow-sm">
-            {(()=>{const shop=shops.find(s=>s.id===shopId);const customer=customers.find(c=>c.id===customerId);return <>
-              <InvoiceHeader shop={shop} compact />
-              <div className="py-4 text-center"><p className="text-base font-bold underline">INVOICE</p><p className="mt-1">{subject||"Bill / Invoice"}</p></div>
-              <div className="grid grid-cols-2 gap-3 border-y border-slate-300 py-3"><div><b>Bill To</b><p>{customer?.name||"Customer"}</p>{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p>{customer.phone}</p>}</div><div className="text-right"><p>Invoice Date: {invoiceDate ? new Date(invoiceDate+"T12:00:00").toLocaleDateString() : "—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p></div></div>
-              <table className="mt-4 w-full border-collapse border border-slate-400"><thead><tr><th className="border border-slate-400 p-1">Image</th><th className="border border-slate-400 p-1 text-left">Order</th><th className="border border-slate-400 p-1 text-left">Order Date &amp; Time</th><th className="border border-slate-400 p-1 text-left">Details</th><th className="border border-slate-400 p-1">Size</th><th className="border border-slate-400 p-1">Qty</th><th className="border border-slate-400 p-1">Rate</th><th className="border border-slate-400 p-1">Total</th></tr></thead><tbody>{lines.flatMap((l,i)=>l.orderId&&l.sizeBreakdowns.length?l.sizeBreakdowns.filter(row=>row.size&&Number(row.quantity)>0).map((row,j)=><tr key={`${i}-${j}`}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.orderDate?new Date(l.orderDate).toLocaleString("en-GB"):"—"}</td><td className="border border-slate-400 p-1">{l.description||"—"}</td><td className="border border-slate-400 p-1 text-center">{row.size}</td><td className="border border-slate-400 p-1 text-center">{row.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(row.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(row.quantity||0)*Number(row.rate||0)).toFixed(3)}</td></tr>):Number(l.quantity)>0?[<tr key={i}><td className="border border-slate-400 p-1 text-center">{l.imagePreview?<img src={l.imagePreview} className="mx-auto h-12 w-12 object-contain" alt=""/>:"—"}</td><td className="border border-slate-400 p-1">{l.orderNo||"—"}</td><td className="border border-slate-400 p-1">{l.orderDate?new Date(l.orderDate).toLocaleString("en-GB"):"—"}</td><td className="border border-slate-400 p-1">{l.description||"—"}</td><td className="border border-slate-400 p-1 text-center">—</td><td className="border border-slate-400 p-1 text-center">{l.quantity}</td><td className="border border-slate-400 p-1 text-right">{Number(l.rate||0).toFixed(3)}</td><td className="border border-slate-400 p-1 text-right">{(Number(l.quantity||0)*Number(l.rate||0)).toFixed(3)}</td></tr>]:[])}</tbody></table>
-              <div className="mt-4 text-right font-bold">GRAND TOTAL&nbsp;&nbsp; {total?money(total):"K.D. 0.000"}</div>
-              {notes&&<div className="mt-3 whitespace-pre-wrap border-t border-slate-300 pt-3">{notes}</div>}
+          <div className="invoice-paper min-w-0 overflow-hidden bg-white p-2 text-[12px] text-slate-900 shadow-sm sm:p-3">
+            {(()=>{const shop=shops.find(s=>s.id===shopId);const customer=customers.find(c=>c.id===customerId);const previewRows=lines.flatMap((l,i)=>l.orderId&&l.sizeBreakdowns.length?l.sizeBreakdowns.filter(row=>row.size.trim()&&Number(row.quantity)>0).map((row,j)=>({key:i+"-"+j,line:l,size:row.size,quantity:Number(row.quantity),rate:Number(row.rate||0),total:Number(row.quantity||0)*Number(row.rate||0)})):Number(l.quantity)>0?[{key:String(i),line:l,size:"—",quantity:Number(l.quantity),rate:Number(l.rate||0),total:Number(l.quantity||0)*Number(l.rate||0)}]:[]);return <>
+              <InvoiceHeader shop={shop}/>
+              <div className="py-2 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1></div>
+              <div className="grid gap-3 border-y border-slate-700 py-2 text-sm sm:grid-cols-2">
+                <div><p className="font-bold">Bill To</p><p>{customer?.name||"Customer"}</p>{subject&&<p className="text-xs">Subject: {subject}</p>}{customer?.phone?.trim()&&customer.phone.trim().toLowerCase()!=="not provided"&&<p>{customer.phone}</p>}{customer?.address?.trim()&&customer.address.trim().toLowerCase()!=="not provided"&&<p className="break-words">{customer.address}</p>}</div>
+                <div className="sm:text-right"><p>Invoice Date: {invoiceDate?new Date(invoiceDate+"T12:00:00").toLocaleDateString("en-GB"):"—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p>{modelNo&&<p>Model No: {modelNo}</p>}</div>
+              </div>
+              <div className="mt-2 overflow-x-auto border border-slate-700">
+                <table className="w-full min-w-[720px] table-fixed border-collapse text-[12px] leading-snug sm:text-[13px]">
+                  <thead><tr className="bg-slate-50">
+                    <th className="w-[10%] break-words border border-slate-700 p-1.5 align-middle">Image</th>
+                    <th className="w-[12%] whitespace-nowrap border border-slate-700 p-1.5 align-middle">Order No</th>
+                    <th className="w-[17%] break-words border border-slate-700 p-1.5 align-middle">Order Date &amp; Time</th>
+                    <th className="w-[22%] break-words border border-slate-700 p-1.5 align-middle">Order Details</th>
+                    <th className="w-[10%] break-words border border-slate-700 p-1.5 align-middle">Size</th>
+                    <th className="w-[8%] whitespace-nowrap border border-slate-700 p-1.5 align-middle">Quantity</th>
+                    <th className="w-[10%] break-words border border-slate-700 p-1.5 align-middle">Rate Per Piece<br/>(K.D.)</th>
+                    <th className="w-[11%] break-words border border-slate-700 p-1.5 align-middle">Total</th>
+                  </tr></thead>
+                  <tbody>{previewRows.map(row=><tr key={row.key} className="align-middle">
+                    <td className="border border-slate-700 p-1 text-center align-middle">{row.line.imagePreview?<img src={row.line.imagePreview} className="mx-auto h-12 w-12 max-w-full object-contain" alt="Design"/>:"—"}</td>
+                    <td className="whitespace-nowrap border border-slate-700 p-1.5 text-center text-[11px] align-middle">{row.line.orderNo||"—"}</td>
+                    <td className="break-words border border-slate-700 p-1.5 text-center text-[11px] align-middle">{row.line.orderDate?new Date(row.line.orderDate).toLocaleString("en-GB"):"—"}</td>
+                    <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{row.line.description.replace(/\s*·\s*/g," ").trim()||"—"}</td>
+                    <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{row.size}</td>
+                    <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{row.quantity}</td>
+                    <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{row.rate.toFixed(3)}</td>
+                    <td className="break-words border border-slate-700 p-1.5 text-right align-middle">{row.total.toFixed(3)}</td>
+                  </tr>)}</tbody>
+                  <tfoot>
+                    <tr><td colSpan={5} className="border border-slate-700 p-2 font-bold">TOTAL QTY: {previewRows.reduce((sum,row)=>sum+row.quantity,0)}</td><td colSpan={2} className="border border-slate-700 p-2 text-right font-bold">GRAND TOTAL</td><td className="border border-slate-700 p-2 text-right font-bold">{(total/1000).toFixed(3)}</td></tr>
+                    <tr><td colSpan={8} className="break-words border border-slate-700 p-2 text-center font-bold uppercase">{previewAmountWords(Math.round(total))}</td></tr>
+                  </tfoot>
+                </table>
+              </div>
+              {notes&&<div className="mt-3 whitespace-pre-wrap break-words border-t border-slate-700 pt-2 text-sm">{notes}</div>}
+              <div className="mt-6 grid grid-cols-2 gap-8 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
             </>})()}
           </div>
         </div>
