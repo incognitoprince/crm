@@ -228,28 +228,28 @@ export function BillPage(){
      </div>
 
      <div data-invoice-table-wrap className="mt-2 overflow-x-auto border border-slate-700">
-       <table data-invoice-table className="w-full min-w-[720px] table-fixed border-collapse text-[10px] sm:text-[11px]">
+       <table data-invoice-table className="w-full min-w-[720px] table-fixed border-collapse text-[12px] leading-snug sm:text-[13px]">
         <thead>
           <tr className="bg-slate-50">
-            <th className="w-[10%] break-words border border-slate-700 p-1.5">Image</th>
-            <th className="w-[12%] whitespace-nowrap border border-slate-700 p-1.5">Order No</th>
-            <th className="w-[17%] break-words border border-slate-700 p-1.5">Order Date &amp; Time</th>
-            <th className="w-[22%] break-words border border-slate-700 p-1.5">Order Details</th>
-            <th className="w-[10%] break-words border border-slate-700 p-1.5">Size</th>
-            <th className="w-[8%] whitespace-nowrap border border-slate-700 p-1.5">Quantity</th>
-            <th className="w-[10%] break-words border border-slate-700 p-1.5">Rate Per Piece<br/>(K.D.)</th>
-            <th className="w-[11%] break-words border border-slate-700 p-1.5">Total</th>
+            <th className="w-[10%] break-words border border-slate-700 p-1.5 align-middle">Image</th>
+            <th className="w-[12%] whitespace-nowrap border border-slate-700 p-1.5 align-middle">Order No</th>
+            <th className="w-[17%] break-words border border-slate-700 p-1.5 align-middle">Order Date &amp; Time</th>
+            <th className="w-[22%] break-words border border-slate-700 p-1.5 align-middle">Order Details</th>
+            <th className="w-[10%] break-words border border-slate-700 p-1.5 align-middle">Size</th>
+            <th className="w-[8%] whitespace-nowrap border border-slate-700 p-1.5 align-middle">Quantity</th>
+            <th className="w-[10%] break-words border border-slate-700 p-1.5 align-middle">Rate Per Piece<br/>(K.D.)</th>
+            <th className="w-[11%] break-words border border-slate-700 p-1.5 align-middle">Total</th>
           </tr>
         </thead>
-        <tbody>{invoice.lines.map(line=><tr key={line.id}>
-          <td className="border border-slate-700 p-1 text-center">{line.imagePath?<img src={resolveMediaUrl(line.imagePath)} className="mx-auto h-16 w-16 max-w-full object-contain" alt="Design"/>:"—"}</td>
-          <td className="whitespace-nowrap border border-slate-700 p-1.5 text-center text-[9px]">{line.orderNo??line.order?.orderNo??"—"}</td>
-          <td className="break-words border border-slate-700 p-1.5 text-center text-[9px]">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
-          <td className="break-words border border-slate-700 p-2 text-center">{line.description.replace(/\s*·\s*/g," ").trim() || "—"}</td>
+        <tbody>{invoice.lines.map(line=><tr key={line.id} className="align-middle">
+          <td className="border border-slate-700 p-1 text-center align-middle">{line.imagePath?<img src={resolveMediaUrl(line.imagePath)} className="mx-auto h-12 w-12 max-w-full object-contain" alt="Design"/>:"—"}</td>
+          <td className="whitespace-nowrap border border-slate-700 p-1.5 text-center text-[11px] align-middle">{line.orderNo??line.order?.orderNo??"—"}</td>
+          <td className="break-words border border-slate-700 p-1.5 text-center text-[11px] align-middle">{line.orderDate?new Date(line.orderDate).toLocaleString("en-GB"):"—"}</td>
+          <td className="break-words border border-slate-700 p-1.5 text-center align-middle">{line.description.replace(/\s*·\s*/g," ").trim() || "—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.sizeBreakdowns?.map(item => item.size).join(", ") || "—"}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{line.quantity}</td>
           <td className="break-words border border-slate-700 p-2 text-center">{(line.unitPriceFils/1000).toFixed(3)}</td>
-          <td className="break-words border border-slate-700 p-2 text-right">{(line.totalFils/1000).toFixed(3)}</td>
+          <td className="break-words border border-slate-700 p-1.5 text-right align-middle">{(line.totalFils/1000).toFixed(3)}</td>
         </tr>)}</tbody>
         <tfoot>
           <tr>
