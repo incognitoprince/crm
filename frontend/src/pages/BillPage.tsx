@@ -128,60 +128,51 @@ export function BillPage(){
    }catch(e){setError(e instanceof Error?e.message:"Unable to create invoice image");}finally{setBusy(false);}
  }
 
+ async function createInvoicePdfParts(){
+   if(!invoiceRef.current)throw new Error("Invoice is not ready");
+   await document.fonts?.ready;
+   const clone=invoiceRef.current.cloneNode(true) as HTMLElement;
+   clone.style.width=INVOICE_CAPTURE_WIDTH+"px";clone.style.minWidth=INVOICE_CAPTURE_WIDTH+"px";clone.style.maxWidth=INVOICE_CAPTURE_WIDTH+"px";
+   clone.style.boxSizing="border-box";clone.style.position="absolute";clone.style.left="-100000px";clone.style.top="0";clone.style.margin="0";clone.style.overflow="visible";clone.style.backgroundColor="#fff";
+   const wrap=clone.querySelector<HTMLElement>("[data-invoice-table-wrap]");if(wrap){wrap.style.overflow="visible";wrap.style.width="100%";}
+   const table=clone.querySelector<HTMLTableElement>("[data-invoice-table]");if(!table)throw new Error("Invoice table is missing");
+   table.style.width="100%";table.style.minWidth="0";table.style.maxWidth="100%";table.style.tableLayout="fixed";table.style.borderCollapse="collapse";
+   const widths=["10%","12%","17%","22%","10%","8%","10%","11%"];
+   table.querySelectorAll("tr").forEach(row=>row.querySelectorAll<HTMLElement>("th,td").forEach((cell,index)=>{if(index<widths.length)cell.style.width=widths[index];cell.style.maxWidth="none";cell.style.overflowWrap="break-word";cell.style.wordBreak="normal";cell.style.whiteSpace="normal";}));
+   clone.querySelectorAll<HTMLElement>("[data-invoice-nowrap]").forEach(el=>{el.style.whiteSpace="normal";el.style.overflowWrap="break-word";el.style.wordBreak="normal";});
+   document.body.appendChild(clone);
+   try{
+     await Promise.all(Array.from(clone.querySelectorAll("img")).map(async img=>{if(!img.complete)await new Promise<void>(resolve=>{img.addEventListener("load",()=>resolve(),{once:true});img.addEventListener("error",()=>resolve(),{once:true});});if(img.decode)try{await img.decode();}catch{}}));
+     await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+     const capture=(element:HTMLElement)=>html2canvas(element,{backgroundColor:"#fff",scale:2,useCORS:true,allowTaint:false,logging:false,width:INVOICE_CAPTURE_WIDTH,windowWidth:INVOICE_CAPTURE_WIDTH});
+     const header=clone.querySelector<HTMLElement>("[data-invoice-header]");const summary=clone.querySelector<HTMLElement>("[data-invoice-summary]");const footer=clone.querySelector<HTMLElement>("[data-invoice-footer]");
+     if(!header||!summary||!footer)throw new Error("Invoice print sections are incomplete");
+     const makeTablePart=(sectionName:"thead"|"tbody"|"tfoot",row?:Element)=>{const w=document.createElement("div");w.style.width=INVOICE_CAPTURE_WIDTH+"px";w.style.background="#fff";const t=table.cloneNode(false) as HTMLTableElement;t.style.width="100%";t.style.minWidth="0";t.style.maxWidth="100%";if(sectionName==="tbody"){const body=document.createElement("tbody");if(row)body.appendChild(row.cloneNode(true));t.appendChild(body);}else{const section=table.querySelector(sectionName);if(section)t.appendChild(section.cloneNode(true));}w.appendChild(t);return w;};
+     const tableHeader=await capture(makeTablePart("thead"));const rows:HTMLCanvasElement[]=[];
+     for(const row of Array.from(table.querySelectorAll("tbody tr")))rows.push(await capture(makeTablePart("tbody",row)));
+     const footerWrap=document.createElement("div");footerWrap.style.width=INVOICE_CAPTURE_WIDTH+"px";footerWrap.style.background="#fff";footerWrap.appendChild(makeTablePart("tfoot"));footerWrap.appendChild(footer.cloneNode(true));
+     return {header:await capture(header),summary:await capture(summary),tableHeader,rows,footer:await capture(footerWrap)};
+   }finally{clone.remove();}
+ }
+
  async function downloadPdf(){
    if(!invoice)return;
    setBusy(true);setError("");
    try{
-     const {canvas,rowBounds,headerBounds}=await createInvoiceCanvas();
+     const parts=await createInvoicePdfParts();
      const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-     const pageWidth=pdf.internal.pageSize.getWidth();const pageHeight=pdf.internal.pageSize.getHeight();
-     const pageHeightPx=Math.floor(canvas.width*pageHeight/pageWidth);
-     const chunks:Array<{start:number;end:number;repeatHeader:boolean}>=[];
-     if(rowBounds.length===0){
-       for(let start=0;start<canvas.height;start+=pageHeightPx)chunks.push({start,end:Math.min(start+pageHeightPx,canvas.height),repeatHeader:false});
-     }else{
-       let rowIndex=0;
-       let firstPage=true;
-       while(rowIndex<rowBounds.length){
-         const start=rowBounds[rowIndex].top;
-         const repeatedHeight=firstPage?0:headerBounds.height;
-         const available=pageHeightPx-repeatedHeight;
-         let endIndex=rowIndex;
-         while(endIndex<rowBounds.length && rowBounds[endIndex].bottom-(firstPage?0:start)<=available)endIndex++;
-         if(endIndex===rowIndex)endIndex++;
-         const end=rowBounds[endIndex-1].bottom;
-         chunks.push({start:firstPage?0:start,end,repeatHeader:!firstPage});
-         rowIndex=endIndex;
-         firstPage=false;
-       }
-       const last=chunks[chunks.length-1];
-       if(canvas.height>last.end){
-         if(canvas.height-last.start+(last.repeatHeader?headerBounds.height:0)<=pageHeightPx){
-           last.end=canvas.height;
-         }else{
-           chunks.push({start:last.end,end:canvas.height,repeatHeader:false});
-         }
-       }
-     }
-     chunks.forEach((chunk,index)=>{
-       if(index>0)pdf.addPage();
-       const pageCanvas=document.createElement("canvas");
-       pageCanvas.width=canvas.width;pageCanvas.height=pageHeightPx;
-       const ctx=pageCanvas.getContext("2d");
-       if(!ctx)throw new Error("Unable to prepare invoice PDF page");
-       ctx.fillStyle="#ffffff";ctx.fillRect(0,0,pageCanvas.width,pageCanvas.height);
-       let destinationY=0;
-       if(chunk.repeatHeader&&headerBounds.height>0){
-         ctx.drawImage(canvas,0,headerBounds.top,canvas.width,headerBounds.height,0,0,canvas.width,headerBounds.height);
-         destinationY=headerBounds.height;
-       }
-       const sourceHeight=Math.min(chunk.end-chunk.start,pageHeightPx-destinationY);
-       if(sourceHeight>0)ctx.drawImage(canvas,0,chunk.start,canvas.width,sourceHeight,0,destinationY,canvas.width,sourceHeight);
-       pdf.addImage(pageCanvas.toDataURL("image/jpeg",0.95),"JPEG",0,0,pageWidth,pageHeight);
-     });
-     pdf.save(`invoice-${invoice.invoiceNo}.pdf`);
+     const pageWidth=pdf.internal.pageSize.getWidth(),pageHeight=pdf.internal.pageSize.getHeight(),margin=8;
+     const contentWidth=pageWidth-margin*2,bottom=pageHeight-margin;
+     const imageHeight=(canvas:HTMLCanvasElement)=>canvas.height*contentWidth/canvas.width;
+     let y=margin;
+     const addCanvas=(canvas:HTMLCanvasElement)=>{const h=imageHeight(canvas);pdf.addImage(canvas.toDataURL("image/jpeg",0.96),"JPEG",margin,y,contentWidth,h);y+=h;};
+     addCanvas(parts.header);addCanvas(parts.summary);addCanvas(parts.tableHeader);
+     for(const row of parts.rows){const h=imageHeight(row);if(y+h>bottom){pdf.addPage();y=margin;addCanvas(parts.tableHeader);}if(y+h>bottom)throw new Error("An invoice row is taller than the available PDF page height");addCanvas(row);}
+     const footerHeight=imageHeight(parts.footer);if(y+footerHeight>bottom){pdf.addPage();y=margin;}if(y+footerHeight>bottom)throw new Error("Invoice totals and signatures do not fit together on one page");addCanvas(parts.footer);
+     pdf.save("invoice-"+invoice.invoiceNo+".pdf");
    }catch(e){setError(e instanceof Error?e.message:"Unable to create invoice PDF");}finally{setBusy(false);}
  }
+
 
  async function shareImage(){
    if(!invoice)return;
@@ -218,14 +209,14 @@ export function BillPage(){
    {error&&<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 print:hidden">{error}</div>}
 
    <article ref={invoiceRef} className="invoice-paper invoice-printable min-w-0 w-full overflow-hidden bg-white p-2 text-slate-900 shadow-[0_8px_35px_rgba(15,31,53,.10)] sm:p-3 md:p-4 print:p-0 print:shadow-none">
-     <InvoiceHeader shop={shop} />
+     <div data-invoice-header><InvoiceHeader shop={shop} /></div>
 
-     <div className="py-2 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1></div>
+     <div data-invoice-summary><div className="py-2 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1></div>
 
      <div className="grid gap-3 border-y border-slate-700 py-2 text-sm sm:grid-cols-2">
        <div><p className="font-bold">Bill To</p><p data-invoice-nowrap>{customer?.name ?? "Customer"}</p>{invoice.subject && <p className="text-xs">Subject: {invoice.subject}</p>}{customer?.phone?.trim() && customer.phone.trim().toLowerCase() !== "not provided" && <p data-invoice-nowrap>{customer.phone}</p>}{customer?.address?.trim() && customer.address.trim().toLowerCase() !== "not provided" && <p className="break-words">{customer.address}</p>}</div>
        <div className="sm:text-right"><p data-invoice-nowrap>Invoice Date: {date(invoice.issuedAt)}</p><p data-invoice-nowrap>Invoice No: {invoice.invoiceNo}</p>{invoice.modelNo&&<p data-invoice-nowrap>Model No: {invoice.modelNo}</p>}</div>
-     </div>
+     </div></div>
 
      <div data-invoice-table-wrap className="mt-2 overflow-x-auto border border-slate-700">
        <table data-invoice-table className="w-full min-w-[720px] table-fixed border-collapse text-[12px] leading-snug sm:text-[13px]">
@@ -262,8 +253,10 @@ export function BillPage(){
        </table>
      </div>
 
-     {invoice.notes&&<div className="mt-3 whitespace-pre-wrap break-words border-t border-slate-700 pt-2 text-sm">{invoice.notes}</div>}
-     <div className="mt-6 grid grid-cols-2 gap-8 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
+     <div data-invoice-footer>
+       {invoice.notes&&<div className="mt-3 whitespace-pre-wrap break-words border-t border-slate-700 pt-2 text-sm">{invoice.notes}</div>}
+       <div className="mt-6 grid grid-cols-2 gap-8 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
+     </div>
    </article>
  </div>;
 }
