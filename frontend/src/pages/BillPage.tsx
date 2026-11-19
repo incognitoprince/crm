@@ -138,7 +138,7 @@ export function BillPage(){
    const table=clone.querySelector<HTMLTableElement>("[data-invoice-table]");if(!table)throw new Error("Invoice table is missing");
    table.style.width="100%";table.style.minWidth="0";table.style.maxWidth="100%";table.style.tableLayout="fixed";table.style.borderCollapse="collapse";
    const widths=["10%","12%","17%","22%","10%","8%","10%","11%"];
-   table.querySelectorAll("tr").forEach(row=>row.querySelectorAll<HTMLElement>("th,td").forEach((cell,index)=>{if(index<widths.length)cell.style.width=widths[index];cell.style.maxWidth="none";cell.style.overflowWrap="break-word";cell.style.wordBreak="normal";cell.style.whiteSpace="normal";}));
+   table.querySelectorAll("thead tr, tbody tr").forEach(row=>row.querySelectorAll<HTMLElement>("th,td").forEach((cell,index)=>{if(index<widths.length)cell.style.width=widths[index];cell.style.maxWidth="none";cell.style.overflowWrap="break-word";cell.style.wordBreak="normal";cell.style.whiteSpace="normal";}));
    clone.querySelectorAll<HTMLElement>("[data-invoice-nowrap]").forEach(el=>{el.style.whiteSpace="normal";el.style.overflowWrap="break-word";el.style.wordBreak="normal";});
    document.body.appendChild(clone);
    try{
