@@ -194,17 +194,28 @@ body {
     overflow: visible !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
-    padding-bottom: 8mm !important;
+    padding-bottom: 0 !important;
   }
 
+  /* Keep both signature labels inside the printable A4 area.
+     The previous extra bottom padding and 8mm top margin pushed them
+     beyond the page edge in Chrome's print renderer. */
   .invoice-printable [data-invoice-signatures] {
     display: grid !important;
-    min-height: 14mm !important;
-    margin-top: 8mm !important;
-    padding-bottom: 3mm !important;
-    line-height: 1.5 !important;
+    min-height: 9mm !important;
+    margin-top: 2mm !important;
+    padding: 0 0 1mm !important;
+    line-height: 1.4 !important;
     overflow: visible !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  .invoice-printable [data-invoice-signatures] > div {
+    display: block !important;
+    min-height: 5mm !important;
+    padding-top: 1mm !important;
+    line-height: 1.4 !important;
+    overflow: visible !important;
   }
 }
