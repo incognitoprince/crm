@@ -190,4 +190,21 @@ body {
     max-height: 48px !important;
     object-fit: contain !important;
   }
+  .invoice-printable [data-invoice-footer] {
+    overflow: visible !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    padding-bottom: 8mm !important;
+  }
+
+  .invoice-printable [data-invoice-signatures] {
+    display: grid !important;
+    min-height: 14mm !important;
+    margin-top: 8mm !important;
+    padding-bottom: 3mm !important;
+    line-height: 1.5 !important;
+    overflow: visible !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
 }
