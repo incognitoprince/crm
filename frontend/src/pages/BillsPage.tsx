@@ -260,7 +260,7 @@ export function BillsPage() {
               <InvoiceHeader shop={shop}/>
               <div className="py-2 text-center"><h1 className="text-xl font-bold underline">INVOICE</h1></div>
               <div className="grid gap-3 border-y border-slate-700 py-2 text-sm sm:grid-cols-2">
-                <div><p className="font-bold">Bill To</p><p>{customer?.name||"Customer"}</p>{subject&&<p className="text-xs">Subject: {subject}</p>}{customer?.phone?.trim()&&customer.phone.trim().toLowerCase()!=="not provided"&&<p>{customer.phone}</p>}{customer?.address?.trim()&&customer.address.trim().toLowerCase()!=="not provided"&&<p className="break-words">{customer.address}</p>}</div>
+                <div><p className="font-bold">Bill To</p><p>{customer?.name||"Customer"}</p>{subject&&<p className="text-xs">Subject: {subject}</p>}{customer?.phone?.trim()&&customer.phone.trim().toLowerCase()!=="not provided"&&<p>Phone: {customer.phone}</p>}{customer?.address?.trim()&&customer.address.trim().toLowerCase()!=="not provided"&&<p className="break-words">{customer.address}</p>}</div>
                 <div className="sm:text-right"><p>Invoice Date: {invoiceDate?new Date(invoiceDate+"T12:00:00").toLocaleDateString("en-GB"):"—"}</p><p>Invoice No: {invoiceNo||"Auto"}</p>{modelNo&&<p>Model No: {modelNo}</p>}</div>
               </div>
               <div className="mt-2 overflow-x-auto border border-slate-700">
