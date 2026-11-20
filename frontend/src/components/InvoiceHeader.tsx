@@ -27,6 +27,7 @@ export function InvoiceHeader({ shop, compact = false }: InvoiceHeaderProps) {
           : "flex shrink-0 items-center justify-center"}>
           {logoSource && (
             <img
+              data-invoice-logo
               src={resolveMediaUrl(logoSource)}
               className={compact ? "max-h-20 max-w-[72px] object-contain" : "max-h-28 w-[112px] max-w-[24vw] object-contain"}
               alt=""
