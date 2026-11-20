@@ -114,6 +114,12 @@ body {
     padding: 0 !important;
     background: #fff !important;
     box-shadow: none !important;
+    /* Fit the complete invoice, including the signature captions, inside
+       the printable A4 height. Expand the layout width by the inverse scale
+       so the visual width remains unchanged after scaling. */
+    width: 108.6957% !important;
+    transform: scale(0.92) !important;
+    transform-origin: top left !important;
   }
 
   /* Remove screen-only scrolling and the 720px mobile preview minimum
