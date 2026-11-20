@@ -170,7 +170,24 @@ body {
     break-inside: avoid;
   }
 
-  .invoice-printable img {
-    max-width: 100% !important;
+  .invoice-printable [data-invoice-logo] {
+    display: block !important;
+    width: 112px !important;
+    height: 96px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+    max-height: 96px !important;
+    object-fit: contain !important;
+  }
+
+  .invoice-printable [data-invoice-design-image] {
+    display: block !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    object-fit: contain !important;
   }
 }
