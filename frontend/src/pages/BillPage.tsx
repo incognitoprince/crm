@@ -255,7 +255,7 @@ export function BillPage(){
 
      <div data-invoice-footer>
        {invoice.notes&&<div className="mt-3 whitespace-pre-wrap break-words border-t border-slate-700 pt-2 text-sm">{invoice.notes}</div>}
-       <div className="mt-6 grid grid-cols-2 gap-8 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
+       <div data-invoice-signatures className="mt-6 grid grid-cols-2 gap-8 text-sm"><div className="border-t border-slate-500 pt-2">Receiver's Sign.</div><div className="border-t border-slate-500 pt-2 text-right">Salesman Sign.</div></div>
      </div>
    </article>
  </div>;
