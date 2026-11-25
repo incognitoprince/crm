@@ -65,7 +65,6 @@ router.get("/", asyncHandler(async (req, res) => {
     where: status ? { status } : undefined,
     include: includes,
     orderBy: { orderDate: "desc" },
-    take: 100,
   });
   res.json({ data: orders.map(order => redactOrderFinancials(order, req.user?.role === "ADMIN")) });
 }));
