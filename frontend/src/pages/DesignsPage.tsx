@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { createDesign, getCustomers, getDesigns, getGarments, updateDesign, uploadDesignImage } from "../services/api";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import type { Customer, Design, Garment } from "../types";
 
 export function DesignsPage() {
+  const [searchParams] = useSearchParams();
   const [customers,setCustomers]=useState<Customer[]>([]);
   const [designs,setDesigns]=useState<Design[]>([]);
   const [garments,setGarments]=useState<Garment[]>([]);
@@ -30,6 +32,10 @@ export function DesignsPage() {
     finally { setLoading(false); }
   }
   useEffect(()=>{void load();},[]);
+  useEffect(() => {
+    const customerId = searchParams.get("customerId");
+    if (customerId && customers.length) setSelectedCustomer(customers.find(customer => customer.id === customerId) ?? null);
+  }, [searchParams, customers]);
 
   function resetForm() {
     setDesignNo("");setName("");setGarment("");setDescription("");setImage(null);setError("");setEditingDesign(null);
