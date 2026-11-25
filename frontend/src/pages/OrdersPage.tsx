@@ -10,6 +10,9 @@ const statuses: OrderStatus[] = ["PENDING", "MEASUREMENT", "CUTTING", "STITCHING
 const activeStatuses: OrderStatus[] = ["PENDING", "MEASUREMENT", "CUTTING", "STITCHING", "QUALITY_CHECK", "READY"];
 const label = (value: string) => value.replaceAll("_", " ");
 const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
+const formatDateValue = (value: string) => value
+  ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value + "T00:00:00"))
+  : "Select date";
 const isDelayed = (order: Order) => Boolean(
   order.deliveryDate &&
   new Date(order.deliveryDate).getTime() < Date.now() &&
@@ -159,16 +162,20 @@ export function OrdersPage() {
             <div className="grid grid-cols-2 gap-2">
               <label className="min-w-0">
                 <span className="mb-1 block text-[10px] font-medium text-slate-500">From</span>
-                <span className="relative block">
+                <span className="relative flex h-10 min-w-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 pr-10 text-xs font-medium text-slate-700 transition hover:border-slate-300 has-[:focus-visible]:border-blue-400 has-[:focus-visible]:bg-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-100">
+                  <span className={deliveryFrom ? "truncate" : "truncate text-slate-400"}>{formatDateValue(deliveryFrom)}</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute right-3 h-4 w-4 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
                   <input type="date" value={deliveryFrom} onChange={event => setDeliveryFrom(event.target.value)} aria-label="Delivery date from"
-                    className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 pr-8 text-xs font-medium text-slate-700 shadow-none transition hover:border-slate-300 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70" />
+                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0" />
                 </span>
               </label>
               <label className="min-w-0">
                 <span className="mb-1 block text-[10px] font-medium text-slate-500">To</span>
-                <span className="relative block">
+                <span className="relative flex h-10 min-w-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 pr-10 text-xs font-medium text-slate-700 transition hover:border-slate-300 has-[:focus-visible]:border-blue-400 has-[:focus-visible]:bg-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-100">
+                  <span className={deliveryTo ? "truncate" : "truncate text-slate-400"}>{formatDateValue(deliveryTo)}</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute right-3 h-4 w-4 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
                   <input type="date" value={deliveryTo} onChange={event => setDeliveryTo(event.target.value)} aria-label="Delivery date to"
-                    className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 pr-8 text-xs font-medium text-slate-700 shadow-none transition hover:border-slate-300 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70" />
+                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0" />
                 </span>
               </label>
             </div>
