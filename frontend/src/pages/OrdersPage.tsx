@@ -10,9 +10,6 @@ const statuses: OrderStatus[] = ["PENDING", "MEASUREMENT", "CUTTING", "STITCHING
 const activeStatuses: OrderStatus[] = ["PENDING", "MEASUREMENT", "CUTTING", "STITCHING", "QUALITY_CHECK", "READY"];
 const label = (value: string) => value.replaceAll("_", " ");
 const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
-const formatDateValue = (value: string) => value
-  ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value + "T00:00:00"))
-  : "Select date";
 const isDelayed = (order: Order) => Boolean(
   order.deliveryDate &&
   new Date(order.deliveryDate).getTime() < Date.now() &&
@@ -29,8 +26,6 @@ export function OrdersPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [shopFilter, setShopFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [deliveryFrom, setDeliveryFrom] = useState("");
-  const [deliveryTo, setDeliveryTo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -74,13 +69,9 @@ export function OrdersPage() {
         order.garmentMaster?.name ?? order.garment,
         order.shop?.name ?? "",
       ].some(value => value.toLocaleLowerCase().includes(query));
-      const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate) : null;
-      const deliveryDay = deliveryDate ? [deliveryDate.getFullYear(), String(deliveryDate.getMonth() + 1).padStart(2, "0"), String(deliveryDate.getDate()).padStart(2, "0")].join("-") : "";
-      const matchesFrom = !deliveryFrom || (deliveryDay !== "" && deliveryDay >= deliveryFrom);
-      const matchesTo = !deliveryTo || (deliveryDay !== "" && deliveryDay <= deliveryTo);
-      return matchesShop && matchesStatus && matchesSearch && matchesFrom && matchesTo;
+      return matchesShop && matchesStatus && matchesSearch;
     });
-  }, [orders, shopFilter, statusFilter, scopeFilter, search, deliveryFrom, deliveryTo]);
+  }, [orders, shopFilter, statusFilter, scopeFilter, search]);
 
   function applyQuickFilter(scope: string, status = "") {
     const next = new URLSearchParams(searchParams);
@@ -157,35 +148,10 @@ export function OrdersPage() {
             className="h-11 self-end rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 shadow-sm transition hover:border-slate-300">
             <option value="">All workflow statuses</option>{statuses.map(status => <option key={status} value={status}>{label(status)}</option>)}
           </select>
-          <fieldset className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-            <legend className="px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Delivery date range</legend>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="min-w-0">
-                <span className="mb-1 block text-[10px] font-medium text-slate-500">From</span>
-                <span className="relative flex h-10 min-w-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 pr-10 text-xs font-medium text-slate-700 transition hover:border-slate-300 focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100">
-                  <span className={deliveryFrom ? "truncate" : "truncate text-slate-400"}>{formatDateValue(deliveryFrom)}</span>
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute right-3 h-4 w-4 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
-                  <input type="date" value={deliveryFrom} onChange={event => setDeliveryFrom(event.target.value)} aria-label="Delivery date from"
-                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0" />
-                </span>
-              </label>
-              <label className="min-w-0">
-                <span className="mb-1 block text-[10px] font-medium text-slate-500">To</span>
-                <span className="relative flex h-10 min-w-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 pr-10 text-xs font-medium text-slate-700 transition hover:border-slate-300 focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100">
-                  <span className={deliveryTo ? "truncate" : "truncate text-slate-400"}>{formatDateValue(deliveryTo)}</span>
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute right-3 h-4 w-4 text-slate-500"><rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
-                  <input type="date" value={deliveryTo} onChange={event => setDeliveryTo(event.target.value)} aria-label="Delivery date to"
-                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0" />
-                </span>
-              </label>
-            </div>
-          </fieldset>
-          <button type="button" onClick={() => { setShopFilter(""); setSearch(""); setDeliveryFrom(""); setDeliveryTo(""); applyQuickFilter("all"); }}
+          <button type="button" onClick={() => { setShopFilter(""); setSearch(""); applyQuickFilter("all"); }}
             className="h-11 self-end whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-100">Clear filters</button>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <span>Filter by delivery date</span>
-          <span>·</span>
           <span>{statusFilter ? label(statusFilter) : scopeFilter === "delayed" ? "Delayed orders" : scopeFilter === "all" ? "All workflow statuses" : "In progress"}</span>
         </div>
       </div>
