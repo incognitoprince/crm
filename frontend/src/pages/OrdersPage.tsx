@@ -19,7 +19,7 @@ export function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
   const [shopFilter, setShopFilter] = useState("");
-  const [view, setView] = useState<"in-progress" | "completed">("in-progress");
+  const view = scopeFilter === "all" ? "completed" : "in-progress";
   const [error, setError] = useState("");
 
   const load = () => getOrders().then(r => setOrders(r.data)).catch(e => setError(e.message));
