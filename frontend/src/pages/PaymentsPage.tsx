@@ -15,6 +15,7 @@ const methods: Array<{ value: PaymentMethod; label: string }> = [
 
 export function PaymentsPage() {
   const [searchParams] = useSearchParams();
+  const scopeFilter = searchParams.get("scope") ?? "";
   const [payments, setPayments] = useState<Payment[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderId, setOrderId] = useState(searchParams.get("orderId") ?? "");
@@ -45,13 +46,13 @@ export function PaymentsPage() {
   // Keep every non-cancelled order selectable, including delivered and fully paid orders.
   // The submit handler still prevents recording more than the outstanding balance.
   const payableOrders = useMemo(
-    () => orders.filter(order => order.status !== "CANCELLED"),
+    () => orders.filter(order => order.status !== "CANCELLED" && (scopeFilter !== "outstanding" || order.totalAmountFils > order.paidAmountFils)),
     [orders],
   );
 
   const visiblePayments = payments.filter(payment => {
     const value = (payment.order.orderNo + " " + payment.order.customer.name + " " + payment.method).toLowerCase();
-    return value.includes(query.toLowerCase());
+    return value.includes(query.toLowerCase()) && (!searchParams.get("orderId") || payment.order.id === searchParams.get("orderId"));
   });
 
   async function submit(event: FormEvent) {
@@ -82,7 +83,7 @@ export function PaymentsPage() {
   return <div className="mx-auto min-w-0 w-full max-w-7xl space-y-5">
     <section>
       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Finance</p>
-      <h3 className="mt-1 text-2xl font-semibold text-navy-900">Payments</h3>
+      <h3 className="mt-1 text-2xl font-semibold text-navy-900">Payments{scopeFilter === "outstanding" ? " · Outstanding" : ""}</h3>
       <p className="mt-1 text-sm text-slate-600">Record customer payments and keep each order balance up to date.</p>
     </section>
 
