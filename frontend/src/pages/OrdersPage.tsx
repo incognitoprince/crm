@@ -143,23 +143,38 @@ export function OrdersPage() {
 
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/70 p-3">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1.5fr)_minmax(150px,1fr)_repeat(2,minmax(140px,1fr))_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1.5fr)_minmax(145px,1fr)_minmax(165px,1.1fr)_minmax(290px,1.7fr)_auto]">
           <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search order, customer, phone, garment…" aria-label="Search orders"
-            className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+            className="h-11 min-w-0 self-end rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
           <select value={shopFilter} onChange={event => setShopFilter(event.target.value)} aria-label="Filter by shop"
-            className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">
+            className="h-11 self-end rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 shadow-sm transition hover:border-slate-300">
             <option value="">All shops</option>{shops.map(shop => <option key={shop.id} value={shop.id}>{shop.name}</option>)}
           </select>
           <select value={statusFilter} onChange={event => applyQuickFilter("", event.target.value)} aria-label="Filter by order status"
-            className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700">
+            className="h-11 self-end rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 shadow-sm transition hover:border-slate-300">
             <option value="">All workflow statuses</option>{statuses.map(status => <option key={status} value={status}>{label(status)}</option>)}
           </select>
-          <input type="date" value={deliveryFrom} onChange={event => setDeliveryFrom(event.target.value)} aria-label="Delivery date from"
-            className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700" />
-          <input type="date" value={deliveryTo} onChange={event => setDeliveryTo(event.target.value)} aria-label="Delivery date to"
-            className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700" />
+          <fieldset className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <legend className="px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Delivery date range</legend>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="min-w-0">
+                <span className="mb-1 block text-[10px] font-medium text-slate-500">From</span>
+                <span className="relative block">
+                  <input type="date" value={deliveryFrom} onChange={event => setDeliveryFrom(event.target.value)} aria-label="Delivery date from"
+                    className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 pr-8 text-xs font-medium text-slate-700 shadow-none transition hover:border-slate-300 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70" />
+                </span>
+              </label>
+              <label className="min-w-0">
+                <span className="mb-1 block text-[10px] font-medium text-slate-500">To</span>
+                <span className="relative block">
+                  <input type="date" value={deliveryTo} onChange={event => setDeliveryTo(event.target.value)} aria-label="Delivery date to"
+                    className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 pr-8 text-xs font-medium text-slate-700 shadow-none transition hover:border-slate-300 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70" />
+                </span>
+              </label>
+            </div>
+          </fieldset>
           <button type="button" onClick={() => { setShopFilter(""); setSearch(""); setDeliveryFrom(""); setDeliveryTo(""); applyQuickFilter("all"); }}
-            className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 hover:bg-slate-50">Clear filters</button>
+            className="h-11 self-end whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-100">Clear filters</button>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <span>Filter by delivery date</span>
