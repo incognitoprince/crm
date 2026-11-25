@@ -134,13 +134,13 @@ export function DashboardPage() {
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
       {cardStyles.map(card => {
         const value = card.key.endsWith("Fils") ? money(data[card.key]) : data[card.key];
-        return <article key={card.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        return <Link key={card.key} to={card.key === "orders" ? "/orders?scope=all" : card.key === "paidFils" ? "/payments" : card.key === "pending" ? "/orders?status=PENDING" : card.key === "ready" ? "/orders?status=READY" : card.key === "delayed" ? "/orders?scope=delayed" : "/payments?scope=outstanding"} className="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300">
           <div className="flex items-start justify-between gap-2">
             <p className="text-xs font-medium text-slate-500">{card.label}</p>
             <span className={"flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold " + card.className}>{card.icon}</span>
           </div>
           <p className="mt-3 text-2xl font-semibold tracking-tight text-navy-900">{value}</p>
-        </article>;
+        </Link>;
       })}
     </section>
 
@@ -154,7 +154,7 @@ export function DashboardPage() {
           <table className="w-full min-w-[560px] text-sm">
             <thead><tr className="border-b border-slate-100 text-left text-xs text-slate-500"><th className="pb-3 font-medium">Shop</th><th className="pb-3 font-medium">Orders</th><th className="pb-3 font-medium">Completed</th><th className="pb-3 font-medium">In progress</th><th className="pb-3 text-right font-medium">Revenue</th></tr></thead>
             <tbody>
-              {data.shops.map(shop => <tr key={shop.id} className="border-b border-slate-50 last:border-0">
+              {data.shops.map(shop => <tr key={shop.id} onClick={() => { window.location.href = "/shops"; }} className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-blue-50/40">
                 <td className="py-2.5"><p className="font-medium text-slate-800">{shop.name}</p><p className="text-[11px] text-slate-500">{shop.area}</p></td>
                 <td className="py-2.5">{shop.orders}</td>
                 <td className="py-2.5 text-emerald-700">{shop.completed}</td>
@@ -177,10 +177,10 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="min-w-0 flex-1 space-y-1.5">
-            {statusItems.map(item => <div key={item.key} className="flex items-center justify-between gap-2 text-xs">
+            {statusItems.map(item => <Link key={item.key} to={"/orders?status=" + item.key} className="flex items-center justify-between gap-2 rounded px-1 text-xs hover:bg-slate-50">
               <span className="flex min-w-0 items-center gap-2"><span className={"h-2.5 w-2.5 shrink-0 rounded-full " + item.className}></span><span className="truncate text-slate-600">{statusLabels[item.key]}</span></span>
               <span className="font-semibold text-slate-800">{data.orderStatus[item.key] ?? 0}</span>
-            </div>)}
+            </Link>)}
           </div>
         </div>
       </article>
@@ -216,7 +216,7 @@ export function DashboardPage() {
       <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-5">
         <div className="flex items-center justify-between"><div><h4 className="font-semibold text-navy-900">Pending payments</h4><p className="mt-0.5 text-xs text-slate-500">Customers with an outstanding balance</p></div><span className="text-sm font-semibold text-rose-700">{money(data.outstandingFils)}</span></div>
         <div className="mt-4 space-y-2">
-          {data.pendingPayments.map(payment => <Link key={payment.id} to={"/orders/" + payment.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 p-3 hover:bg-slate-50">
+          {data.pendingPayments.map(payment => <Link key={payment.id} to={"/payments?orderId=" + payment.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 p-3 hover:bg-slate-50">
             <span className="min-w-0"><span className="block truncate text-sm font-medium text-slate-800">{payment.customerName}</span><span className="block text-xs text-slate-500">{payment.orderNo}</span></span>
             <span className="text-right"><span className="block text-sm font-semibold text-rose-700">{money(payment.outstandingFils)}</span><span className="block text-[11px] text-slate-400">of {money(payment.totalAmountFils)}</span></span>
           </Link>)}
