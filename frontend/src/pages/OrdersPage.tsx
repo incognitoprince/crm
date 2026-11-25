@@ -12,7 +12,7 @@ const label = (value: string) => value.replaceAll("_", " ");
 const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 const isDelayed = (order: Order) => Boolean(
   order.deliveryDate &&
-  new Date(order.deliveryDate).getTime() < new Date().setHours(0, 0, 0, 0) &&
+  new Date(order.deliveryDate).getTime() < Date.now() &&
   !["DELIVERED", "CANCELLED"].includes(order.status),
 );
 
@@ -71,7 +71,8 @@ export function OrdersPage() {
         order.garmentMaster?.name ?? order.garment,
         order.shop?.name ?? "",
       ].some(value => value.toLocaleLowerCase().includes(query));
-      const deliveryDay = order.deliveryDate ? new Date(order.deliveryDate).toISOString().slice(0, 10) : "";
+      const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate) : null;
+      const deliveryDay = deliveryDate ? [deliveryDate.getFullYear(), String(deliveryDate.getMonth() + 1).padStart(2, "0"), String(deliveryDate.getDate()).padStart(2, "0")].join("-") : "";
       const matchesFrom = !deliveryFrom || (deliveryDay !== "" && deliveryDay >= deliveryFrom);
       const matchesTo = !deliveryTo || (deliveryDay !== "" && deliveryDay <= deliveryTo);
       return matchesShop && matchesStatus && matchesSearch && matchesFrom && matchesTo;
@@ -83,7 +84,7 @@ export function OrdersPage() {
     next.delete("status");
     next.delete("scope");
     if (status) next.set("status", status);
-    else if (scope !== "in-progress") next.set("scope", scope);
+    else if (scope === "all" || scope === "delayed") next.set("scope", scope);
     setSearchParams(next);
   }
 
