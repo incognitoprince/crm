@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState as useReactState } from "react";
+import { getCustomers, getDesigns, getOrders, getBills } from "../services/api";
+import type { Customer, Design, Order, Invoice } from "../types";
 import { cn } from "../utils/cn";
 
 const links = [
@@ -18,8 +21,74 @@ const links = [
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [search, setSearch] = useReactState("");
+  const [searchOpen, setSearchOpen] = useReactState(false);
+  const [searchBusy, setSearchBusy] = useReactState(false);
+  const [searchError, setSearchError] = useReactState("");
+  const [customers, setCustomers] = useReactState<Customer[]>([]);
+  const [orders, setOrders] = useReactState<Order[]>([]);
+  const [designs, setDesigns] = useReactState<Design[]>([]);
+  const [invoices, setInvoices] = useReactState<Invoice[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const visibleLinks = links.filter(link => user?.role === "ADMIN" || (user?.role === "INVOICE_CREATOR" ? link.to === "/bills" : !["/dashboard","/payments","/bills","/users"].includes(link.to)));
+  useEffect(() => {
+    const term = search.trim();
+    if (!term) {
+      setCustomers([]); setOrders([]); setDesigns([]); setInvoices([]);
+      setSearchError(""); setSearchBusy(false); return;
+    }
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      setSearchBusy(true); setSearchError("");
+      try {
+        const canSearchCustomers = user?.role !== "INVOICE_CREATOR";
+        const canSearchOrders = user?.role !== "INVOICE_CREATOR";
+        const canSearchDesigns = user?.role !== "INVOICE_CREATOR";
+        const canSearchInvoices = user?.role === "ADMIN" || user?.role === "INVOICE_CREATOR";
+        const [c,o,d,b] = await Promise.all([
+          canSearchCustomers ? getCustomers(term) : Promise.resolve({data: [] as Customer[]}),
+          canSearchOrders ? getOrders() : Promise.resolve({data: [] as Order[]}),
+          canSearchDesigns ? getDesigns() : Promise.resolve({data: [] as Design[]}),
+          canSearchInvoices ? getBills() : Promise.resolve({data: [] as Invoice[]})
+        ]);
+        if (!active) return;
+        const q = term.toLocaleLowerCase();
+        setCustomers(c.data.filter(x => [x.name,x.phone,x.customerNo].some(v => (v ?? "").toLocaleLowerCase().includes(q))).slice(0,5));
+        setOrders(o.data.filter(x => [x.orderNo,x.customer?.name,x.customer?.phone,x.status].some(v => (v ?? "").toString().toLocaleLowerCase().includes(q))).slice(0,5));
+        setDesigns(d.data.filter(x => [x.designNo,x.name,x.garment,x.customer?.name].some(v => (v ?? "").toString().toLocaleLowerCase().includes(q))).slice(0,5));
+        setInvoices(b.data.filter(x => [x.invoiceNo,x.customer?.name,x.subject].some(v => (v ?? "").toString().toLocaleLowerCase().includes(q))).slice(0,5));
+      } catch (e) {
+        if (active) setSearchError(e instanceof Error ? e.message : "Search is unavailable");
+      } finally { if (active) setSearchBusy(false); }
+    }, 250);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [search, user?.role]);
+
+  useEffect(() => { setSearch(""); setSearchOpen(false); }, [location.pathname, location.search]);
+
+  const searchGroups = useMemo(() => [
+    { label: "Customers", items: customers.map(x => ({id:x.id,title:x.name,subtitle:[x.customerNo,x.phone].filter(Boolean).join(" · "),to:"/customers/"+x.id})) },
+    { label: "Orders", items: orders.map(x => ({id:x.id,title:x.orderNo,subtitle:x.customer.name+" · "+x.status.replaceAll("_"," "),to:"/orders/"+x.id})) },
+    { label: "Designs", items: designs.map(x => ({id:x.id,title:x.designNo+" · "+(x.name||x.garment),subtitle:x.customer?.name ?? "Design Library",to:x.customerId?"/designs?customerId="+x.customerId:"/designs"})) },
+    { label: "Invoices", items: invoices.map(x => ({id:x.id,title:x.invoiceNo,subtitle:x.customer?.name ?? "Invoice",to:"/bills/"+x.id})) }
+  ].filter(group => group.items.length), [customers,orders,designs,invoices]);
+
+  const allSearchItems = searchGroups.flatMap(group=>group.items);
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") { setSearchOpen(false); return; }
+    if (event.key === "Enter" && allSearchItems[0]) { navigate(allSearchItems[0].to); setSearchOpen(false); }
+  }
+  useEffect(() => {
+    function onPointerDown(event: PointerEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setSearchOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-[#f5f9fd] lg:grid lg:grid-cols-[236px_1fr]">
@@ -112,9 +181,34 @@ export function AppLayout() {
             {mobileMenuOpen ? "×" : "☰"}
           </button>
           <div className="hidden h-10 w-10 items-center justify-center rounded-lg text-xl text-navy-900 lg:flex">☰</div>
-          <div className="relative max-w-[510px] flex-1">
+          <div ref={searchRef} className="relative max-w-[510px] flex-1">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-500">⌕</span>
-            <input aria-label="Global search" placeholder="Search customers, orders, designs..." className="h-10 w-full rounded-lg border border-slate-200 bg-[#f6f8fb] pl-10 pr-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
+            <input
+              aria-label="Global search"
+              aria-expanded={searchOpen}
+              aria-controls="global-search-results"
+              role="combobox"
+              aria-autocomplete="list"
+              value={search}
+              onChange={event => { setSearch(event.target.value); setSearchOpen(true); }}
+              onFocus={() => search.trim() && setSearchOpen(true)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search customers, orders, designs, invoices..."
+              className="h-10 w-full rounded-lg border border-slate-200 bg-[#f6f8fb] pl-10 pr-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+            />
+            {searchOpen && search.trim() && <div id="global-search-results" role="listbox" className="absolute left-0 right-0 top-12 z-50 max-h-[min(70vh,480px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+              {searchBusy && <p className="px-3 py-2 text-xs text-slate-500">Searching…</p>}
+              {searchError && <p className="px-3 py-2 text-xs text-rose-600">{searchError}</p>}
+              {!searchBusy && !searchError && searchGroups.length === 0 && <p className="px-3 py-3 text-sm text-slate-500">No matching records found.</p>}
+              {searchGroups.map(group => <section key={group.label} className="py-1">
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{group.label}</p>
+                {group.items.map(item => <Link key={item.id} role="option" aria-selected="false" to={item.to} onClick={() => {setSearch("");setSearchOpen(false);}} className="block rounded-lg px-3 py-2 hover:bg-blue-50 focus:bg-blue-50">
+                  <span className="block truncate text-sm font-medium text-slate-800">{item.title}</span>
+                  <span className="block truncate text-xs text-slate-500">{item.subtitle}</span>
+                </Link>)}
+              </section>)}
+              {!searchBusy && allSearchItems.length > 0 && <p className="border-t border-slate-100 px-3 pt-2 text-[10px] text-slate-400">Press Enter to open the first result · Esc to close</p>}
+            </div>}
           </div>
           <div className="ml-auto flex items-center gap-4">
             <div className="h-8 w-px bg-slate-200" />
