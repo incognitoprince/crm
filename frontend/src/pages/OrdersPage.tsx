@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
@@ -12,6 +12,9 @@ const money = (fils: number) => "KWD " + (fils / 1000).toFixed(3);
 
 export function OrdersPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const statusFilter = searchParams.get("status") ?? "";
+  const scopeFilter = searchParams.get("scope") ?? "";
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -20,7 +23,13 @@ export function OrdersPage() {
   const [error, setError] = useState("");
 
   const load = () => getOrders().then(r => setOrders(r.data)).catch(e => setError(e.message));
-  const visibleOrders = orders.filter(o => (shopFilter ? o.shop?.id === shopFilter : true) && (view === "completed" ? ["DELIVERED","CANCELLED"].includes(o.status) : !["DELIVERED","CANCELLED"].includes(o.status)));
+  const visibleOrders = orders.filter(o =>
+    (shopFilter ? o.shop?.id === shopFilter : true) &&
+    (statusFilter ? o.status === statusFilter :
+      scopeFilter === "delayed" ? !!o.deliveryDate && new Date(o.deliveryDate) < new Date() && !["DELIVERED","CANCELLED"].includes(o.status) :
+      scopeFilter === "all" ? true :
+      view === "completed" ? ["DELIVERED","CANCELLED"].includes(o.status) : !["DELIVERED","CANCELLED"].includes(o.status))
+  );
   useEffect(() => { load(); getShops().then(r => setShops(r.data)).catch(e => setError(e.message)); }, []);
 
   async function change(id: string, status: OrderStatus) {
@@ -37,7 +46,7 @@ export function OrdersPage() {
 
   return <div className="mx-auto max-w-7xl space-y-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Workflow</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">Orders</h3><p className="mt-1 text-sm text-slate-600">Manage orders and move them through the tailoring workflow.</p></div>
+      <div><p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Workflow</p><h3 className="mt-1 text-2xl font-semibold text-navy-900">Orders</h3><p className="mt-1 text-sm text-slate-600">{statusFilter ? "Filtered by " + label(statusFilter) : scopeFilter === "delayed" ? "Orders past their delivery date" : scopeFilter === "all" ? "All orders across every workflow status" : "Manage orders and move them through the tailoring workflow."}</p></div>
       <button onClick={() => navigate("/orders/new")} className="rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm">+ New order</button>
     </div>
 
@@ -56,8 +65,8 @@ export function OrdersPage() {
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/70 p-3">
         <select value={shopFilter} onChange={e => setShopFilter(e.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700"><option value="">All shops</option>{shops.map(shop => <option key={shop.id} value={shop.id}>{shop.name}</option>)}</select>
-        <button onClick={() => setView("in-progress")} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "in-progress" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>In progress <span className="ml-1 text-xs">{pending}</span></button>
-        <button onClick={() => setView("completed")} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "completed" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>Completed <span className="ml-1 text-xs">{orders.length - pending}</span></button>
+        <button onClick={() => { navigate("/orders"); }} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "in-progress" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>In progress <span className="ml-1 text-xs">{pending}</span></button>
+        <button onClick={() => { navigate("/orders?scope=all"); }} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (view === "completed" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600")}>Completed <span className="ml-1 text-xs">{orders.length - pending}</span></button>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-[980px] w-full text-sm">
